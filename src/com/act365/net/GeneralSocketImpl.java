@@ -177,18 +177,16 @@ public abstract class GeneralSocketImpl extends SocketImpl {
   */
 
   public static InetAddress createInetAddress( int family , byte[] ipAddress ){
-    if( ipAddress == null ){
-        throw new NullPointerException("ipAddress has not been defined in GeneralSocketImpl.createInetAddress()");
-    }
 	return _createInetAddress( family , ipAddress );
   }
 
   /**
-   Creates a <code>java.net.Inet4Address</code> object with the IP address 0.0.0.0..
+   Creates a <code>java.net.Inet4Address</code> object with no IP address.
+   In general, the field will be populated by a subsequent call to receive().
   */
 
   public static InetAddress createInetAddress(){
-	return _createInetAddress( SocketConstants.AF_INET , new byte[] {0,0,0,0} );
+	return _createInetAddress( SocketConstants.AF_INET , null );
   }
 
   native static InetAddress _createInetAddress( int family , byte[] ipAddress );

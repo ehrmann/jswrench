@@ -106,7 +106,7 @@ public abstract class GeneralDatagramSocketImpl extends DatagramSocketImpl {
   public int peek( InetAddress sender ) throws IOException {
     byte[] buffer = new byte[0];
     DatagramPacket dgram = new DatagramPacket( buffer , buffer.length );
-	dgram.setAddress( GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , new byte[]{0,0,0,0} ));
+	dgram.setAddress( GeneralSocketImpl.createInetAddress() );
 	_receive( getSocketDescriptor( fd ) , dgram , SocketConstants.MSG_PEEK );
 	sender = dgram.getAddress();
 	return dgram.getPort();
@@ -124,7 +124,7 @@ public abstract class GeneralDatagramSocketImpl extends DatagramSocketImpl {
   public int peekData( DatagramPacket p ) throws IOException {
   	byte[] buffer = new byte[ 0 ];
   	p.setData( buffer );
-	p.setAddress( GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , new byte[]{0,0,0,0} ));
+	p.setAddress( GeneralSocketImpl.createInetAddress() );
 	_receive( getSocketDescriptor( fd ) , p , SocketConstants.MSG_PEEK );
 	return p.getPort();
   }
@@ -135,7 +135,7 @@ public abstract class GeneralDatagramSocketImpl extends DatagramSocketImpl {
   */
 
   public void receive( DatagramPacket dgram ) throws IOException {
-  	dgram.setAddress( GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , new byte[]{0,0,0,0} ));
+  	dgram.setAddress( GeneralSocketImpl.createInetAddress() );
     _receive( getSocketDescriptor( fd ) , dgram , 0 );
   }
 

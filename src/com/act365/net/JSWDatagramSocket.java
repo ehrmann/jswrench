@@ -190,7 +190,7 @@ public class JSWDatagramSocket extends DatagramSocket {
         while( true ) {
             
             dgram = new DatagramPacket( receiveBuffer , receiveBuffer.length );      
-            
+                    
             receive( dgram );
         
             int cursor = 0 ,
@@ -236,7 +236,7 @@ public class JSWDatagramSocket extends DatagramSocket {
                     ip4Message.length = (short)( ip4HeaderLength + message.headerLength() + dgram.getLength() );
                 }                
             }
-    
+
             cursor += size ;
             length -= size ;
         
