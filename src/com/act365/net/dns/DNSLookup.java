@@ -40,9 +40,9 @@ import java.net.*;
  passed on to another server.
  <p><code>-p protocol</code> (optional) defines the socket protocol to be used.
  By default, the JDK UDP implementation will be used. The alternatives are
- UDP or RawUDP. 
+ UDP, RawUDP and RawHdrUDP. 
  <p><code>-l localhost</code> (optional) should be specified if the protocol
- has been set to RawUDP. The information will be used to construct the IP header.
+ has been set to RawHdrUDP. The information will be used to construct the IP header.
  <p><code>DNSServer</code> is the IP address of the DNS server.
  <p><code>domain</code> is the domain name to be resolved.
 */
@@ -77,7 +77,8 @@ public class DNSLookup {
       } else if( args[ i ].equals("-p") && i < args.length - 3 ){
       	protocollabel = args[ ++ i ];
       	if( ! protocollabel.equalsIgnoreCase("UDP") && 
-      	    ! protocollabel.equalsIgnoreCase("RawUDP") ){
+		    ! protocollabel.equalsIgnoreCase("RawUDP") &&
+			! protocollabel.equalsIgnoreCase("RawHdrUDP") ){
       	    	System.err.println("Unsupported protocol");
       	    	System.exit( 2 );
       	    }
@@ -96,9 +97,10 @@ public class DNSLookup {
       System.exit( 2 );
     }
     
-    final int protocol = SocketUtils.getProtocol();
+    final boolean israw = protocollabel.equalsIgnoreCase("RawUDP") ||
+                          protocollabel.equalsIgnoreCase("RawHdrUDP");
     
-    boolean includeheader = SocketUtils.includeHeader();
+    final boolean includeheader = SocketUtils.includeHeader();
     
     new SocketWrenchSession();
     
@@ -137,17 +139,20 @@ public class DNSLookup {
 
     DNSMessage message = null ;
 
-    // A RawUDP header comprises 20 bytes of IP4 info and 8 bytes of UDP.
+    // A raw UDP header comprises 20 bytes of IP4 info and 8 bytes of UDP.
     
-    DNSReader reader = new DNSReader( includeheader ? 28 : 0 ); 
+    DNSReader reader = new DNSReader( israw ? 28 : 0 ); 
 
     try {
       
       sendbuffer = DNSWriter.write( (short) socket.hashCode() , recursion_desired , domainname );
+
+      if( israw ){
+	    sendbuffer = UDPWriter.write( source.getAddress() , (short) 53 , server.getAddress() , (short) 53 , sendbuffer , sendbuffer.length );
+      }
       
       if( includeheader ){
 
-		sendbuffer = UDPWriter.write( source.getAddress() , (short) 53 , server.getAddress() , (short) 53 , sendbuffer , sendbuffer.length );
 		sendbuffer = IP4Writer.write( IP4.TOS_COMMAND ,
 									 (short) 255 ,
 									 (byte) SocketConstants.IPPROTO_UDP ,
@@ -155,6 +160,8 @@ public class DNSLookup {
 									 server.getAddress() ,
 									 sendbuffer );
       }
+
+	  SocketUtils.dump( System.out , sendbuffer , 0 , sendbuffer.length );
       
       socket.send( new DatagramPacket( sendbuffer , sendbuffer.length , server , 53 ) );
 
@@ -162,6 +169,8 @@ public class DNSLookup {
 
       socket.receive( packet );
 
+      SocketUtils.dump( System.out , packet.getData() , 0 , packet.getLength() );
+      
       reader.read( packet.getData() ).dump( System.out );
 
     } catch ( Exception e ) {
