@@ -49,6 +49,6 @@ clean : dummy
 	rm -f com/act365/net/*/*.class
 
 backup : clean
-	cd .. && tar cf - src | gzip -9 > jswrench.tar.gz
+	cd ../.. && tar cf - jswrench/src | gzip -9 > jswrench.tar.gz
 
 
