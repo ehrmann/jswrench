@@ -54,6 +54,18 @@ public class TCP {
                           LAST_ACK = 9 ,
                           FIN_WAIT_2 = 10 ,
                           TIME_WAIT = 11 ;
-
+                          
+  public final static String[] statelabels = { "UNSET" ,
+                                               "CLOSED" ,
+                                               "LISTEN" ,
+                                               "SYN_RCVD" ,
+                                               "SYN_SENT" ,
+                                               "ESTABLISHED" ,
+                                               "CLOSE_WAIT" ,
+                                               "FIN_WAIT_1" ,
+                                               "CLOSING" ,
+                                               "LAST_ACK" ,
+                                               "FIN_WAIT_2" ,
+                                               "TIME_WAIT" };
 }
 
