@@ -153,8 +153,6 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
  
     socket = new DatagramSocket();
 
-    acknowledger = new TCPAcknowledger( this , 200 );
- 
     msltimer = new TCPMSLTimer( this , msltimeout );
 
     TCPJListener.getInstance().addPropertyChangeListener( this );
@@ -275,7 +273,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
       }
     } 
 
-    if( acknowledger.isAlive() ){
+    if( acknowledger != null && acknowledger.isAlive() ){
       acknowledger.interrupt();
       flags |= TCP.ACK ;
     } else if( destseqnum != 0 ) {
@@ -360,10 +358,11 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
 
     if( avoidackdelay ){
       send( TCP.ACK );
-    } else if( acknowledger.isAlive() ) {
+    } else if( acknowledger != null && acknowledger.isAlive() ) {
       acknowledger.interrupt();
       send( TCP.ACK );
     } else {
+      acknowledger = new TCPAcknowledger( this , 200 );
       acknowledger.start();
     }
   }
@@ -400,6 +399,8 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     rto = (long)( beta * rtt );
     sendtime = 0 ;
     receivetime = 0 ;
+    
+    acknowledger = null ;
   }
 
   /**
