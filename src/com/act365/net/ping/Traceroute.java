@@ -213,28 +213,32 @@ public class Traceroute {
                                          
         socket.send( message , hostaddr.getAddress() );
 
-        try {
-          socket.receive( ip4Message , icmpMessage );
-          recIdentifier = icmpMessage.identifier ;           
-        } catch( InterruptedIOException e ){
-          recIdentifier = 0 ;
-          System.out.println( ttl ++ + ". *.*.*.*/*.*.*.*");            
-          continue ;
-        }          
+        while(true){
         
-        if( protocol == SocketConstants.IPPROTO_ICMP && icmpMessage.isQuery() && ( recIdentifier != identifier ) ){
-            continue ;
-        }
+            try {
+                socket.receive( ip4Message , icmpMessage );
+                recIdentifier = icmpMessage.identifier ;           
+            } catch( InterruptedIOException e ){
+                recIdentifier = 0 ;
+                System.out.println( ttl ++ + ". *.*.*.*/*.*.*.*");
+                break;            
+            }          
+        
+            if( protocol == SocketConstants.IPPROTO_ICMP && icmpMessage.isQuery() && ( recIdentifier != identifier ) ){
+                continue ;
+            }
 
-        if( icmpMessage.type != ICMP.ICMP_TIME_EXCEEDED &&
-            icmpMessage.type != ICMP.ICMP_ECHOREPLY && 
-            icmpMessage.code != ICMP.ICMP_PORT_UNREACH ){
-            recIdentifier = 0 ;
-            System.out.println( ttl ++ + ". *.*.*.*/*.*.*.*");            
-            continue ;
-        } 
+            if( icmpMessage.type != ICMP.ICMP_TIME_EXCEEDED &&
+                icmpMessage.type != ICMP.ICMP_ECHOREPLY && 
+                icmpMessage.code != ICMP.ICMP_PORT_UNREACH ){
+                continue ;
+            } 
                 
-        System.out.println( ttl ++ + ". " + GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , ip4Message.source ) );
+            System.out.println( ttl + ". " + GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , ip4Message.source ) );
+            break;        
+        }
+        
+        ++ ttl ;
       }
 
     } catch ( Exception e ) {
