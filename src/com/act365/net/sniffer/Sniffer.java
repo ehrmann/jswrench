@@ -42,22 +42,27 @@ import java.net.*;
 public class Sniffer {
 
   /**
-   * Usage: <code>Sniffer -p protocol</code>
+   * Usage: <code>Sniffer -p protocol -x excluded</code>
    * <p><code>protocol</code> is an optional argument. When selected, only
    * packets with the given protocol will be displayed. The default is TCP.
+   * <p><code>excluded</code> is an optional argument that allows messages
+   * from a single named source address to be excluded from the output.
    */
   
 	public static void main(String[] args) {
 
-		String protocollabel = "TCP";
+		String protocollabel = "TCP",
+		       excluded = null ;
 
 		int i = 0;
 
 		while( i < args.length) {
           if( args[ i ].equals("-p") && i < args.length - 1 ){
           	protocollabel = args[ ++ i ];
+          } else if( args[ i ].equals("-x") && i < args.length - 1 ) {
+          	excluded = args[ ++ i ];
           } else {
-          	System.err.println("Syntax: Sniffer -p protocol");
+          	System.err.println("Syntax: Sniffer -p protocol -x excluded");
           	System.exit( 1 );
           }
           ++ i ;
@@ -68,6 +73,12 @@ public class Sniffer {
 			new SocketWrenchSession();
 
             SocketUtils.setProtocol( protocollabel );
+            
+            byte[] excludedaddress = new byte[0];
+            
+            if( excluded instanceof String ){
+            	excludedaddress = InetAddress.getByName( excluded ).getAddress();
+            }
             
 			byte[] buffer = new byte[512];
 
@@ -85,9 +96,18 @@ public class Sniffer {
 
 				ipmessage =	IP4Reader.read(packet.getData(), packet.getLength(), true);
 
+                if( excludedaddress.length == 4 &&
+                    excludedaddress[0] == ipmessage.source[0] &&
+                    excludedaddress[1] == ipmessage.source[1] &&
+                    excludedaddress[2] == ipmessage.source[2] &&
+                    excludedaddress[3] == ipmessage.source[3] ){
+                    	continue;
+                }
+
 				System.out.println( ipmessage.toString() );
 
 				switch (ipmessage.protocol) {
+					
 					case SocketConstants.IPPROTO_UDP :
 
 						UDPMessage udpmessage = UDPReader.read( ipmessage.data,
