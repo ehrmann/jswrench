@@ -111,10 +111,7 @@ public class Sniffer {
 					default :
 						}
 
-				System.out.println(
-					packet.getLength()
-						+ " bytes received from "
-						+ packet.getAddress());
+				System.out.println( ipmessage.toString() );
 
 				SocketUtils.dump(
 					System.out,
