@@ -38,9 +38,85 @@ public class ICMPMessage {
   public short identifier ;
   public short sequence_number ;
   public byte[] data ;
+  public int offset ;
+  public int count ;
+  
 
+  public String getTypeLabel(){
+      return ICMP.typeLabels[ type ];
+  }
+  
+  public String getCodeLabel(){
+      switch( type ){
+          case ICMP.ICMP_DEST_UNREACH:
+              return ICMP.unreachLabels[ code ];
+              
+          case ICMP.ICMP_REDIRECT:
+              return ICMP.redirectLabels[ code ];
+              
+          case ICMP.ICMP_TIME_EXCEEDED:
+              return ICMP.timeExceededLabels[ code ];
+              
+          default:
+              return "";
+      }
+  }
+
+  public boolean isQuery(){
+
+      switch( type ){
+
+      case ICMP.ICMP_ECHOREPLY:
+      case ICMP.ICMP_ECHO:
+      case ICMP.ICMP_ROUTERADVERT:
+      case ICMP.ICMP_ROUTERSOLICIT:
+      case ICMP.ICMP_TIMESTAMP:
+      case ICMP.ICMP_TIMESTAMPREPLY:
+      case ICMP.ICMP_INFO_REQUEST:
+      case ICMP.ICMP_INFO_REPLY:
+      case ICMP.ICMP_ADDRESS:
+      case ICMP.ICMP_ADDRESSREPLY:
+
+        return true ;
+
+      case ICMP.ICMP_DEST_UNREACH:
+      case ICMP.ICMP_SOURCE_QUENCH:
+      case ICMP.ICMP_REDIRECT:
+      case ICMP.ICMP_TIME_EXCEEDED:
+      case ICMP.ICMP_PARAMETERPROB:
+      default:
+      
+        return false ;
+      }        
+  }
+  
   public String toString() {
-    return ICMP.typelabels[type] + ':' + code + ':' + sequence_number + ':' + data.length + " bytes";
+      
+      StringBuffer sb = new StringBuffer();
+      
+      sb.append("ICMP: ");
+      sb.append( getTypeLabel() );
+      
+      final String codeLabel = getCodeLabel();
+      
+      if( codeLabel.length() > 0 ){
+          sb.append(" (");
+          sb.append( codeLabel );
+          sb.append(')');
+      }
+      
+      if( isQuery() ){      
+          sb.append(" identifier-");
+          sb.append( identifier );
+          sb.append(" seq-");
+          sb.append( sequence_number );
+      }
+
+      sb.append(" length-");
+      sb.append( count );
+      sb.append(" bytes");
+      
+      return sb.toString();
   }
 }
 
