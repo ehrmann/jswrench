@@ -55,9 +55,9 @@ public class TCPMessage {
   	
   	sb.append("TCP: ");
   	
-  	sb.append( sourceport );
+  	sb.append( sourceport >= 0 ? sourceport : sourceport ^ 0xffffff00 );
   	sb.append("-");
-  	sb.append( destinationport );
+  	sb.append( destinationport >= 0 ? destinationport : destinationport ^ 0xffffff00 );
   	sb.append(" ");
   	
   	int count = 0 ;
