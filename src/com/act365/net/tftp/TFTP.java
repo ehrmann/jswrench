@@ -211,10 +211,10 @@ public class TFTP extends TFTPBase {
      	
      	StreamTokenizer st = new StreamTokenizer( new InputStreamReader( input ) );
 
+        st.resetSyntax();
+        st.whitespaceChars( 0 , ' ');
+        st.wordChars( ' ' + 1  , 255 ); 
         st.eolIsSignificant( true );
-        st.wordChars( 47 , 47 ); // Forward slash 
-        st.wordChars( 58 , 58 ); // Colon
-        st.commentChar('#');
              	     	
      	if( interactive ){
      		System.out.print( TFTPConstants.prompt );
@@ -223,7 +223,7 @@ public class TFTP extends TFTPBase {
         out:
      
      	  while( true ){
-            
+         
             try {
             
               switch( st.nextToken() ){
@@ -233,13 +233,17 @@ public class TFTP extends TFTPBase {
      		    
      		    case StreamTokenizer.TT_WORD:
      		      execute( st );
+
      		      break;
      		  
      		    case StreamTokenizer.TT_EOL:
      		      continue;
      		  
      		    case StreamTokenizer.TT_NUMBER:
-     		      command("Numerical input not expected: " + st.nval );
+     		      command("Unexpected numerical input " + st.nval );
+                  
+                default:
+                  command("Unexpected character");
      		  }
      		  
             } catch ( TFTPCommandException e ) {
@@ -254,7 +258,17 @@ public class TFTP extends TFTPBase {
                 
               System.out.println("Input Error");
             }
-            
+
+            try {            
+           
+                if( st.nextToken() != StreamTokenizer.TT_EOL ){
+                    while( st.nextToken() != StreamTokenizer.TT_EOL );
+                    System.out.println("Trailing text ignored");       
+                }
+            } catch ( IOException e ) {
+                System.out.println("Input Error");
+            }
+
 			if( interactive ){
 				System.out.print( TFTPConstants.prompt );
 			}     		
@@ -281,7 +295,7 @@ public class TFTP extends TFTPBase {
      	}
      	
      	if( command == TFTPConstants.commands.length ){
-     		command( st.sval );
+     		command( "Unknown command " + st.sval );
      	}
      	
      	boolean exit = false ;
@@ -325,8 +339,12 @@ public class TFTP extends TFTPBase {
               	command("Hostname must be specified");
               }
               
-              if( st.nextToken() == StreamTokenizer.TT_NUMBER ){
-              	port = (int) st.nval ;
+              if( st.nextToken() == StreamTokenizer.TT_WORD ){
+                try {
+                    port = Integer.parseInt( st.sval );
+                } catch ( NumberFormatException e ) {
+                    command("Port number should be an integer");
+                }
               }
               
               connected = true ;
@@ -362,7 +380,7 @@ public class TFTP extends TFTPBase {
      	      	  command("Remote filename must be specified");	 
      	      	}
      	      	
-                int colonPos = remotefilename.indexOf(':');
+                int colonPos = remotefilename.indexOf('|');
                 
                 if( colonPos >= 0 ){
                     hostname = remotefilename.substring( 0 , colonPos );
@@ -375,7 +393,7 @@ public class TFTP extends TFTPBase {
 				  command("Local filename must be specified");	 
 				}
 				
-				if( localfilename.indexOf(':') != -1 ){
+				if( localfilename.indexOf('|') != -1 ){
 				  command("Cannot specify hostname for local file");
 				}
 				
@@ -449,7 +467,7 @@ public class TFTP extends TFTPBase {
 				  command("Local filename must be specified");	 
 				}
 								
-				if( localfilename.indexOf(':') != -1 ){
+				if( localfilename.indexOf('|') != -1 ){
 				  command("Cannot specify hostname for local file");
 				}
 
@@ -459,7 +477,7 @@ public class TFTP extends TFTPBase {
 				  command("Remote filename must be specified");	 
 				}
      	      	
-                int colonPos = remotefilename.indexOf(':');
+                int colonPos = remotefilename.indexOf('|');
                 
                 if( colonPos >= 0 ){
                     hostname = remotefilename.substring( 0 , colonPos );
@@ -508,10 +526,6 @@ public class TFTP extends TFTPBase {
 			  verbose = ! verbose ;
 			  break;
      	}
-
-        if( st.nextToken() != StreamTokenizer.TT_EOL ){
-        	throw new TFTPCommandException("Trailing garbage: " + st.toString() );     	
-        }
      }
      
      /**
