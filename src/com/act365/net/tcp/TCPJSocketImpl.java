@@ -78,14 +78,17 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
       windowsize ,
       destwindowsize ,
       readoffset ,
-      readcount ;
+      readcount ,
+      writestart ,
+      writeend ;
   
   long rto ,
        rtt ,
        sendtime ,
        receivetime ;
 
-  byte[] readbuffer ;
+  byte[] readbuffer ,
+         writebuffer ;
 
   TCPAcknowledger acknowledger ;
 
@@ -162,101 +165,119 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     }
   }
   
-  /**
-   Sends a message and awaits acknowledgement. Updates the estimate 
-   of the connection round-trip time.
-  */
-   
-  synchronized void sendAndAwaitACK( int flags , TCPOptions options , byte[] buffer , int offset , int count ) throws IOException {
-
-    int sendsize = 1 , 
-        counter = 1 ;
-
-    long delay = rto ;
-
-    send( flags , options , buffer , offset , count , false );
-
-    try {
-      wait( delay );
-      delay *= 2 ;
-      sendsize = acknowledgedseqnum == 0 ? 0 : localseqnum - acknowledgedseqnum ;
-      while( ( acknowledgedseqnum == 0 || sendsize > 0  ) && counter ++ < transmissionlimit ){
-      	System.err.println("localseqnum: " + localseqnum );
-      	System.err.println("acknowledgedseqnum: " + acknowledgedseqnum );
-        send( flags , options , buffer , Math.max( offset - sendsize , 0 ) , Math.min( sendsize , buffer.length ) , true );
-        wait( delay );
-        delay *= 2 ;
-        sendsize = acknowledgedseqnum == 0 ? 0 : localseqnum - acknowledgedseqnum ;
-      } 
-    } catch ( Exception e ) {
-      System.err.println("Exception: " + e.getMessage() );
-    }
-  
-    if( sendsize > 0 ){
-      throw new IOException("Connection reset");
-    }
-
-    updateRTO();
-  }
-
-  /**
-   Sends a message with no data and awaits acknowledgement.
-  */
-
-  void sendAndAwaitACK( int flags ) throws IOException {
-    sendAndAwaitACK( flags , new TCPOptions() , new byte[0] , 0 , 0 );
-  }
-
-  /**
-   Sends a message with no data but some options and awaits acknowledgement.
-  */
-
-  void sendAndAwaitACK( int flags , TCPOptions options ) throws IOException {
-    sendAndAwaitACK( flags , options , new byte[0] , 0 , 0 );
-  }
-
   /** 
-   Sends a TCP message to the destination but doesn't await acknowledgement. 
-   Checks whether the receiver is ready to receive.
+   Sends a TCP message to the destination and awaits acknowledgement where
+   appropriate. Data is broadcast in chunks consistent with the window size
+   that has been advertised by the destination. 
   */ 
 
-  void send( int flags , TCPOptions options , byte[] buffer , int offset , int count , boolean retransmission ) throws IOException {
-
-	int sendsize ;
+  synchronized void send( int flags , TCPOptions options , boolean awaitACK ) throws IOException {
 
 	if( ( flags & TCP.PSH ) > 0 ){
-	  sendsize = localseqnum - acknowledgedseqnum ;
+	  
+	  int sendsize ,
+	      count = ( writeend - writestart )% writebuffer.length ;
+	      
 	  while( count > 0 ){
-		while( sendsize >= destwindowsize ){
-		  try {
-			wait(); // Persist timer
-		  } catch( InterruptedException ie ) {
-		  }
-		}
-		sendsize = Math.min( count , acknowledgedseqnum + destwindowsize - localseqnum );
-		transmit( flags , options , buffer , offset , sendsize , retransmission );
-		offset += sendsize ;
-		count -= sendsize ; 
-	  } 
+	  	while( destwindowsize == 0 ){
+	  		try {
+	  			wait(); // Persist timer
+	  		} catch( InterruptedException ie ) {
+	  		}
+	  	} 
+		sendsize = Math.min( count , destwindowsize );
+        send( flags , options , writestart , ( writestart + sendsize )% writebuffer.length , awaitACK );
+	    writestart += sendsize ;
+		count = ( writeend - writestart )% writebuffer.length ;
+	  }
 	} else {
-	  transmit( flags , options , buffer , offset , count , retransmission );
+	  send( flags , options , 0 , 0 , awaitACK );
 	}
+	
+	notifyAll();
   }
 
-  /**
-   Sends a message with no data but doesn't await acknowledgement.
-  */
-
+  void send( int flags , boolean awaitACK ) throws IOException {
+  	send( flags , new TCPOptions() , awaitACK );
+  }
+  
   void send( int flags ) throws IOException {
-	send( flags , new TCPOptions() , new byte[0] , 0 , 0 , false );
+  	send( flags , new TCPOptions() , false );
   }
+  
+  /**
+   * Transmits a message, including the data in the interval [start,end) from
+   * the write buffer, and awaits acknowledgement if appropriate. 
+   * Retransmission will occur where timely acknowledgement isn't received.
+   * Updates the estimate of the connection round-trip time.
+   */
+   
+  synchronized void send( int flags , TCPOptions options , int start , int end , boolean awaitACK ) throws IOException {
+  	
+  	sendtime = new Date().getTime();
 
+//    System.err.println("sendtime: " + sendtime );
+      	
+	int seqnum = localseqnum ;
+	
+	send( flags , options , start , end , seqnum );
+    
+    if( ( flags & TCP.SYN ) > 0 || ( flags & TCP.FIN ) > 0 ){
+      ++ localseqnum ;
+    } else if( ( flags & TCP.PSH ) > 0 ) {
+      localseqnum += ( end - start )% writebuffer.length ;
+    }  
+
+    if( awaitACK ){
+
+        int sendsize = 1 ,
+            counter = 1 ;
+        
+        long delay = rto ;
+          	
+		try {
+		  wait( delay );
+		  delay *= 2 ;
+		  
+		  if( acknowledgedseqnum == 0 ){
+		  	sendsize = 1 ;
+		  } else {
+		  	start = ( end - ( localseqnum - acknowledgedseqnum ) )% writebuffer.length ;
+		  	sendsize = ( end - start )% writebuffer.length ;
+		  	seqnum = acknowledgedseqnum ;
+		  }
+		  
+		  while( ( acknowledgedseqnum == 0 || sendsize > 0 ) && counter ++ < transmissionlimit ){
+//		  	sendtime = 0 ;
+			send( flags , options , start , end , seqnum );
+			wait( delay );
+			delay *= 2 ;
+
+			if( acknowledgedseqnum == 0 ){
+			  sendsize = 1 ;
+			} else {
+			  start = ( end - ( localseqnum - acknowledgedseqnum ) )% writebuffer.length ;
+			  sendsize = ( end - start )% writebuffer.length ;
+			}	
+		  } 
+		  
+		} catch ( Exception e ) {
+		  System.err.println("Exception: " + e.getMessage() );
+		}
+  
+		if( sendsize > 0 ){
+		  throw new IOException("Connection reset");
+		}
+
+		updateRTO();
+    }
+  }
+  
   /** 
-   Transmits a TCP message to the destination. No check is made beforehand
-   to see whether the receiver is ready to receive.
+   Transmits a TCP message. Acknowledgement is not awaited.
   */ 
 
-  void transmit( int flags , TCPOptions options , byte[] buffer , int offset , int count , boolean retransmit ) throws IOException {
+  synchronized void send( int flags , TCPOptions options , int start , int end , int seqnum ) throws IOException {
 
     if( localhost.equals( ip0 ) ){
       throw new IOException("Local address not yet set");
@@ -280,22 +301,11 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
       flags |= TCP.ACK ;
     }
 
-    if( retransmit ){
-      if( ( flags & TCP.SYN ) > 0 || ( flags & TCP.FIN ) > 0 ){
-        -- localseqnum ;
-      } else if( ( flags & TCP.PSH ) > 0 ) {
-        localseqnum -= count ;
-      }
-      sendtime = 0 ;
-    } else {
-      sendtime = new Date().getTime();
-    }
-
     byte[] sendbuffer = TCPWriter.write( localhost.getAddress() ,
                                          (short) localport ,
                                          address.getAddress() ,
                                          (short) port ,
-                                         localseqnum ,
+                                         seqnum ,
                                          destseqnum ,
                                          ( flags & TCP.ACK ) > 0 ,
                                          ( flags & TCP.RST ) > 0 ,
@@ -304,9 +314,9 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
                                          ( flags & TCP.PSH ) > 0 ,
                                          (short) windowsize ,
                                          options ,
-                                         buffer ,  
-                                         offset ,
-                                         count  );
+                                         writebuffer ,  
+                                         writestart ,
+                                         writeend );
 
     if( includeipheader ){
 
@@ -321,12 +331,6 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     if( debug ){
       System.err.println("SEND:");
       SocketUtils.dump( System.err , sendbuffer , 0 , sendbuffer.length );
-    }
-
-    if( ( flags & TCP.SYN ) > 0 || ( flags & TCP.FIN ) > 0 ){
-      ++ localseqnum ;
-    } else if( ( flags & TCP.PSH ) > 0 ) {
-      localseqnum += count ;
     }
 
     socket.send( new DatagramPacket( sendbuffer , sendbuffer.length , address , port ) );
@@ -344,9 +348,9 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
 	  sendtime = 0 ;
 	  receivetime = 0 ;
 
-	  if( debug ){
+      if( debug ){
 		System.err.println("Updated rto: " + rto );
-	  }
+      }
 	}
   }
 
@@ -372,15 +376,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
    */
   
   void resetSocket(){
-/*
-    try {
-      if( localhost == null ){
-        localhost = InetAddress.getLocalHost();
-      }
-    } catch ( UnknownHostException uhe ) {
-      localhost = null ;
-    }
-*/     
+
 	address = localhost = ip0 ;
 	port = localport = 0 ;
     
@@ -394,6 +390,10 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     readbuffer = new byte[ maxwindowsize ];
     readoffset = 0 ;
     readcount  = 0 ;
+        
+    writebuffer = new byte[ maxwindowsize ];
+    writestart = 0 ;
+    writeend = 0 ;
  
     rtt = 1000 ;
     rto = (long)( beta * rtt );
@@ -427,7 +427,11 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     }
       
     destwindowsize = message.windowsize ;
+    	
+    notifyAll();
 
+    flush();    
+    
     switch( state ){
 
     case TCP.CLOSED:
@@ -437,19 +441,19 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
         send( TCP.SYN | TCP.ACK );
         previousstate = state ;
         state = TCP.SYN_RCVD ;
-        notifyAll();
+//        notifyAll();
       } 
       return ;
     case TCP.SYN_RCVD:
       if( message.ack ){
         previousstate = state ;
         state = TCP.ESTABLISHED ;
-        notifyAll();
+//        notifyAll();
         return;
       } else if( message.rst && previousstate == TCP.LISTEN ) {
         previousstate = state ;
         state = TCP.LISTEN ;
-        notifyAll();
+//        notifyAll();
         return ;
       }
       break;
@@ -458,13 +462,13 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
         send( TCP.ACK );
         previousstate = state ;
         state = TCP.ESTABLISHED ;
-        notifyAll();
+//        notifyAll();
         return ;
       } else if( message.syn ){
         send( TCP.SYN | TCP.ACK );
         previousstate = state ;
         state = TCP.SYN_RCVD ;
-        notifyAll();
+//        notifyAll();
         return;
       }
       break;
@@ -474,13 +478,13 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
 			send( TCP.ACK );
 			previousstate = state ;
 			state = TCP.CLOSE_WAIT ;
-			notifyAll();
+//			notifyAll();
 			return ;
         } else {
 		  send( TCP.FIN | TCP.ACK );
 		  previousstate = state ;
 		  state = TCP.LAST_ACK ;
-		  notifyAll();
+//		  notifyAll();
 		  return;
         }
       } else if( message.psh ){
@@ -493,17 +497,17 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
         readcount += message.data.length ;
         windowsize -= message.data.length ;
         acknowledge();
-        notifyAll();
+//        notifyAll();
         return ;
       } else if( message.ack ){
-        notifyAll();
+//        notifyAll();
         return ;
       }
       break;
     case TCP.CLOSE_WAIT :
       return;
     case TCP.FIN_WAIT_1 :
-      if( message.fin && message.ack ){
+	  if( message.fin && message.ack ){
         send( TCP.ACK );
         timeWait();
         return ;
@@ -511,12 +515,12 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
         send( TCP.ACK );
         previousstate = state ;
         state = TCP.CLOSING ;
-        notifyAll();
+//        notifyAll();
         return ;
       } else if( message.ack ){
         previousstate = state ;
         state = TCP.FIN_WAIT_2 ;
-        notifyAll();
+//        notifyAll();
         return ;
       }
       break;
@@ -529,7 +533,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     case TCP.LAST_ACK :
       if( message.ack ){
         resetSocket();
-        notifyAll();
+//        notifyAll();
         return;
       }
       break;
@@ -543,7 +547,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     case TCP.TIME_WAIT :
       if( message.fin ){
         send( TCP.ACK );
-        notifyAll();
+//        notifyAll();
         return ;
       }
       break;
@@ -554,10 +558,23 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
       System.err.println( message );
       send( TCP.RST );
     }
-
+    
     resetSocket();
 
     throw new IOException("Connection reset by peer");
+  }
+  
+  /**
+   * Polls until the writebuffer is empty.
+   */
+  
+  synchronized void flush() {
+  	try {
+  		while( writestart != writeend ){
+  			wait();
+  		}
+  	} catch ( InterruptedException e ) {
+  	}
   }
   
   void activeOpen( InetAddress address , short port ) throws IOException {
@@ -595,14 +612,14 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
       case TCP.ESTABLISHED:
       case TCP.SYN_RCVD:
         state = TCP.FIN_WAIT_1 ;
-        sendAndAwaitACK( TCP.FIN );
+        send( TCP.FIN , true );
         break;
       case TCP.SYN_SENT:
         resetSocket();
         break;  
       case TCP.CLOSE_WAIT:
         state = TCP.LAST_ACK ;
-        sendAndAwaitACK( TCP.FIN );
+        send( TCP.FIN , true );
         break;
       default:
         // Will reach here if an exception has been thrown during socket set-up
@@ -648,7 +665,17 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
       throw new IOException("Write not possible from current state");
     }
 
-    sendAndAwaitACK( TCP.PSH , new TCPOptions() , buffer , offset , count );
+    int i = -1 ;
+    
+    while( ++ i < count ){
+      writebuffer[ writeend ++ ] = buffer[ offset ++ ];
+      writeend %= writebuffer.length ;
+      if( writeend == writestart ){
+        throw new IOException("Write buffer overflow");
+      }
+    }
+    
+    send( TCP.PSH , true );
   }
 
   /**
@@ -811,7 +838,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
 
     activeOpen( dst , (short) remotePort );
 
-    sendAndAwaitACK( TCP.SYN , options );
+    send( TCP.SYN , options , true );
 
     while( state != TCP.ESTABLISHED ){
       try {
