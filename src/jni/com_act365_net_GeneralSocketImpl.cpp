@@ -454,7 +454,7 @@ jobject JNICALL Java_com_act365_net_GeneralSocketImpl__1createInetAddress(JNIEnv
                                                                           jint       family ,
                                                                           jbyteArray address )
 {
-    jclass inetAddressClass = env -> FindClass("java/net/InetAddress");
+    jclass inetAddressClass = env -> FindClass("java/net/Inet4Address");
 
     jmethodID mid = env -> GetMethodID( inetAddressClass , "<init>" , "()V" );
 
