@@ -162,36 +162,7 @@ public class DNSLookup {
 
       socket.receive( packet );
 
-      message = reader.read( packet.getData() );
-
-      i = -1 ;
-
-      while( ++ i < message.questions.length ){
-        System.out.println( "QUERY " + (int)( i + 1 ) );
-        System.out.println( message.questions[ i ].toString() );
-      }
-
-      i = -1 ;
-
-      while( ++ i < message.answers.length ){
-        System.out.println( "ANSWER " + (int)( i + 1 ) );
-        System.out.println( new String( message.answers[ i ].domain_name , "UTF8" ) + ": " + message.answers[ i ].toString() );
-      }
-
-      i = -1 ;
-
-      while( ++ i < message.authority_records.length ){
-        System.out.println( "AUTHORITY RECORD " + (int)( i + 1 ) );
-        System.out.println( new String( message.authority_records[ i ].domain_name , "UTF8" ) + ": " + message.authority_records[ i ].toString() );
-      }
-
-
-      i = -1 ;
-
-      while( ++ i < message.additional_records.length ){
-        System.out.println( "ADDITIONAL RECORD " + (int)( i + 1 ) );
-        System.out.println( new String( message.additional_records[ i ].domain_name , "UTF8" ) + ": " + message.additional_records[ i ].toString() );
-      }
+      reader.read( packet.getData() ).dump( System.out );
 
     } catch ( Exception e ) {
       System.err.println( e.getMessage() );

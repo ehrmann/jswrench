@@ -26,6 +26,8 @@
 
 package com.act365.net.dns ;
 
+import java.io.* ;
+
 /**
  * Represents a DNS message.
  */
@@ -49,5 +51,36 @@ public class DNSMessage {
   public ResourceRecord[] answers ;
   public ResourceRecord[] authority_records ;
   public ResourceRecord[] additional_records ;
+
+  public void dump( PrintStream printer )throws UnsupportedEncodingException {  
+  
+    int i = -1 ;
+
+    while( ++ i < questions.length ){
+	  printer.println( "QUERY " + (int)( i + 1 ) );
+	  printer.println( questions[ i ].toString() );
+    }
+
+    i = -1 ;
+
+    while( ++ i < answers.length ){
+	  printer.println( "ANSWER " + (int)( i + 1 ) );
+	  printer.println( new String( answers[ i ].domain_name , "UTF8" ) + ": " + answers[ i ].toString() );
+    }
+
+    i = -1 ;
+
+    while( ++ i < authority_records.length ){
+	  printer.println( "AUTHORITY RECORD " + (int)( i + 1 ) );
+	  printer.println( new String( authority_records[ i ].domain_name , "UTF8" ) + ": " + authority_records[ i ].toString() );
+    }
+
+    i = -1 ;
+
+    while( ++ i < additional_records.length ){
+	  printer.println( "ADDITIONAL RECORD " + (int)( i + 1 ) );
+	  printer.println( new String( additional_records[ i ].domain_name , "UTF8" ) + ": " + additional_records[ i ].toString() );
+    }
+  }
 }
 
