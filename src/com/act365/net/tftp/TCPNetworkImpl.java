@@ -104,7 +104,7 @@ public class TCPNetworkImpl extends TCPNetworkBase implements INetworkImpl {
             input = socket.getInputStream();
             output = socket.getOutputStream();
         } catch( Exception e ){
-            ErrorHandler.system("Cannot create socket");
+            ErrorHandler.system("Cannot create socket: " + e.getMessage() );
         }
         
         ErrorHandler.debug("open: " + toString() );
