@@ -45,9 +45,9 @@ public class Traceroute {
    Executes the Traceroute service.
    <p>Usage: <code>Traceroute -p protocol -l localhost -d -f first_ttl host</code>
    <p><code>protocol</code> is the protocol to be used for broadcast. The default 
-   is ICMP - the alternative is UDP.
+   is HdrICMP - the alternative is HdrUDP.
    <p><code>localhost</code> is the local host address, which should be specified
-   if UDP is used. (The information is used to calculate the UDP checksum).
+   if HdrUDP is used. (The information is used to calculate the UDP checksum).
    <p><code>-d</code> should be specified if debug is required.
    <p><code>-f first_ttl</code> is the TTL value used for the first packet.
    (The default value is 1). 
@@ -77,8 +77,8 @@ public class Traceroute {
     while( i < args.length - 1 ){
       if( args[ i ].equals("-p") && i < args.length - 2 ){
         protocollabel = args[ ++ i ];
-        if( ! protocollabel.equalsIgnoreCase("ICMP") && 
-            ! protocollabel.equalsIgnoreCase("UDP") ){
+        if( ! protocollabel.equalsIgnoreCase("HdrICMP") && 
+            ! protocollabel.equalsIgnoreCase("HdrUDP") ){
           System.err.println("Unsupported protocol");
           System.exit( 2 );
         }
@@ -101,7 +101,7 @@ public class Traceroute {
     }
 
     try {
-		SocketUtils.setProtocol("RawICMP");
+		SocketUtils.setProtocol("HdrICMP");
     } catch ( java.io.IOException e ) {
     	System.err.println("Unsupported protocol");
     	System.exit( 4 );
@@ -126,7 +126,7 @@ public class Traceroute {
     }
 
     if( protocol == SocketConstants.IPPROTO_UDP && localaddr == null ){
-      System.err.println("localhost must be defined if RawUDP is to be used");
+      System.err.println("localhost must be defined if HdrUDP is to be used");
       System.exit( 6 );
     }
 

@@ -170,10 +170,10 @@ public class Ping {
    <p><code>-s nbytes</code> (optional) defines the number of bytes to appear
    in each packet. The default is 56.
    <p><code>-p protocol</code> (optional) defines the socket protocol to be used.
-   By default, ICMP will be used - the alternative is RawICMP.
+   By default, ICMP will be used - the alternative is HdrICMP.
    <p><code>-l localhost</code> (optional) should be specified if the protocol
-   has been set to RawICMP. The information will be used to construct the IP header.
-   <p><code>-t ttl</code> (optional) is the time-to-live to be used if the RawICMP
+   has been set to HdrICMP. The information will be used to construct the IP header.
+   <p><code>-t ttl</code> (optional) is the time-to-live to be used if the HdrICMP
    protocol has been selected. The default is 64.
    <p><code>hostname</code> define the remote host.
   */
@@ -224,7 +224,7 @@ public class Ping {
       } else if( args[ i ].equals("-p") && i < args.length - 2 ){
       	protocollabel = args[ ++ i ];
       	if( ! protocollabel.equalsIgnoreCase("ICMP") &&
-      	    ! protocollabel.equalsIgnoreCase("RawICMP") ){
+      	    ! protocollabel.equalsIgnoreCase("HdrICMP") ){
       	    	System.err.println("Unsupported protocol");
       	    	System.exit( 2 );
       	    }

@@ -51,7 +51,7 @@ public class Sniffer {
   
 	public static void main(String[] args) {
 
-		String protocollabel = "TCP",
+		String protocollabel = "RawTCP",
 		       excluded = null ;
 
 		int i = 0;
