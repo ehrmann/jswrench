@@ -110,7 +110,7 @@ public class UDPMessage implements IProtocolMessage {
    */
   
   public int getDestinationPort(){
-      return destinationport ;
+      return destinationport >= 0 ? destinationport : destinationport ^ 0xffffff00 ;
   }
   
   /**
@@ -138,6 +138,14 @@ public class UDPMessage implements IProtocolMessage {
   
   public int length() {
       return 8 + count ;  
+  }
+  
+  /**
+   * Calculates the header length in bytes.
+   */
+  
+  public int headerLength() {
+      return 8 ;
   }
   
   /**
@@ -185,33 +193,38 @@ public class UDPMessage implements IProtocolMessage {
     
   public int read( byte[] buffer , int offset , int count , boolean testchecksum , byte[] source , byte[] destination ) throws IOException {
 
-      if( count < 8 ){
-        throw new IOException("UDP messages must be at least eight bytes long");
+      if( SocketWrenchSession.isRaw() ){      
+          if( count < 8 ){
+              throw new IOException("UDP messages must be at least eight bytes long");
+          }
+          sourceport = SocketUtils.shortFromBytes( buffer , offset );
+          destinationport = SocketUtils.shortFromBytes( buffer , offset + 2 );
+          this.count = SocketUtils.shortFromBytes( buffer , offset + 4 ) - 8 ;
+          checksum = SocketUtils.shortFromBytes( buffer , offset + 6 );
+          data = buffer ;
+          this.offset = offset + 8 ;
+          if( testchecksum ){
+              if( source == null || destination == null ){
+                  throw new IOException("Cannot test checksum unless source and destination IP addresses are known");
+              }
+              short checksum = SocketUtils.checksum( source ,
+                                                     destination ,
+                                                     (byte) SocketConstants.IPPROTO_UDP ,
+                                                     buffer ,
+                                                     offset ,
+                                                     count );
+
+              if( checksum != 0 ){
+                  throw new IOException("Checksum error: " + checksum );
+              }
+          }
+          return length();
+      } else {
+          data = buffer ;
+          this.offset = offset ;
+          this.count = count ;
+          return count ;
       }
-
-      sourceport = SocketUtils.shortFromBytes( buffer , offset );
-      destinationport = SocketUtils.shortFromBytes( buffer , offset + 2 );
-      this.count = SocketUtils.shortFromBytes( buffer , offset + 4 ) - 8 ;
-      checksum = SocketUtils.shortFromBytes( buffer , offset + 6 );
-
-      data = buffer ;
-      this.offset = offset + 8 ;
-
-      if( testchecksum ){
-
-        short checksum = SocketUtils.checksum( source ,
-                                               destination ,
-                                               (byte) SocketConstants.IPPROTO_UDP ,
-                                               buffer ,
-                                               offset ,
-                                               count );
-
-        if( checksum != 0 ){
-          throw new IOException("Checksum error: " + checksum );
-        }
-      }
-    
-      return length();      
   }
 
   /**

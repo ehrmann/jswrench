@@ -89,7 +89,7 @@ public class JSWDatagramSocket extends DatagramSocket {
     
     public JSWDatagramSocket( int port , InetAddress localAddr ) throws SocketException {
         
-        super( port , localAddr );
+        super( port , localAddr );        
         
         reset();
 
@@ -245,99 +245,6 @@ public class JSWDatagramSocket extends DatagramSocket {
         
       send( new DatagramPacket( sendBuffer , cursor , GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , destAddress ) , destPort ) );
     }
-                             
-    public int receive( IP4Message ip4Message ,
-                        UDPMessage udpMessage ) throws IOException {
-    
-        DatagramPacket dgram ;
-
-        int protocol = 0 ;
-        
-        while( true ){
-                            
-            dgram = new DatagramPacket( receiveBuffer , receiveBuffer.length );
-            
-            receive( dgram );
-        
-            int cursor = 0 ,
-                length = dgram.getLength() ,
-                size ;
-        
-            if( SocketWrenchSession.isRaw() ){ 
-                if( ip4Message instanceof IP4Message ){
-                    size = IP4Reader.read( ip4Message , receiveBuffer , cursor , length , testChecksum );
-                    protocol = ( ip4Message.protocol >= 0 ? ip4Message.protocol : ip4Message.protocol ^ 0xffffff00 );
-                    if( protocol != SocketConstants.IPPROTO_UDP ){
-                        throw new IOException("Non-UDP Datagram packet");    
-                    }
-                    if( ( sourceAddress[ 0 ] != 0 ||
-                          sourceAddress[ 1 ] != 0 ||
-                          sourceAddress[ 2 ] != 0 ||
-                          sourceAddress[ 3 ] != 0 ) && 
-                        ( sourceAddress[ 0 ] != ip4Message.destination[ 0 ] ||
-                          sourceAddress[ 1 ] != ip4Message.destination[ 1 ] ||
-                          sourceAddress[ 2 ] != ip4Message.destination[ 2 ] ||
-                          sourceAddress[ 3 ] != ip4Message.destination[ 3 ] ) ){
-                              continue ;
-                    }
-                        
-                } else {
-                    size = ip4HeaderLength ;
-                    protocol = SocketConstants.IPPROTO_UDP ;
-                }
-
-                cursor += size ;
-                length -= size ;
-
-                if( ip4Message instanceof IP4Message ){                        
-                    size = udpMessage.read( receiveBuffer , cursor , length , testChecksum , ip4Message.source , ip4Message.destination );
-                } else {
-                    size = udpMessage.read( receiveBuffer , cursor , length , false , null , null );
-                }
-        
-                if( sourcePort != 0 && sourcePort != udpMessage.destinationport ){
-                    continue ;
-                }
-            
-                cursor += size ;
-                length -= size ;
-                
-            } else {
-                
-                if( ip4Message instanceof IP4Message ){
-                    ip4Message.source = dgram.getAddress().getAddress();
-                    ip4Message.destination = sourceAddress ;
-                    ip4Message.length = (short)( length + 28 );
-                }
-                
-                udpMessage = new UDPMessage( (short) dgram.getPort() ,
-                                             (short)  sourcePort ,
-                                             dgram.getData() ,
-                                             0 ,
-                                             length );
-                                      
-                cursor = length ;
-                length = 0 ;                      
-            }
-
-            if( cursor != dgram.getLength() || length != 0 ){
-                throw new IOException("Illegal UDP message format");
-            }
-            
-            break;
-        }
-        
-        if( debug instanceof PrintStream ){
-            debug.println("RECEIVE:");
-            if( ip4Message != null ){
-                debug.println( ip4Message.toString() );
-            }
-            debug.println( udpMessage.toString() );
-            SocketUtils.dump( debug , udpMessage.getData() , udpMessage.getOffset() , udpMessage.getCount() );
-        }
-        
-        return protocol ;
-    }
 
     public int receive( IP4Message ip4Message ,
                         TCPMessage tcpMessage ) throws IOException {
@@ -437,8 +344,7 @@ public class JSWDatagramSocket extends DatagramSocket {
                 
         return protocol ;
     }
-        
-    
+            
     public int receive( IP4Message ip4Message ,
                         IProtocolMessage message ) throws IOException {
     
@@ -456,36 +362,55 @@ public class JSWDatagramSocket extends DatagramSocket {
                 length = dgram.getLength() ,
                 size ;
         
-            if( SocketWrenchSession.isRaw() && ip4Message instanceof IP4Message ){
-                size = IP4Reader.read( ip4Message , receiveBuffer , cursor , length , testChecksum );
-                protocol = ( ip4Message.protocol >= 0 ? ip4Message.protocol : ip4Message.protocol ^ 0xffffff00 );
-                if( protocol != message.getProtocol() ){
-                    throw new IOException("Non-" + message.getProtocolName() + " Datagram packet");    
+            byte[] source ,
+                   destination ;
+                   
+            if( SocketWrenchSession.isRaw() ){
+                if( ip4Message instanceof IP4Message ){
+                    size = IP4Reader.read( ip4Message , receiveBuffer , cursor , length , testChecksum );
+                    protocol = ( ip4Message.protocol >= 0 ? ip4Message.protocol : ip4Message.protocol ^ 0xffffff00 );
+                    source = ip4Message.source ;
+                    destination = ip4Message.destination ;
+                    if( protocol != message.getProtocol() ){
+                        throw new IOException("Non-" + message.getProtocolName() + " Datagram packet");    
+                    }
+                    if( ( sourceAddress[ 0 ] != 0 ||
+                          sourceAddress[ 1 ] != 0 ||
+                          sourceAddress[ 2 ] != 0 ||
+                          sourceAddress[ 3 ] != 0 ) && 
+                        ( sourceAddress[ 0 ] != ip4Message.destination[ 0 ] ||
+                          sourceAddress[ 1 ] != ip4Message.destination[ 1 ] ||
+                          sourceAddress[ 2 ] != ip4Message.destination[ 2 ] ||
+                          sourceAddress[ 3 ] != ip4Message.destination[ 3 ] ) ){
+                              continue ;
+                    }
+                } else {
+                    size = ip4HeaderLength ;
+                    protocol = message.getProtocol();
+                    source = dgram.getAddress().getAddress();
+                    destination = sourceAddress ;
                 }
-                if( ( sourceAddress[ 0 ] != 0 ||
-                      sourceAddress[ 1 ] != 0 ||
-                      sourceAddress[ 2 ] != 0 ||
-                      sourceAddress[ 3 ] != 0 ) && 
-                    ( sourceAddress[ 0 ] != ip4Message.destination[ 0 ] ||
-                      sourceAddress[ 1 ] != ip4Message.destination[ 1 ] ||
-                      sourceAddress[ 2 ] != ip4Message.destination[ 2 ] ||
-                      sourceAddress[ 3 ] != ip4Message.destination[ 3 ] ) ){
-                          continue ;
-                }
-            } else {
-                size = ip4HeaderLength ;
+            } else {                
+                size = 0 ; 
                 protocol = message.getProtocol();
+                source = dgram.getAddress().getAddress();
+                destination = sourceAddress ;
+                if( ip4Message instanceof IP4Message ){
+                    ip4Message.source = source ;
+                    ip4Message.destination = destination ;
+                    ip4Message.length = (short) size ;
+                }                
             }
     
             cursor += size ;
             length -= size ;
         
-            if( ip4Message instanceof IP4Message ){
-                size = message.read( receiveBuffer , cursor , length , testChecksum , ip4Message.source , ip4Message.destination );
-            } else {
-                size = message.read( receiveBuffer , cursor , length , testChecksum , null , null );
-            }
+            size = message.read( receiveBuffer , cursor , length , testChecksum , source , destination );
         
+            if( message.usesPortNumbers() && sourcePort != 0 && message.getDestinationPort() != 0 && sourcePort != message.getDestinationPort() ){
+                continue ;
+            }
+            
             cursor += size ;
             length -= size ;
         

@@ -121,6 +121,10 @@ public class ICMPMessage implements IProtocolMessage {
       return icmpCount + ( isQuery() ? 8 : 4 );
   }
   
+  public int headerLength(){
+      return isQuery() ? 8 : 4 ;
+  }
+  
   public String toString() {
       
       StringBuffer sb = new StringBuffer();
