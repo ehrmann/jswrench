@@ -220,7 +220,7 @@ public class Traceroute {
                 recIdentifier = icmpMessage.identifier ;           
             } catch( InterruptedIOException e ){
                 recIdentifier = 0 ;
-                System.out.println( ttl ++ + ". *.*.*.*/*.*.*.*");
+                System.out.println( ttl + ". *.*.*.*/*.*.*.*");
                 break;            
             }          
         
