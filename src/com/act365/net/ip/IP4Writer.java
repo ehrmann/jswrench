@@ -28,8 +28,10 @@ package com.act365.net.ip ;
  
 import com.act365.net.*;
 
+import java.io.IOException ;
+
 /**
- IP4Writer writes IP4Message objects to a DatagramPacket.
+ IP4Writer writes IP4Message objects to a buffer.
  Fragmentation isn't supported - all messages are created
  with the DONT_FRAGMENT bit set and with offset set to 0.
  However, the identified is increased in order to identify
@@ -40,61 +42,68 @@ public class IP4Writer {
 
   static short identifier = 0 ;
 
-  static byte[] write( IP4Message message ){
+  static int write( IP4Message message , byte[] buffer , int offset , int count ) throws IOException {
 
-    byte[] buffer = new byte[ message.length ];
+    final int length = message.length();
+    
+    if( count < length ){
+        throw new IOException("IP4 Write buffer overflow");
+    }
+    
+    buffer[ offset ] = (byte)( message.version << 4 | message.headerlength ); 
+    buffer[ offset + 1 ] = message.typeofservice ;
 
-    buffer[0] = (byte)( message.version << 4 | message.headerlength ); 
-    buffer[1] = message.typeofservice ;
+    SocketUtils.shortToBytes( message.length , buffer , offset + 2 );
+    SocketUtils.shortToBytes( message.identifier , buffer , offset + 4 );
+    SocketUtils.shortToBytes( message.offset , buffer , offset + 6 );
 
-    SocketUtils.shortToBytes( message.length , buffer , 2 );
-    SocketUtils.shortToBytes( message.identifier , buffer , 4 );
-    SocketUtils.shortToBytes( message.offset , buffer , 6 );
+    buffer[ offset + 6 ] |= message.flags ;
 
-    buffer[6] |= message.flags ;
+    buffer[ offset + 8 ] = (byte) message.timetolive ;
+    buffer[ offset + 9 ] = message.protocol ;
 
-    buffer[8] = (byte) message.timetolive ;
-    buffer[9] = message.protocol ;
+    SocketUtils.shortToBytes( message.checksum , buffer , offset + 10 );
 
-    SocketUtils.shortToBytes( message.checksum , buffer , 10 );
+    buffer[ offset + 12 ] = message.source[0];
+    buffer[ offset + 13 ] = message.source[1];
+    buffer[ offset + 14 ] = message.source[2];
+    buffer[ offset + 15 ] = message.source[3];
 
-    buffer[12] = message.source[0];
-    buffer[13] = message.source[1];
-    buffer[14] = message.source[2];
-    buffer[15] = message.source[3];
-
-    buffer[16] = message.destination[0];
-    buffer[17] = message.destination[1];
-    buffer[18] = message.destination[2];
-    buffer[19] = message.destination[3];
+    buffer[ offset + 16 ] = message.destination[0];
+    buffer[ offset + 17 ] = message.destination[1];
+    buffer[ offset + 18 ] = message.destination[2];
+    buffer[ offset + 19 ] = message.destination[3];
   
     byte b = 4 ;
 
     while( ++ b < message.headerlength ){
-      SocketUtils.intToBytes( message.options[ b - 5 ] , buffer , 4 * b );
+      SocketUtils.intToBytes( message.options[ b - 5 ] , buffer , offset + 4 * b );
     }
 
     int i = 0 ;
     
     while( i < message.dataCount ){
-      buffer[i] = message.data[ i + message.dataOffset ];
+      buffer[ offset + i ] = message.data[ i + message.dataOffset ];
       ++ i ;
     }
     
-    return buffer ;
+    return length ;
   }
 
   /**
    Builds a full IP4Message object and writes it to a buffer.
    It is assumed that no options will be specified.
   */
-
-  public static byte[] write( byte typeofservice ,
-                              short timetolive ,
-                              byte protocol ,
-                              byte[] source ,
-                              byte[] destination ,
-                              byte[] data ) 
+  
+  public static int write( byte typeofservice ,
+                           short timetolive ,
+                           byte protocol ,
+                           byte[] source ,
+                           byte[] destination ,
+                           byte[] data ,
+                           byte[] buffer ,
+                           int offset ,
+                           int count ) throws IOException
   {
     IP4Message message = new IP4Message();
 
@@ -113,9 +122,37 @@ public class IP4Writer {
     message.options = new int[0];
     message.data = data ;
 
-    message.checksum = SocketUtils.checksum( write( message ) , 20 , 0 );
-       
-    return write( message );
+    write( message , buffer , offset , count );
+    
+    /*
+     * The checksum is calculated from the IP header alone -
+     * the data that follows is ignored. 
+     */
+     
+    message.checksum = SocketUtils.checksum( buffer , offset , 20 );
+
+    SocketUtils.shortToBytes( message.checksum , buffer , offset + 10 );
+
+    return message.length();       
   }
+  
+  /**
+   * @deprecated Use the other form of write() - it avoids buffer copy
+   */
+
+  public static byte[] write( byte typeofservice ,
+                              short timetolive ,
+                              byte protocol ,
+                              byte[] source ,
+                              byte[] destination ,
+                              byte[] data ) throws IOException
+  {
+      byte[] buffer = new byte[ 20 + data.length ];
+      
+      write( typeofservice , timetolive , protocol , source , destination , data , buffer , 0 , buffer.length );
+      
+      return buffer ;  
+  }
+  
 }
 

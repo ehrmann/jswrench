@@ -180,6 +180,7 @@ public class Traceroute {
                                            hostaddr.getAddress() , 
                                            (short) destinationport ++ ,
                                            timebuffer ,
+                                           0 ,
                                            timebuffer.length );
           break;
 

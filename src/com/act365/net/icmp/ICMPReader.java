@@ -93,7 +93,7 @@ public class ICMPReader {
      
          while( i < 4 ){
              if( message.data[ message.offset + i ++ ] != 0 ){
-                 throw new IOException("ICMP error messages lacks zero padding");
+                 throw new IOException("ICMP error message lacks zero padding");
              }
          }
          

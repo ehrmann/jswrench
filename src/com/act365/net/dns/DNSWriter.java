@@ -28,6 +28,8 @@ package com.act365.net.dns ;
  
 import com.act365.net.*;
 
+import java.io.IOException ;
+
 /**
  DNSWriter writes DNS messages to a byte stream.
 */
@@ -88,79 +90,60 @@ public class DNSWriter {
     return length ;
   }
 
-  static byte[] write( DNSMessage message ){
+  static int write( DNSMessage message , byte[] buffer , int offset , int count ) throws IOException {
 
-    int length = 12 ;
+    final int length = message.length();
+
+    if( count < length ){
+        throw new IOException("DNS Write buffer overflow");    
+    }
+    
+    SocketUtils.shortToBytes( message.identification , buffer , offset );
+    SocketUtils.shortToBytes( message.flags , buffer , offset + 2 );
+    SocketUtils.shortToBytes( (short) message.questions.length , buffer , offset + 4 );
+    SocketUtils.shortToBytes( (short) message.answers.length , buffer , offset + 6 );
+    SocketUtils.shortToBytes( (short) message.authority_records.length , buffer , offset + 8 );
+    SocketUtils.shortToBytes( (short) message.additional_records.length , buffer , offset + 10 );
+   
+    int cursor = 12 ;
 
     int i = -1 ;
 
     while( ++ i < message.questions.length ){
-      length += message.questions[ i ].length();
+      cursor += write( message.questions[ i ] , buffer , cursor );
     }
 
     i = -1 ;
 
     while( ++ i < message.answers.length ){
-      length += message.answers[ i ].length();
+      cursor += write( message.answers[ i ] , buffer , cursor );
     }
 
     i = -1 ;
 
     while( ++ i < message.authority_records.length ){
-      length += message.authority_records[ i ].length();
+      cursor += write( message.authority_records[ i ] , buffer , cursor );
     }
 
     i = -1 ;
 
     while( ++ i < message.additional_records.length ){
-      length += message.additional_records[ i ].length();
+      cursor += write( message.additional_records[ i ] , buffer , cursor );
     }
 
-    byte[] buffer = new byte[ length ];
-
-    SocketUtils.shortToBytes( message.identification , buffer , 0 );
-    SocketUtils.shortToBytes( message.flags , buffer , 2 );
-    SocketUtils.shortToBytes( (short) message.questions.length , buffer , 4 );
-    SocketUtils.shortToBytes( (short) message.answers.length , buffer , 6 );
-    SocketUtils.shortToBytes( (short) message.authority_records.length , buffer , 8 );
-    SocketUtils.shortToBytes( (short) message.additional_records.length , buffer , 10 );
-   
-    length = 12 ;
-
-    i = -1 ;
-
-    while( ++ i < message.questions.length ){
-      length += write( message.questions[ i ] , buffer , length );
-    }
-
-    i = -1 ;
-
-    while( ++ i < message.answers.length ){
-      length += write( message.answers[ i ] , buffer , length );
-    }
-
-    i = -1 ;
-
-    while( ++ i < message.authority_records.length ){
-      length += write( message.authority_records[ i ] , buffer , length );
-    }
-
-    i = -1 ;
-
-    while( ++ i < message.additional_records.length ){
-      length += write( message.additional_records[ i ] , buffer , length );
-    }
-
-    return buffer ;
+    return cursor ;
   }
 
   /**
    Generates a standard DNS Query.
   */
 
-  public static byte[] write( short identification ,
-                              boolean recursion_desired ,
-                              String domain ) throws Exception {
+  public static int write( short identification ,
+                           boolean recursion_desired ,
+                           String domain ,
+                           byte[] buffer ,
+                           int offset ,
+                           int count ) throws IOException {
 
     short flags = 0 ;
 
@@ -184,7 +167,22 @@ public class DNSWriter {
     message.authority_records = new ResourceRecord[ 0 ];
     message.additional_records = new ResourceRecord[ 0 ];
  
-    return write( message );
+    return write( message , buffer , offset , count );
+  }
+  
+  /**
+   * @deprecated Use the other form of write(), which avoids a buffer copy.
+   */
+
+  public static byte[] write( short identification ,
+                              boolean recursion_desired ,
+                              String domain ) throws IOException {
+      
+      byte[] buffer = new byte[ domain.length() + 6 ];
+      
+      write( identification , recursion_desired , domain , buffer , 0 , buffer.length );
+      
+      return buffer ;
   }
 }
 

@@ -28,32 +28,76 @@ package com.act365.net.udp ;
 
 import com.act365.net.*;
 
+import java.io.IOException ;
+
 /**
  * Class <code>UDPWriter</code> writes UDP messages into bytestreams.
  */
-
+ 
 public class UDPWriter {
 
-  static byte[] write( UDPMessage message ){
+  static int write( UDPMessage message , byte[] buffer , int offset , int count ) throws IOException {
 
-    byte[] buffer = new byte[ message.length ];
+    final int length = message.length();
+    
+    if( count < length ){
+        throw new IOException("UDP Write buffer overflow");
+    }
+    
+    SocketUtils.shortToBytes( message.sourceport , buffer , offset );
+    SocketUtils.shortToBytes( message.destinationport , buffer , offset + 2 );
+    SocketUtils.shortToBytes( message.length , buffer , offset + 4 );
+    SocketUtils.shortToBytes( message.checksum , buffer , offset + 6 );
 
-    SocketUtils.shortToBytes( message.sourceport , buffer , 0 );
-    SocketUtils.shortToBytes( message.destinationport , buffer , 2 );
-    SocketUtils.shortToBytes( message.length , buffer , 4 );
-    SocketUtils.shortToBytes( message.checksum , buffer , 6 );
+    int i = 0 ;
 
-    int i = 7 ;
-
-    while( ++ i < buffer.length ){
-      buffer[ i ] = message.data[ i - 8 ];
+    while( i < message.count ){
+      buffer[ offset + 8 + i ] = message.data[ message.offset + i ];
+      ++ i ;
     }
 
-    return buffer ;
+    return length ;
   }
 
   /**
    * Builds a UDP message and writes it to a bytestream.
+   */
+
+  public static int write( byte[] sourceaddress ,
+                           short  sourceport ,
+                           byte[] destinationaddress ,
+                           short  destinationport ,
+                           byte[] data ,
+                           int    dataOffset ,
+                           int    dataCount ,
+                           byte[] buffer ,
+                           int    offset ,
+                           int    count  ) throws IOException {
+
+    UDPMessage message = new UDPMessage();
+
+    message.sourceport = sourceport ;
+    message.destinationport = destinationport ;
+    message.length = (short)( dataCount + 8 );
+    message.checksum = 0 ;
+    message.data = data ;
+
+    final int length = write( message , buffer , offset , count );
+    
+    message.checksum = SocketUtils.checksum( sourceaddress ,
+                                             destinationaddress ,
+                                             (byte) SocketConstants.IPPROTO_UDP ,
+                                             buffer ,
+                                             offset ,                                             
+                                             length );
+
+    SocketUtils.shortToBytes( message.checksum , buffer , offset + 6 );
+
+    return length ;
+  }
+
+  /**
+   * @deprecated Use the other form of write(), which avoids a buffer copy
    */
 
   public static byte[] write( byte[] sourceaddress ,
@@ -61,24 +105,23 @@ public class UDPWriter {
                               byte[] destinationaddress ,
                               short  destinationport ,
                               byte[] data ,
-                              int    datalength ) {
-
-    UDPMessage message = new UDPMessage();
-
-    message.sourceport = sourceport ;
-    message.destinationport = destinationport ;
-    message.length = (short)( datalength + 8 );
-    message.checksum = 0 ;
-    message.data = data ;
-
-    message.checksum = SocketUtils.checksum( sourceaddress ,
-                                             destinationaddress ,
-                                             (byte) SocketConstants.IPPROTO_UDP ,
-                                             write( message ) ,
-                                             (int) 0 ,
-                                             message.length );
-
-    return write( message );
+                              int    dataOffset ,
+                              int    dataCount ) throws IOException {
+  
+      byte[] buffer = new byte[ 8 + dataCount ];
+      
+      write( sourceaddress ,
+             sourceport ,
+             destinationaddress ,
+             destinationport ,
+             data ,
+             dataOffset ,
+             dataCount ,
+             buffer ,
+             0 ,
+             buffer.length );
+             
+      return buffer ;                            
   }
 }
 

@@ -71,14 +71,9 @@ public class UDPReader {
       throw new IOException("IP and UDP header lengths differ");
     }
 
-    message.data = new byte[ message.length - 8 ];
-
-    int i = 0 ;
-
-    while( i < message.length - 8 ){
-      message.data[ i ] = buffer[ offset + 8 + i ];
-      ++ i ;
-    }
+    message.data = buffer ;
+    message.offset = offset + 8 ;
+    message.count = message.length - 8 ;
 
     if( testchecksum ){
 

@@ -26,6 +26,7 @@
 
 package com.act365.net.dns ;
 
+import java.io.IOException ;
 import java.util.*;
 
 /**
@@ -56,7 +57,7 @@ public class Query {
    a single domain name.
   */
 
-  public Query( String domain_name ) throws Exception {
+  public Query( String domain_name ) throws IOException {
 
     this.domain_name = domain_name ;
 
@@ -89,7 +90,7 @@ public class Query {
    into the byte stream expected by the query_name member.
   */
 
-  static int parse( String name , byte[] buffer , int offset ) throws Exception {
+  static int parse( String name , byte[] buffer , int offset ) throws IOException {
 
     StringTokenizer parser = new StringTokenizer( name , "." );
 
@@ -100,7 +101,7 @@ public class Query {
     while( parser.hasMoreTokens() ){
       label = parser.nextToken().getBytes("UTF8");
       if( label.length > 63 ){
-        throw new Exception("Maximum label length exceeded");
+        throw new IOException("Maximum label length exceeded");
       }
       buffer[ offset ++ ] = (byte) label.length ;
       i = -1 ;

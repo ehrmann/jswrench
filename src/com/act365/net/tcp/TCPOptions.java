@@ -86,6 +86,25 @@ public class TCPOptions {
     this.timestampEchoReply = timestampEchoReply ;
     timestampSet = true ;
   }
+  
+  public int length(){
+      
+      int l = 0 ;
+      
+      if( maxSegmentSizeSet ){
+          l += 4 ;
+      }
+      
+      if( windowScaleFactorSet ){
+          l += 4 ;
+      }
+      
+      if( timestampSet ){
+          l += 12 ;
+      }
+      
+      return l ;
+  }  
 }
 
 

@@ -50,6 +50,14 @@ public class IP4Message {
   public int dataCount ;
 
   /**
+   * Calculates the message-length in bytes.
+   */
+  
+  public int length(){
+      return 4 * headerlength + dataCount ;
+  }
+  
+  /**
    Writes the message to a string.
   */
 

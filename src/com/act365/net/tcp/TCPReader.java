@@ -95,21 +95,18 @@ public class TCPReader {
       message.options[ i - offset - 20 ] = buffer[ i ];
     }
 
-    message.data = new byte[ count - 4 * message.headerlength ];
+    message.data = buffer ;
+    message.datastart = offset + 4 * message.headerlength ;
+    message.dataend = offset + count ;
 
-    while( i < offset + count ){
-      message.data[ i - offset - 4 * message.headerlength ] = buffer[ i ];
-      ++ i ;
-    }
- 
     if( testchecksum ){
 
       short checksum = SocketUtils.checksum( source ,
-                                                   destination ,
-                                                   (byte) SocketConstants.IPPROTO_TCP ,
-                                                   buffer ,
-                                                   offset ,
-                                                   count ); 
+                                             destination ,
+                                             (byte) SocketConstants.IPPROTO_TCP ,
+                                             buffer ,
+                                             offset ,
+                                             count ); 
 
       if( checksum != 0 ){
         throw new IOException("Checksum error: " + checksum );

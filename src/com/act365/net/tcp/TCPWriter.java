@@ -28,72 +28,78 @@ package com.act365.net.tcp ;
 
 import com.act365.net.* ;
 
+import java.io.IOException ;
 /**
  * Writes TCP messages to a bytestream.
  */
 
 public class TCPWriter {
 
-  static byte[] write( TCPMessage message ){
+  static int write( TCPMessage message , byte[] buffer , int offset , int count ) throws IOException {
 
-    int length = 20 + message.options.length + message.data.length ;
+    final int length = message.length();
 
-    byte[] buffer = new byte[ length ];
-
-    SocketUtils.shortToBytes( message.sourceport , buffer , 0 );
-    SocketUtils.shortToBytes( message.destinationport , buffer , 2 );
-    SocketUtils.intToBytes( message.sequencenumber , buffer , 4 );
-    SocketUtils.intToBytes( message.acknowledgementnumber , buffer , 8 );
+    if( count < length ){
+        throw new IOException("TCP Write buffer overflow");
+    }
     
-    buffer[ 12 ] = (byte)( message.headerlength << 4 );
-    buffer[ 13 ] = 0 ;
+    SocketUtils.shortToBytes( message.sourceport , buffer , offset );
+    SocketUtils.shortToBytes( message.destinationport , buffer , offset + 2 );
+    SocketUtils.intToBytes( message.sequencenumber , buffer , offset + 4 );
+    SocketUtils.intToBytes( message.acknowledgementnumber , buffer , offset + 8 );
+    
+    buffer[ offset + 12 ] = (byte)( message.headerlength << 4 );
+    buffer[ offset + 13 ] = 0 ;
 
-    if( message.urg ) buffer[ 13 ] |= TCP.URG ;
-    if( message.ack ) buffer[ 13 ] |= TCP.ACK ;
-    if( message.psh ) buffer[ 13 ] |= TCP.PSH ;
-    if( message.rst ) buffer[ 13 ] |= TCP.RST ;
-    if( message.syn ) buffer[ 13 ] |= TCP.SYN ;
-    if( message.fin ) buffer[ 13 ] |= TCP.FIN ;
+    if( message.urg ) buffer[ offset + 13 ] |= TCP.URG ;
+    if( message.ack ) buffer[ offset + 13 ] |= TCP.ACK ;
+    if( message.psh ) buffer[ offset + 13 ] |= TCP.PSH ;
+    if( message.rst ) buffer[ offset + 13 ] |= TCP.RST ;
+    if( message.syn ) buffer[ offset + 13 ] |= TCP.SYN ;
+    if( message.fin ) buffer[ offset + 13 ] |= TCP.FIN ;
 
-    SocketUtils.shortToBytes( message.windowsize , buffer , 14 );
-    SocketUtils.shortToBytes( message.checksum , buffer , 16 );
-    SocketUtils.shortToBytes( message.urgentpointer , buffer , 18 );
+    SocketUtils.shortToBytes( message.windowsize , buffer , offset + 14 );
+    SocketUtils.shortToBytes( message.checksum , buffer , offset + 16 );
+    SocketUtils.shortToBytes( message.urgentpointer , buffer , offset + 18 );
 
     int i = 20 ;
 
     while( i < 20 + message.options.length ){
-      buffer[ i ] = message.options[ i - 20 ];
+      buffer[ offset + i ] = message.options[ i - 20 ];
       ++ i ;
     }
 
     while( i < length ){
-      buffer[ i ] = message.data[ i - 20 - message.options.length ];
+      buffer[ offset + i ] = message.data[( message.datastart + i - 20 - message.options.length )% message.data.length ];
       ++ i ;
     }
 
-    return buffer ;
+    return length ;
   }
 
   /**
    * Writes a TCP message to a bytestream.
    */
 
-  public static byte[] write( byte[] sourceaddress ,
-                              short sourceport ,
-                              byte[] destinationaddress ,
-                              short destinationport ,
-                              int sequencenumber ,
-                              int acknowledgementnumber ,
-                              boolean ack ,
-                              boolean rst ,
-                              boolean syn ,
-                              boolean fin ,
-                              boolean psh ,
-                              short windowsize ,
-                              TCPOptions options ,
-                              byte[] writebuffer ,
-                              int writestart ,
-                              int writeend ){
+  public static int write( byte[] sourceaddress ,
+                           short sourceport ,
+                           byte[] destinationaddress ,
+                           short destinationport ,
+                           int sequencenumber ,
+                           int acknowledgementnumber ,
+                           boolean ack ,
+                           boolean rst ,
+                           boolean syn ,
+                           boolean fin ,
+                           boolean psh ,
+                           short windowsize ,
+                           TCPOptions options ,
+                           byte[] writebuffer ,
+                           int writestart ,
+                           int writeend ,
+                           byte[] buffer ,
+                           int offset ,
+                           int count ) throws IOException {
   
     TCPMessage message = new TCPMessage();
 
@@ -150,26 +156,67 @@ public class TCPWriter {
       message.options[ i ] = optionsbuffer[ i ];
     }
 
-    int count = ( writeend - writestart )% writebuffer.length ;
-    
-    message.data = new byte[ count ];
+    message.data = writebuffer ;
+    message.datastart = writestart ;
+    message.dataend = writeend ;
 
-    i = -1 ;
-
-    while( ++ i < count ){
-      message.data[ i ] = writebuffer[( i + writestart )% writebuffer.length ];
-    }
-      
-    short length = (short)( 4 * message.headerlength + count );
-
+    final int length = write( message , buffer , offset , count );
+        
     message.checksum = SocketUtils.checksum( sourceaddress ,
                                              destinationaddress ,
                                              (byte) SocketConstants.IPPROTO_TCP ,
-                                             write( message ) ,
-                                             0 ,
+                                             buffer ,
+                                             offset ,
                                              length );
 
-    return write( message );
-  }
-}    
+    SocketUtils.shortToBytes( message.checksum , buffer , offset + 16 );
 
+    return length ;
+  }
+  
+  /**
+   * @deprecated Use the other form of write(), which avoids a buffer copy
+   */
+
+  public static byte[] write( byte[] sourceaddress ,
+                              short sourceport ,
+                              byte[] destinationaddress ,
+                              short destinationport ,
+                              int sequencenumber ,
+                              int acknowledgementnumber ,
+                              boolean ack ,
+                              boolean rst ,
+                              boolean syn ,
+                              boolean fin ,
+                              boolean psh ,
+                              short windowsize ,
+                              TCPOptions options ,
+                              byte[] writebuffer ,
+                              int writestart ,
+                              int writeend ) throws IOException {
+                                
+    byte[] bytestream = new byte[ 20 + options.length() + ( writeend - writestart )% writebuffer.length ];
+    
+    write( sourceaddress ,
+           sourceport ,
+           destinationaddress ,
+           destinationport ,
+           sequencenumber ,
+           acknowledgementnumber ,
+           ack ,
+           rst ,
+           syn ,
+           fin ,
+           psh ,
+           windowsize ,
+           options ,
+           writebuffer ,
+           writestart ,
+           writeend ,
+           bytestream ,
+           0 ,
+           bytestream.length );
+
+    return bytestream ;    
+  }      
+}    

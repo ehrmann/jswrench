@@ -37,6 +37,8 @@ public class UDPMessage {
   public short length ;
   public short checksum ;
   public byte[] data ;
+  public int offset ;
+  public int count ;
 
   /**
    Writes the message to a string.
@@ -55,6 +57,14 @@ public class UDPMessage {
     sb.append(" bytes");
 
     return sb.toString();
-  }    
+  }  
+  
+  /**
+   * Calculates the message length in bytes.
+   */
+  
+  public int length() {
+      return 8 + data.length ;  
+  }
 }
 

@@ -124,7 +124,7 @@ public class Sniffer {
                         	new DNSReader( 8 ).read( ipmessage.data ).dump(System.out);
                         } else {
                             System.out.println( udpmessage.toString() );
-                            SocketUtils.dump( System.out , udpmessage.data , 0 , udpmessage.data.length );
+                            SocketUtils.dump( System.out , udpmessage.data , udpmessage.offset , udpmessage.count );
                         }
                         
 						break;
@@ -141,7 +141,7 @@ public class Sniffer {
                                         
 
                         System.out.println( tcpmessage.toString () );
-                        SocketUtils.dump( System.out , tcpmessage.data , 0 , tcpmessage.data.length );
+                        SocketUtils.dump( System.out , tcpmessage.data , tcpmessage.datastart , tcpmessage.dataLength() ); // Not quite right
                         
 						break;
 

@@ -82,5 +82,40 @@ public class DNSMessage {
 	  printer.println( new String( additional_records[ i ].domain_name , "UTF8" ) + ": " + additional_records[ i ].toString() );
     }
   }
+  
+  /**
+   * Calculates the length in bytes of a DNS message.
+   */
+
+  public int length(){
+
+      int len = 12 ;
+
+      int i = -1 ;
+
+      while( ++ i < questions.length ){
+        len += questions[ i ].length();
+      }
+
+      i = -1 ;
+
+      while( ++ i < answers.length ){
+        len += answers[ i ].length();
+      }
+
+      i = -1 ;
+
+      while( ++ i < authority_records.length ){
+        len += authority_records[ i ].length();
+      }
+
+      i = -1 ;
+
+      while( ++ i < additional_records.length ){
+        len += additional_records[ i ].length();
+      }
+
+      return len ;
+  }
 }
 

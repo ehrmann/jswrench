@@ -44,6 +44,10 @@ public class ICMPMessage {
   public int count ;
   public IP4Message ip4Message ;  
 
+  public int length(){
+      return 8 + count ;
+  }
+  
   public String getTypeLabel(){
       return ICMP.typeLabels[ type ];
   }

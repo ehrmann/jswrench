@@ -28,6 +28,8 @@ package com.act365.net.icmp ;
  
 import com.act365.net.*;
 
+import java.io.IOException ;
+
 /**
  ICMPWriter writes ICMPMessage objects to a byte stream.
 */
@@ -51,35 +53,40 @@ public class ICMPWriter {
     counter = 0 ;
   }
 
-  static byte[] write( ICMPMessage message ){
+  static int write( ICMPMessage message , byte[] buffer , int offset , int count ) throws IOException {
 
-    byte[] buffer = new byte[ message.data.length + 8 ];
+    final int length = message.length();
+     
+    if( count < length ){
+        throw new IOException("ICMP Write buffer overflow");
+    }
+    
+    buffer[ offset ]     = message.type ;
+    buffer[ offset + 1 ] = message.code ;    
+    SocketUtils.shortToBytes( message.checksum , buffer , offset + 2 );
+    SocketUtils.shortToBytes( message.identifier , buffer , offset + 4 );
+    SocketUtils.shortToBytes( message.sequence_number , buffer , offset + 6 );
+    
+    int i = 0 ;
 
-    buffer[0] = message.type ;
-    buffer[1] = message.code ;
-    buffer[2] = (byte)( message.checksum >>> 8 );
-    buffer[3] = (byte)( message.checksum & 0xff );
-    buffer[4] = (byte)( message.identifier >>> 8 );
-    buffer[5] = (byte)( message.identifier & 0xff );
-    buffer[6] = (byte)( message.sequence_number >>> 8 );
-    buffer[7] = (byte)( message.sequence_number & 0xff );
-
-    int i = 7 ;
-
-    while( ++ i < buffer.length ){
-      buffer[i] = message.data[i-8];
+    while( i < message.count ){
+      buffer[ offset + 8 + i ] = message.data[ i + message.offset ];
+      ++ i ;
     }
 
-    return buffer ;
+    return length ;
   }
 
   /**
    Builds a full ICMPMessage object and writes it to a buffer.
   */
 
-  public byte[] write( byte type ,
-                       byte code ,
-                       byte[] data ) 
+  public int write( byte type , 
+                    byte code , 
+                    byte[] data , 
+                    byte[] buffer , 
+                    int offset , 
+                    int count ) throws IOException 
   {
     ICMPMessage message = new ICMPMessage();
 
@@ -90,9 +97,27 @@ public class ICMPWriter {
     message.sequence_number = counter ++ ;
     message.data = data ;
 
-    message.checksum = SocketUtils.checksum( write( message ) , 0 , 8 + data.length );
+    final int length = write( message , buffer , offset , count );
+    
+    message.checksum = SocketUtils.checksum( buffer , offset , length );
+    SocketUtils.shortToBytes( message.checksum , buffer , offset + 2 );
        
-    return write( message );
+    return length ;
+  }
+
+  /**
+   * @deprecated Use the other form of write(), which avoids a buffer copy
+   */
+  
+  public byte[] write( byte type ,
+                       byte code ,
+                       byte[] data ) throws IOException  
+  {
+      byte[] buffer = new byte[ 8 + data.length ];
+      
+      write( type , code , data , buffer , 0 , data.length );
+      
+      return buffer ;
   }
 }
 

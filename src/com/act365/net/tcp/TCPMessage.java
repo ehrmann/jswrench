@@ -48,6 +48,16 @@ public class TCPMessage {
   public short urgentpointer ;
   public byte[] options ;
   public byte[] data ; 
+  public int datastart ;
+  public int dataend ;
+  
+  public int dataLength(){
+      return ( dataend - datastart )% data.length ;
+  }
+  
+  public int length() {
+      return 20 + options.length + dataLength();
+  }
   
   public String toString() {
   	
@@ -128,7 +138,7 @@ public class TCPMessage {
 	sb.append( windowsize );
       	
     sb.append(" length-");
-    sb.append( data.length );
+    sb.append( dataLength() );
     sb.append(" bytes");
     
   	return sb.toString();

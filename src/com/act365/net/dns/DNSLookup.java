@@ -148,7 +148,7 @@ public class DNSLookup {
       sendbuffer = DNSWriter.write( (short) socket.hashCode() , recursion_desired , domainname );
 
       if( israw ){
-	    sendbuffer = UDPWriter.write( source.getAddress() , (short) 53 , server.getAddress() , (short) 53 , sendbuffer , sendbuffer.length );
+	    sendbuffer = UDPWriter.write( source.getAddress() , (short) 53 , server.getAddress() , (short) 53 , sendbuffer , 0 , sendbuffer.length );
       }
       
       if( includeheader ){
