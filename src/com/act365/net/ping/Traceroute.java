@@ -164,7 +164,7 @@ public class Traceroute {
 
       socket.setSoTimeout( 3000 );
       
-      while( message == null || message.type != ICMP.ICMP_ECHOREPLY && message.type != ICMP.ICMP_DEST_UNREACH ){
+      while( message == null || message.type != ICMP.ICMP_ECHOREPLY && message.code != ICMP.ICMP_PORT_UNREACH ){
 
         SocketUtils.longToBytes( new Date().getTime() , timebuffer , 0 );
 
@@ -223,15 +223,13 @@ public class Traceroute {
             SocketUtils.dump( System.err , packet.getData() , 0 , packet.getLength() );
           }  
 
-          System.out.print( ttl ++ + ". ");
+          System.out.println( ttl ++ + ". " + packet.getAddress() );
           
-          if( message.type == ICMP.ICMP_TIME_EXCEEDED ||
-              message.type == ICMP.ICMP_ECHOREPLY || 
-              message.type == ICMP.ICMP_DEST_UNREACH ){
-            System.out.println( packet.getAddress() );
-          } else {
-            System.out.println( message.toString() );
-          }
+          if( message.type != ICMP.ICMP_TIME_EXCEEDED &&
+              message.type != ICMP.ICMP_ECHOREPLY && 
+              message.code != ICMP.ICMP_PORT_UNREACH ){
+            System.out.println( ":" + message.toString() );
+          } 
         }
       }
 
