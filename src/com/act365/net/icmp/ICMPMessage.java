@@ -60,12 +60,28 @@ public class ICMPMessage implements IProtocolMessage {
    */
   
   public static short counter ;
-                      
-  public void populate( byte   type ,
-                        byte   code ,
-                        byte[] data ,
-                        int    offset ,
-                        int    count ) {
+  
+  /**
+   * Creates s blank ICMP message that will be populated by a call to read().
+   */
+  
+  public ICMPMessage(){
+  }
+
+  /**
+   * Creates a new ICMP message.
+   * @param type ICMP type
+   * @param code ICMP code
+   * @param data data buffer
+   * @param offset offset within buffer at which data starts
+   * @param count length of data in bytes
+   */  
+  
+  public ICMPMessage( byte   type ,
+                      byte   code ,
+                      byte[] data ,
+                      int    offset ,
+                      int    count ) {
 
       this.type = type ;
       this.code = code ;
@@ -95,6 +111,10 @@ public class ICMPMessage implements IProtocolMessage {
   
   public boolean usesPortNumbers(){
       return false ;
+  }
+  
+  public int getDestinationPort(){
+      return 0 ;
   }
   
   public int length(){

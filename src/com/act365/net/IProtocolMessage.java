@@ -68,6 +68,13 @@ public interface IProtocolMessage {
     public boolean usesPortNumbers();
     
     /**
+     * Returns the port number to which the message will be sent.
+     * Protocols that don't use port numbers should return 0.
+     */
+    
+    public int getDestinationPort();
+    
+    /**
      * Calculates the message length in bytes, excluding the IP header.
      * @return message length in bytes
      */

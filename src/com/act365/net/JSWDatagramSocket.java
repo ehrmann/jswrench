@@ -149,7 +149,7 @@ public class JSWDatagramSocket extends DatagramSocket {
             SocketUtils.dump( debug , sendBuffer , 0 , cursor );
         }
         
-        send( new DatagramPacket( sendBuffer , cursor , GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , destAddress ) , 0 ) );
+        send( new DatagramPacket( sendBuffer , cursor , GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , destAddress ) , message.getDestinationPort() ) );
     }
 
     public void send( byte[] destAddress ,
@@ -310,11 +310,11 @@ public class JSWDatagramSocket extends DatagramSocket {
                     ip4Message.length = (short)( length + 28 );
                 }
                 
-                udpMessage.populate( (short) dgram.getPort() ,
-                                     (short)  sourcePort ,
-                                     dgram.getData() ,
-                                     0 ,
-                                     length );
+                udpMessage = new UDPMessage( (short) dgram.getPort() ,
+                                             (short)  sourcePort ,
+                                             dgram.getData() ,
+                                             0 ,
+                                             length );
                                       
                 cursor = length ;
                 length = 0 ;                      

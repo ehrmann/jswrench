@@ -45,7 +45,14 @@ public class UDPMessage implements IProtocolMessage {
   int count ;
 
   /**
-   * Populates a UDP message.
+   * Creates a blank UDP message that will be populated by read().
+   */
+  
+  public UDPMessage(){
+  }
+  
+  /**
+   * Creates a UDP message.
    * @param sourceport the UDP port from which the message has been sent
    * @param destinationport the UDP port to which the message will be sent
    * @param data array that contains data segment
@@ -53,11 +60,11 @@ public class UDPMessage implements IProtocolMessage {
    * @param count length of data segment
    */
   
-  public void populate( short  sourceport ,
-                        short  destinationport ,
-                        byte[] data ,
-                        int    offset ,
-                        int    count ){
+  public UDPMessage( short  sourceport ,
+                     short  destinationport ,
+                     byte[] data ,
+                     int    offset ,
+                     int    count ){
       this.sourceport = sourceport ;
       this.destinationport = destinationport ;
       this.checksum = 0 ;
@@ -71,7 +78,7 @@ public class UDPMessage implements IProtocolMessage {
    */
     
   public int getProtocol(){
-      return 17 ;
+      return SocketConstants.IPPROTO_UDP ;
   }
     
   /**
@@ -96,6 +103,14 @@ public class UDPMessage implements IProtocolMessage {
   
   public boolean usesPortNumbers(){
       return true ;
+  }
+  
+  /**
+   * Returns the destination port.
+   */
+  
+  public int getDestinationPort(){
+      return destinationport ;
   }
   
   /**

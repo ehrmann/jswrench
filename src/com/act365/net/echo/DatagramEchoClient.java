@@ -166,7 +166,7 @@ class DatagramEchoClient {
       UDPMessage udpMessage = new UDPMessage();
       
       while( ( bufferlength = System.in.read( buffer ) ) > -1 ){
-        udpMessage.populate( (short) localport , (short) port , buffer , 0 , bufferlength );
+        udpMessage = new UDPMessage( (short) localport , (short) port , buffer , 0 , bufferlength );
         socket.send( udpMessage , dest.getAddress() );
         socket.receive( ip4Message , udpMessage );
         System.out.write( udpMessage.getData() , udpMessage.getOffset() , udpMessage.getCount() );

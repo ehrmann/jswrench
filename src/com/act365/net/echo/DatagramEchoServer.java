@@ -151,11 +151,11 @@ public class DatagramEchoServer {
 
         server.receive( ip4Message , udpMessage );
 
-        udpMessage.populate( (short) port ,
-                             (short) ( udpMessage.sourceport >= 0 ? udpMessage.sourceport : udpMessage.sourceport ^ 0xffffff00 ) ,
-                             udpMessage.getData() ,
-                             udpMessage.getOffset() ,
-                             udpMessage.getCount() );
+        udpMessage = new UDPMessage( (short) port ,
+                                     (short) ( udpMessage.sourceport >= 0 ? udpMessage.sourceport : udpMessage.sourceport ^ 0xffffff00 ) ,
+                                     udpMessage.getData() ,
+                                     udpMessage.getOffset() ,
+                                     udpMessage.getCount() );
         
         server.send( udpMessage , ip4Message.source );
       }

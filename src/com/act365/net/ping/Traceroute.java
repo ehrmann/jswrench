@@ -191,25 +191,21 @@ public class Traceroute {
     
         case SocketConstants.IPPROTO_ICMP:
                   
-            message = new ICMPMessage();
-
-            ((ICMPMessage) message ).populate( ICMP.ICMP_ECHO , 
-                                               (byte) 0 , 
-                                               timebuffer , 
-                                               0 , 
-                                               timebuffer.length );
+            message = new ICMPMessage( ICMP.ICMP_ECHO , 
+                                       (byte) 0 , 
+                                       timebuffer , 
+                                       0 , 
+                                       timebuffer.length );
           
             break;
 
         case SocketConstants.IPPROTO_UDP:
         
-            message = new UDPMessage();
-            
-            ((UDPMessage) message ).populate( (short) sourceport , 
-                                              (short) destinationport ++ ,
-                                              timebuffer ,
-                                              0 ,
-                                              timebuffer.length ); 
+            message = new UDPMessage( (short) sourceport , 
+                                      (short) destinationport ++ ,
+                                      timebuffer ,
+                                      0 ,
+                                      timebuffer.length ); 
         
             socket.setSourcePort( sourceport ++ );
           
