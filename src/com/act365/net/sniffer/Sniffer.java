@@ -28,9 +28,10 @@ package com.act365.net.sniffer;
 
 import com.act365.net.*;
 import com.act365.net.dns.*;
+import com.act365.net.icmp.*;
 import com.act365.net.ip.*;
-import com.act365.net.udp.*;
 import com.act365.net.tcp.*;
+import com.act365.net.udp.*;
 
 import java.net.*;
 
@@ -121,6 +122,9 @@ public class Sniffer {
                                                                 
                         if( udpmessage.sourceport == 53 ){
                         	new DNSReader( 8 ).read( ipmessage.data ).dump(System.out);
+                        } else {
+                            System.out.println( udpmessage.toString() );
+                            SocketUtils.dump( System.out , udpmessage.data , 0 , udpmessage.data.length );
                         }
                         
 						break;
@@ -142,6 +146,17 @@ public class Sniffer {
 						break;
 
 					case SocketConstants.IPPROTO_ICMP :
+                    
+                        ICMPMessage icmpMessage = ICMPReader.read( ipmessage.data ,
+                                                                   0 ,
+                                                                   ipmessage.data.length ,
+                                                                   true );
+                        
+                        System.out.println( icmpMessage.toString() );
+                        SocketUtils.dump( System.out , icmpMessage.data , icmpMessage.offset , icmpMessage.count );
+                                                                   
+                        break;
+                          
 					default :
 					
 					    SocketUtils.dump(System.out,packet.getData(),0,packet.getLength());
