@@ -48,5 +48,70 @@ public class TCPMessage {
   public short urgentpointer ;
   public byte[] options ;
   public byte[] data ; 
+  
+  public String toString() {
+  	
+  	StringBuffer sb = new StringBuffer();
+  	
+  	sb.append( sourceport );
+  	sb.append("-");
+  	sb.append( destinationport );
+  	
+  	int count = 0 ;
+  	
+  	if( urg ){
+  		count ++ ;
+  		sb.append("URG");  		
+  	}
+  	
+	if( psh ){
+		if( count ++ > 0 ){
+			sb.append(",");
+		}
+		sb.append("PSH");
+	}
+  	
+	if( rst ){
+		if( count ++ > 0 ){
+			sb.append(",");
+		}
+		sb.append("RST");
+	}
+  	
+	if( syn ){
+		if( count ++ > 0 ){
+			sb.append(",");
+		}
+		sb.append("SYN");
+	}
+  	
+	if( fin ){
+		if( count ++ > 0 ){
+			sb.append(",");
+		}
+		sb.append("FIN");
+	}
+  	
+	if( ack ){
+		if( count ++ > 0 ){
+			sb.append(",");
+		}
+		sb.append("ACK");
+	}
+  	
+	sb.append(":seq=");
+	sb.append( sequencenumber );
+  	
+	sb.append(",ack=");
+	sb.append( acknowledgementnumber );
+
+	sb.append(",window=");
+	sb.append( windowsize );
+      	
+    sb.append(":length=");
+    sb.append( data.length );
+    
+  	return sb.toString();
+  }
 }
 
