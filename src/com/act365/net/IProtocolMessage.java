@@ -62,6 +62,12 @@ public interface IProtocolMessage {
     public boolean isRaw();
     
     /**
+     * Indicates whether the protocol uses port numbers.
+     */
+    
+    public boolean usesPortNumbers();
+    
+    /**
      * Calculates the message length in bytes, excluding the IP header.
      * @return message length in bytes
      */
@@ -128,11 +134,13 @@ public interface IProtocolMessage {
      * @param offset
      * @param source source IP address
      * @param destination destination IP address
+     * @param isRaw whether the data is for a raw socket (i.e. whether the protocol-specific header should be written)
      * @return number of bytes written
      */
     
     public int write( byte[] buffer , 
                       int offset ,
                       byte[] source , 
-                      byte[] destination ) throws IOException ;
+                      byte[] destination ,
+                      boolean isRaw ) throws IOException ;
 }

@@ -143,7 +143,9 @@ public class DNSLookup {
     
       int length = DNSWriter.write( (short) hashCode() , recursion_desired , domainname , dnsbuffer , 0 , dnsbuffer.length );
 
-      socket.send( server.getAddress() , 53 , dnsbuffer , 0 , length );            
+      udpMessage.populate( (short) 1024 , (short) 53 , dnsbuffer , 0 , length );
+      
+      socket.send( udpMessage , server.getAddress() );            
       socket.receive( null , udpMessage );
 
       DNSReader.read( dnsMessage , udpMessage.getData() , udpMessage.getOffset() , udpMessage.getCount() );

@@ -89,7 +89,15 @@ public class UDPMessage implements IProtocolMessage {
   public boolean isRaw(){
       return false ;
   }
-    
+  
+  /**
+   * UDP messages use port numbers.
+   */  
+  
+  public boolean usesPortNumbers(){
+      return true ;
+  }
+  
   /**
    Writes the message to a string.
   */
@@ -193,42 +201,49 @@ public class UDPMessage implements IProtocolMessage {
 
   /**
    * Writes the message into a byte-stream at the given position.
-   * @param buffer
-   * @param offset
+   * @param buffer buffer into which the message is to be written
+   * @param offset position at which the message will be written
    * @param source source IP address
    * @param destination destination IP address
+   * @param isRaw whether the UDP header should be written
    * @return number of bytes written
    */
     
-  public int write( byte[] buffer , int offset , byte[] source , byte[] destination ) throws IOException {
+  public int write( byte[] buffer , int offset , byte[] source , byte[] destination , boolean isRaw ) throws IOException {
   
       int length ;
       
       try {
-          length = simpleWrite( buffer , offset );
+          length = simpleWrite( buffer , offset , isRaw );
       } catch( ArrayIndexOutOfBoundsException e ){
           throw new IOException("UDP Write buffer overflow");
       }
     
-      checksum = SocketUtils.checksum( source , destination , (byte) SocketConstants.IPPROTO_UDP , buffer , offset , length );
-      SocketUtils.shortToBytes( checksum , buffer , offset + 6 );
+      if( isRaw ){
+          checksum = SocketUtils.checksum( source , destination , (byte) SocketConstants.IPPROTO_UDP , buffer , offset , length );
+          SocketUtils.shortToBytes( checksum , buffer , offset + 6 );
+      }
       
       return length ;
   }
 
-  int simpleWrite( byte[] buffer , int offset ) {
+  int simpleWrite( byte[] buffer , int offset , boolean isRaw ) {
 
     final short length = (short) length();
     
-    SocketUtils.shortToBytes( sourceport , buffer , offset );
-    SocketUtils.shortToBytes( destinationport , buffer , offset + 2 );
-    SocketUtils.shortToBytes( length , buffer , offset + 4 );
-    SocketUtils.shortToBytes( checksum , buffer , offset + 6 );
-
+    if( isRaw ){
+        SocketUtils.shortToBytes( sourceport , buffer , offset );
+        SocketUtils.shortToBytes( destinationport , buffer , offset + 2 );
+        SocketUtils.shortToBytes( length , buffer , offset + 4 );
+        SocketUtils.shortToBytes( checksum , buffer , offset + 6 );
+        
+        offset += 8 ;
+    }
+    
     int i = 0 ;
 
     while( i < length - 8 ){
-      buffer[ offset + 8 + i ] = data[ this.offset + i ];
+      buffer[ offset + i ] = data[ this.offset + i ];
       ++ i ;
     }
 

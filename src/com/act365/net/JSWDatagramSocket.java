@@ -113,87 +113,19 @@ public class JSWDatagramSocket extends DatagramSocket {
         testChecksum = true ;        
     }
     
-    /**
-     * Sends a UDP message.
-     * 
-     * @param srcPort
-     * @param destAddress
-     * @param destPort
-     * @param buffer
-     * @param offset
-     * @param count
-     *
-     * @throws IOException
-     */
-    
-    public void send( byte[] destAddress , 
-                      int destPort ,
-                      byte[] buffer ,
-                      int offset ,
-                      int count ) throws IOException {
-    
-        if( ! SocketWrenchSession.isRaw() && 
-            SocketWrenchSession.getProtocol() != SocketConstants.IPPROTO_UDP ){
-            throw new IOException("Sending of UDP messages incompatible with selected protocol");
-        }
-        
-        if( SocketWrenchSession.isRaw() && sourcePort == 0 ){
-            throw new IOException("Source port should be defined for raw UDP protocols");
-        }
-        
-        int cursor = 0 ;
-        
-        if( SocketWrenchSession.includeHeader() ){
-
-            cursor += IP4Writer.write( (byte) typeOfService ,
-                                       (short) timeToLive ,
-                                       (byte) SocketConstants.IPPROTO_UDP ,
-                                       sourceAddress ,
-                                       destAddress ,
-                                       new byte[0] ,
-                                       sendBuffer ,
-                                       cursor );                                                   
-        }
-        
-        if( SocketWrenchSession.isRaw()){
-
-            UDPMessage udpMessage = new UDPMessage();
-            
-            udpMessage.populate( (short) sourcePort ,
-                                 (short) destPort ,
-                                 buffer ,
-                                 offset ,
-                                 count );
-            
-            cursor += udpMessage.write( sendBuffer , cursor , sourceAddress , destAddress );
-            
-        } else {
-                    
-            try {
-                int i = 0 ;
-            
-                while( i < count ){
-                    sendBuffer[ cursor ++ ] = buffer[ offset + i ++ ]; 
-                }
-                
-            } catch ( ArrayIndexOutOfBoundsException e ) {                
-                throw new IOException("UDP Write buffer overflow");
-            }
-        }
-        
-        if( debug instanceof PrintStream ){
-            debug.println("SEND:");
-            SocketUtils.dump( debug , sendBuffer , 0 , cursor );
-        }
-        
-        send( new DatagramPacket( sendBuffer , cursor , GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , destAddress ) , destPort ) );
-    }
-
     public void send( IProtocolMessage message ,
                       byte[] destAddress ) throws IOException {
     
-        if( message.isRaw() && ! SocketWrenchSession.isRaw() ){
-            throw new IOException("Sending of " + message.getProtocolName() + " messages incompatible with selected protocol");
+        if( SocketWrenchSession.isRaw() ){
+            if( message.usesPortNumbers() && sourcePort == 0 ){
+                throw new IOException("Source port should be defined for raw " + message.getProtocolName() + " messages");
+            }
+        } else {
+            if( message.isRaw() ){
+                throw new IOException("Sending of raw " + message.getProtocolName() + " messages incompatible with selected protocol");
+            } else if( message.getProtocol() != SocketWrenchSession.getProtocol() ){
+                throw new IOException("Selected SocketWrenchSession protocol is incompatible with " + message.getProtocolName() );
+            }
         }
         
         int cursor = 0 ;
@@ -210,7 +142,7 @@ public class JSWDatagramSocket extends DatagramSocket {
                                        cursor );                                                   
         }
 
-        cursor += message.write( sendBuffer , cursor , sourceAddress , destAddress );
+        cursor += message.write( sendBuffer , cursor , sourceAddress , destAddress , SocketWrenchSession.isRaw() );
                         
         if( debug instanceof PrintStream ){
             debug.println("SEND:");

@@ -93,6 +93,10 @@ public class ICMPMessage implements IProtocolMessage {
       return true ;
   }
   
+  public boolean usesPortNumbers(){
+      return false ;
+  }
+  
   public int length(){
       return icmpCount + ( isQuery() ? 8 : 4 );
   }
@@ -266,15 +270,23 @@ public class ICMPMessage implements IProtocolMessage {
   /**
    * Writes the message into a byte-stream at the given position.
    * The source and destination arguments will be ignored because they 
-   * are not involved in the ICMP checksum calculation
-   * @param buffer
-   * @param offset
+   * are not involved in the ICMP checksum calculation. The argument
+   * isRaw should always be 'true'.
+   * @param buffer buffer into which to write
+   * @param offset position within buffer at which to write
+   * @param source source IP address (unused)
+   * @param destination destination IP address (unused)
+   * @param isRaw whether a protocol-specific header should be written (always true for ICMP) 
    * @return number of bytes written
    */
   
-  public int write( byte[] buffer , int offset , byte[] source , byte[] destination ) throws IOException {
+  public int write( byte[] buffer , int offset , byte[] source , byte[] destination , boolean isRaw ) throws IOException {
   
       int length ;
+      
+      if( ! isRaw ){
+          throw new IOException("ICMP protocol only works with raw sockets");
+      }
       
       try {
           length = simpleWrite( buffer , offset );

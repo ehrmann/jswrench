@@ -29,6 +29,7 @@ package com.act365.net.ping ;
 import com.act365.net.*;
 import com.act365.net.icmp.*;
 import com.act365.net.ip.*;
+import com.act365.net.udp.* ;
 
 import java.io.InterruptedIOException;
 import java.net.*;
@@ -169,6 +170,8 @@ public class Traceroute {
       
       ICMPMessage icmpMessage = new ICMPMessage();
       
+      IProtocolMessage message = null ;
+      
       float sumdt = 0 ,
             mindt = Float.MAX_VALUE ,
             maxdt = Float.MIN_VALUE ;
@@ -187,33 +190,33 @@ public class Traceroute {
         switch( protocol ){
     
         case SocketConstants.IPPROTO_ICMP:
-        
-          {
-            ICMPMessage message = new ICMPMessage();
+                  
+            message = new ICMPMessage();
 
-            message.populate( ICMP.ICMP_ECHO , 
-                              (byte) 0 , 
-                              timebuffer , 
-                              0 , 
-                              timebuffer.length );
-                                         
-            socket.send( message , hostaddr.getAddress() );
-          }
-
-          break;
+            ((ICMPMessage) message ).populate( ICMP.ICMP_ECHO , 
+                                               (byte) 0 , 
+                                               timebuffer , 
+                                               0 , 
+                                               timebuffer.length );
+          
+            break;
 
         case SocketConstants.IPPROTO_UDP:
         
-          socket.setSourcePort( sourceport ++ );
+            message = new UDPMessage();
+            
+            ((UDPMessage) message ).populate( (short) sourceport , 
+                                              (short) destinationport ++ ,
+                                              timebuffer ,
+                                              0 ,
+                                              timebuffer.length ); 
+        
+            socket.setSourcePort( sourceport ++ );
           
-          socket.send( hostaddr.getAddress() , 
-                       destinationport ++ ,
-                       timebuffer ,
-                       0 ,
-                       timebuffer.length );
-
-          break;
+            break;
         }
+                                         
+        socket.send( message , hostaddr.getAddress() );
 
         try {
           socket.receive( ip4Message , icmpMessage );
