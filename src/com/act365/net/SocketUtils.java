@@ -263,7 +263,7 @@ public class SocketUtils {
 	 Writes a long into a buffer.
 	*/
 
-	public static void longToBytes( long value , byte[] buffer , int offset ) {
+	public static int longToBytes( long value , byte[] buffer , int offset ) {
 	  buffer[ offset + 7 ] = (byte)( value & 0xff ); 
 	  value = value >>> 8 ;
 	  buffer[ offset + 6 ] = (byte)( value & 0xff ); 
@@ -278,14 +278,16 @@ public class SocketUtils {
 	  value = value >>> 8 ;
 	  buffer[ offset + 1 ] = (byte)( value & 0xff ); 
 	  value = value >>> 8 ;
-	  buffer[ offset ] = (byte)( value ); 
+	  buffer[ offset ] = (byte)( value );
+	  
+	  return offset + 8 ; 
 	}
 
 	/**
 	 Writes an int into a buffer.
 	*/
 
-	public static void intToBytes( int value , byte[] buffer , int offset ){
+	public static int intToBytes( int value , byte[] buffer , int offset ){
 	  buffer[ offset + 3 ] = (byte)( value & 0xff ); 
 	  value = value >> 8 ;
 	  buffer[ offset + 2 ] = (byte)( value & 0xff ); 
@@ -293,18 +295,53 @@ public class SocketUtils {
 	  buffer[ offset + 1 ] = (byte)( value & 0xff ); 
 	  value = value >> 8 ;
 	  buffer[ offset ] = (byte)( value );
+	  
+	  return offset + 4 ;
 	}
 
 	/**
 	 Writes a short into a buffer.
 	*/
 
-	public static void shortToBytes( short value , byte[] buffer , int offset ){
+	public static int shortToBytes( short value , byte[] buffer , int offset ){
 	  buffer[ offset + 1 ] = (byte)( value & 0xff ); 
 	  value = (short)( value >> 8 );
 	  buffer[ offset ] = (byte)( value );
+	  
+	  return offset + 2 ;
 	}
 
+    /**
+     * Writes a String to a buffer.
+     */
+
+    public static int stringToBytes( String string , byte[] buffer , int offset ){
+    
+        byte[] data = new byte[0];
+        
+        try {
+          data = string.getBytes("UTF8");
+        } catch ( UnsupportedEncodingException e ){	
+        }
+        
+    	return dataToBytes( data , 0 , data.length , buffer , offset );    
+    }
+    
+    /**
+     * Writes from one buffer to another. 
+     */
+     
+    public static int dataToBytes( byte[] data , int dataOffset , int dataCount , byte[] buffer , int offset ){
+    	
+    	int cursor = 0 ;
+    	
+    	while( cursor < dataCount ){
+    		buffer[ offset ++ ] = data[ dataOffset + cursor ++ ];
+    	}
+    	
+    	return offset ;
+    }
+    
 	/**
 	 Dumps a buffer in printable form.
 	*/
