@@ -183,7 +183,7 @@ void SocketUtils::writeAddress( JNIEnv*        env ,
     hostent* pHost = NULL ;
 
     if( useDNS ){
-        gethostbyaddr( (char*) & address  , sizeof( address ) , AF_INET );
+        pHost = gethostbyaddr( (char*) & address  , sizeof( address ) , AF_INET );
     }
 
     jstring hostname ;
