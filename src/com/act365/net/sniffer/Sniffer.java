@@ -155,7 +155,7 @@ public class Sniffer {
 					case SocketConstants.IPPROTO_ICMP :
                                             
                         System.out.println( icmpMessage.toString() );
-                        SocketUtils.dump( System.out , icmpMessage.data , icmpMessage.offset , icmpMessage.count );
+                        SocketUtils.dump( System.out , icmpMessage.getData() , icmpMessage.getOffset() , icmpMessage.getCount() );
                                                                    
                         break;
                           

@@ -188,16 +188,11 @@ public class JSWDatagramSocket extends DatagramSocket {
         send( new DatagramPacket( sendBuffer , cursor , GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , destAddress ) , destPort ) );
     }
 
-    public void send( int identifier ,
-                      int type ,
-                      int code ,
-                      byte[] data ,
-                      int dataOffset ,
-                      int dataCount ,
+    public void send( IProtocolMessage message ,
                       byte[] destAddress ) throws IOException {
     
-        if( ! SocketWrenchSession.isRaw() ){
-            throw new IOException("Sending of ICMP messages incompatible with selected protocol");
+        if( message.isRaw() && ! SocketWrenchSession.isRaw() ){
+            throw new IOException("Sending of " + message.getProtocolName() + " messages incompatible with selected protocol");
         }
         
         int cursor = 0 ;
@@ -206,7 +201,7 @@ public class JSWDatagramSocket extends DatagramSocket {
 
             cursor += IP4Writer.write( (byte) typeOfService ,
                                        (short) timeToLive ,
-                                       (byte) SocketConstants.IPPROTO_ICMP ,
+                                       (byte) message.getProtocol() ,
                                        sourceAddress ,
                                        destAddress ,
                                        new byte[0] ,
@@ -214,7 +209,7 @@ public class JSWDatagramSocket extends DatagramSocket {
                                        cursor );                                                   
         }
 
-        cursor += new ICMPWriter( (short) identifier ).write( (byte) type , (byte) code , data , dataOffset , dataCount , sendBuffer , cursor );
+        cursor += message.write( sendBuffer , cursor );
                         
         if( debug instanceof PrintStream ){
             debug.println("SEND:");
@@ -412,71 +407,6 @@ public class JSWDatagramSocket extends DatagramSocket {
         
         return protocol ;
     }
-    
-    public int receive( IP4Message ip4Message ,
-                        ICMPMessage icmpMessage ) throws IOException {
-    
-        DatagramPacket dgram ;
-        
-        int protocol = 0 ;
-        
-        while( true ) {
-            
-            dgram = new DatagramPacket( receiveBuffer , receiveBuffer.length );      
-            
-            receive( dgram );
-        
-            int cursor = 0 ,
-                length = dgram.getLength() ,
-                size ;
-        
-            if( SocketWrenchSession.isRaw() && ip4Message instanceof IP4Message ){
-                size = IP4Reader.read( ip4Message , receiveBuffer , cursor , length , testChecksum );
-                protocol = ( ip4Message.protocol >= 0 ? ip4Message.protocol : ip4Message.protocol ^ 0xffffff00 );
-                if( protocol != SocketConstants.IPPROTO_ICMP ){
-                    throw new IOException("Non-ICMP Datagram packet");    
-                }
-                if( ( sourceAddress[ 0 ] != 0 ||
-                      sourceAddress[ 1 ] != 0 ||
-                      sourceAddress[ 2 ] != 0 ||
-                      sourceAddress[ 3 ] != 0 ) && 
-                    ( sourceAddress[ 0 ] != ip4Message.destination[ 0 ] ||
-                      sourceAddress[ 1 ] != ip4Message.destination[ 1 ] ||
-                      sourceAddress[ 2 ] != ip4Message.destination[ 2 ] ||
-                      sourceAddress[ 3 ] != ip4Message.destination[ 3 ] ) ){
-                          continue ;
-                }
-            } else {
-                size = ip4HeaderLength ;
-                protocol = SocketConstants.IPPROTO_ICMP ;
-            }
-    
-            cursor += size ;
-            length -= size ;
-        
-            size = ICMPReader.read( icmpMessage , receiveBuffer , cursor , length , testChecksum );
-        
-            cursor += size ;
-            length -= size ;
-        
-            if( cursor != dgram.getLength() || length != 0 ){
-                throw new IOException("Illegal ICMP message format");
-            }
-            
-            break;
-        }
-        
-        if( debug instanceof PrintStream ){
-            debug.println("RECEIVE:");
-            if( ip4Message != null ){
-                debug.println( ip4Message.toString() );
-            }
-            debug.println( icmpMessage.toString() );
-            SocketUtils.dump( debug , icmpMessage.data , icmpMessage.count , icmpMessage.offset );
-        }
-        
-        return protocol ;
-    }
 
     public int receive( IP4Message ip4Message ,
                         TCPMessage tcpMessage ) throws IOException {
@@ -576,16 +506,16 @@ public class JSWDatagramSocket extends DatagramSocket {
                 
         return protocol ;
     }
+        
     
-/*    
     public int receive( IP4Message ip4Message ,
-                        TCPMessage tcpMessage ) throws IOException {
+                        IProtocolMessage message ) throws IOException {
     
         DatagramPacket dgram ;
-
+        
         int protocol = 0 ;
         
-        while( true ){        
+        while( true ) {
             
             dgram = new DatagramPacket( receiveBuffer , receiveBuffer.length );      
             
@@ -598,41 +528,34 @@ public class JSWDatagramSocket extends DatagramSocket {
             if( SocketWrenchSession.isRaw() && ip4Message instanceof IP4Message ){
                 size = IP4Reader.read( ip4Message , receiveBuffer , cursor , length , testChecksum );
                 protocol = ( ip4Message.protocol >= 0 ? ip4Message.protocol : ip4Message.protocol ^ 0xffffff00 );
-                if( protocol != SocketConstants.IPPROTO_TCP &&
-                    protocol != SocketConstants.IPPROTO_TCPJ ){
-                    throw new IOException("Non-TCP Datagram packet");    
+                if( protocol != message.getProtocol() ){
+                    throw new IOException("Non-" + message.getProtocolName() + " Datagram packet");    
                 }
-                if( sourceAddress[ 0 ] != ip4Message.destination[ 0 ] ||
-                    sourceAddress[ 1 ] != ip4Message.destination[ 1 ] ||
-                    sourceAddress[ 2 ] != ip4Message.destination[ 2 ] ||
-                    sourceAddress[ 3 ] != ip4Message.destination[ 3 ] ){
-                        continue ;
+                if( ( sourceAddress[ 0 ] != 0 ||
+                      sourceAddress[ 1 ] != 0 ||
+                      sourceAddress[ 2 ] != 0 ||
+                      sourceAddress[ 3 ] != 0 ) && 
+                    ( sourceAddress[ 0 ] != ip4Message.destination[ 0 ] ||
+                      sourceAddress[ 1 ] != ip4Message.destination[ 1 ] ||
+                      sourceAddress[ 2 ] != ip4Message.destination[ 2 ] ||
+                      sourceAddress[ 3 ] != ip4Message.destination[ 3 ] ) ){
+                          continue ;
                 }
             } else {
                 size = ip4HeaderLength ;
-                protocol = SocketConstants.IPPROTO_TCP ;
+                protocol = message.getProtocol();
             }
     
             cursor += size ;
             length -= size ;
-  
-            // Wrongly assumes a raw socket.
         
-            System.err.println("cursor " + cursor + " length " + length );
-                      
-            size = TCPReader.read( tcpMessage , receiveBuffer , cursor , length , testChecksum , ip4Message.source , ip4Message.destination );
-
-            if( sourcePort != 0 && sourcePort != tcpMessage.destinationport ){
-                continue ;
-            }
-            
+            size = message.read( receiveBuffer , cursor , length , testChecksum );
+        
             cursor += size ;
             length -= size ;
-
-            System.err.println("cursor " + cursor + " length " + length );
         
             if( cursor != dgram.getLength() || length != 0 ){
-                throw new IOException("Illegal TCP message format");
+                throw new IOException("Illegal " + message.getProtocolName() + " message format");
             }
             
             break;
@@ -643,13 +566,13 @@ public class JSWDatagramSocket extends DatagramSocket {
             if( ip4Message != null ){
                 debug.println( ip4Message.toString() );
             }
-            debug.println( tcpMessage.toString() );
-            SocketUtils.dump( debug , tcpMessage.data , tcpMessage.datastart , ( tcpMessage.dataend - tcpMessage.datastart )% tcpMessage.data.length );
+            debug.println( message.toString() );
+            SocketUtils.dump( debug , message.getData() , message.getCount() , message.getOffset() );
         }
         
         return protocol ;
     }
-*/    
+
     public int receive( IP4Message ip4Message ,
                         ICMPMessage icmpMessage ,
                         UDPMessage udpMessage ,
@@ -679,7 +602,7 @@ public class JSWDatagramSocket extends DatagramSocket {
         switch( protocol ){
             
             case SocketConstants.IPPROTO_ICMP:
-                size = ICMPReader.read( icmpMessage , receiveBuffer , cursor , length , testChecksum );
+                size = icmpMessage.read( receiveBuffer , cursor , length , testChecksum );
                 break;
                 
             case SocketConstants.IPPROTO_UDP:
@@ -712,7 +635,7 @@ public class JSWDatagramSocket extends DatagramSocket {
                 
                 case SocketConstants.IPPROTO_ICMP:
                     debug.println( icmpMessage.toString() );
-                    SocketUtils.dump( debug , icmpMessage.data , icmpMessage.count , icmpMessage.offset );
+                    SocketUtils.dump( debug , icmpMessage.getData() , icmpMessage.getCount() , icmpMessage.getOffset() );
                     break;
                 
                 case SocketConstants.IPPROTO_TCP:

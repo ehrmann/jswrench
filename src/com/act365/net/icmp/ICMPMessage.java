@@ -26,26 +26,116 @@
 
 package com.act365.net.icmp ;
 
+import com.act365.net.*;
 import com.act365.net.ip.*;
+
+import java.io.IOException ;
 
 /**
  Stores the contents of an ICMP message.
 */
 
-public class ICMPMessage {
+public class ICMPMessage implements IProtocolMessage {
  
   public byte type ;
   public byte code ;
   public short checksum ;
   public short identifier ;
   public short sequence_number ;
-  public byte[] data ;
-  public int offset ;
-  public int count ;
-  public IP4Message ip4Message ;  
+  
+  byte[] icmpData ;
+  int icmpOffset ;
+  int icmpCount ;
+  
+  IP4Message ip4Message ;  
 
+  /**
+   * All ICMP messages issued from a single app share a common identifier.
+   */
+  
+  public static short icmpIdentifier ;
+  
+  /**
+   * All ICMP messages issued from a single app are numbered a sequence.
+   */
+  
+  public static short counter ;
+                      
+  public void populate( byte   type ,
+                        byte   code ,
+                        byte[] data ,
+                        int    offset ,
+                        int    count ) {
+
+      this.type = type ;
+      this.code = code ;
+      checksum = 0 ;
+      identifier = icmpIdentifier ;
+      sequence_number = counter ++ ;
+      icmpData = data ;
+      icmpOffset = offset ;
+      icmpCount = count ;
+  }
+  
+  public int getProtocol(){
+      return SocketConstants.IPPROTO_ICMP ;
+  }
+  
+  public String getProtocolName(){
+      return "ICMP";
+  }
+  
+  /**
+   * ICMP messages have to be sent using raw sockets.
+   */
+
+  public boolean isRaw(){
+      return true ;
+  }
+  
   public int length(){
-      return count + ( isQuery() ? 8 : 4 );
+      return icmpCount + ( isQuery() ? 8 : 4 );
+  }
+  
+  public String toString() {
+      
+      StringBuffer sb = new StringBuffer();
+      
+      sb.append("ICMP: ");
+      sb.append( getTypeLabel() );
+      
+      final String codeLabel = getCodeLabel();
+      
+      if( codeLabel.length() > 0 ){
+          sb.append(" (");
+          sb.append( codeLabel );
+          sb.append(')');
+      }
+      
+      if( isQuery() ){      
+          sb.append(" identifier-");
+          sb.append( identifier >= 0 ? identifier : identifier ^ 0xffffff00 );
+          sb.append(" seq-");
+          sb.append( sequence_number >= 0 ? sequence_number : sequence_number ^ 0xffffff00 );
+      }
+
+      sb.append(" length-");
+      sb.append( icmpCount );
+      sb.append(" bytes");
+      
+      return sb.toString();
+  }
+
+  public byte[] getData(){
+      return icmpData ;
+  }
+  
+  public int getCount(){
+      return icmpCount ;
+  }
+  
+  public int getOffset(){
+      return icmpOffset ;
   }
   
   public String getTypeLabel(){
@@ -94,35 +184,113 @@ public class ICMPMessage {
       
         return false ;
       }        
-  }
+  }  
+
+  /**
+   * Reads an ICMP message from a bytestream.
+   * The checksum is optionally tested. 
+   */
   
-  public String toString() {
+  public int read( byte[] buffer , int offset , int count , boolean testchecksum ) throws IOException {
       
-      StringBuffer sb = new StringBuffer();
-      
-      sb.append("ICMP: ");
-      sb.append( getTypeLabel() );
-      
-      final String codeLabel = getCodeLabel();
-      
-      if( codeLabel.length() > 0 ){
-          sb.append(" (");
-          sb.append( codeLabel );
-          sb.append(')');
-      }
-      
-      if( isQuery() ){      
-          sb.append(" identifier-");
-          sb.append( identifier >= 0 ? identifier : identifier ^ 0xffffff00 );
-          sb.append(" seq-");
-          sb.append( sequence_number >= 0 ? sequence_number : sequence_number ^ 0xffffff00 );
+      if( count < 4 ) {
+        throw new IOException("ICMP messages must be at least four bytes long");
       }
 
-      sb.append(" length-");
-      sb.append( count );
-      sb.append(" bytes");
-      
-      return sb.toString();
+      short checksum ;
+
+      if( testchecksum && ( checksum = SocketUtils.checksum( buffer , offset , count ) ) != 0 ){
+        throw new IOException("Checksum error: " + checksum );
+      }
+
+      type = buffer[ offset ];
+      code = buffer[ offset + 1 ];
+      checksum = SocketUtils.shortFromBytes( buffer , offset + 2 );
+
+      boolean isquery ;
+
+      int datastart ;
+
+      boolean isQuery = isQuery();
+     
+      if( isQuery ){
+
+          if( count < 8 ) {
+            throw new IOException("ICMP query messages must be at least eight bytes long");
+          }
+
+          identifier = SocketUtils.shortFromBytes( buffer , offset + 4 );
+          sequence_number = SocketUtils.shortFromBytes( buffer , offset + 6 );
+
+          datastart = 8 ;
+      } else {
+          datastart = 4 ;
+      } 
+     
+      icmpData = buffer ;
+      icmpOffset = offset + datastart ;
+      icmpCount = count - datastart ;
+
+      if( ! isQuery ){
+
+          int i = 0 ;
+     
+          while( i < 4 ){
+              if( icmpData[ icmpOffset + i ++ ] != 0 ){
+                  throw new IOException("ICMP error message lacks zero padding");
+              }
+          }
+         
+          ip4Message = new IP4Message();
+         
+          IP4Reader.read( ip4Message , icmpData , icmpOffset + 4 , icmpCount , false );
+      }
+     
+      return length();
   }
+    
+  /**
+   * Writes the message into a byte-stream at the given position.
+   * 
+   * @param buffer
+   * @param offset
+   * @return number of bytes written
+   */
+  
+  public int write( byte[] buffer , int offset ) throws IOException {
+  
+      int length ;
+      
+      try {
+          length = simpleWrite( buffer , offset );
+      } catch( ArrayIndexOutOfBoundsException e ){
+          throw new IOException("ICMP Write buffer overflow");
+      }
+    
+      checksum = SocketUtils.checksum( buffer , offset , length );
+      SocketUtils.shortToBytes( checksum , buffer , offset + 2 );
+       
+      return length ;
+  }
+    
+  int simpleWrite( byte[] buffer , int offset ) {
+      
+      final int length = length();
+     
+      buffer[ offset ]     = type ;
+      buffer[ offset + 1 ] = code ;    
+      SocketUtils.shortToBytes( checksum , buffer , offset + 2 );
+      SocketUtils.shortToBytes( identifier , buffer , offset + 4 );
+      SocketUtils.shortToBytes( sequence_number , buffer , offset + 6 );
+    
+      int i = 0 ;
+
+      while( i < icmpCount ){
+        buffer[ offset + 8 + i ] = icmpData[ i + icmpOffset ];
+        ++ i ;
+      }
+
+      return length ;
+  }  
 }
 

@@ -104,13 +104,13 @@ public class Ping {
 
             ++ received ;
 
-            System.out.print( message.count + 8 + " bytes from ");
+            System.out.print( message.getCount() + 8 + " bytes from ");
             System.out.print( GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , ip4Message.source ).toString() + ": ");
             System.out.print( "icmp_seq=" + message.sequence_number + " " );
 
-            if( message.count >= 8 ){
+            if( message.getCount() >= 8 ){
 
-              t1 = SocketUtils.longFromBytes( message.data , message.offset );
+              t1 = SocketUtils.longFromBytes( message.getData() , message.getOffset() );
               t2 = new Date().getTime();
 
               dt = t2 - t1 ;

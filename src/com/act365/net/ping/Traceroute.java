@@ -156,6 +156,8 @@ public class Traceroute {
     }
 
     final int identifier = hashCode();
+
+    ICMPMessage.icmpIdentifier = (short) identifier ;
     
     try {
 
@@ -186,7 +188,17 @@ public class Traceroute {
     
         case SocketConstants.IPPROTO_ICMP:
         
-          socket.send( identifier , ICMP.ICMP_ECHO , 0 , timebuffer , 0 , timebuffer.length , hostaddr.getAddress() );
+          {
+            ICMPMessage message = new ICMPMessage();
+
+            message.populate( ICMP.ICMP_ECHO , 
+                              (byte) 0 , 
+                              timebuffer , 
+                              0 , 
+                              timebuffer.length );
+                                         
+            socket.send( message , hostaddr.getAddress() );
+          }
 
           break;
 

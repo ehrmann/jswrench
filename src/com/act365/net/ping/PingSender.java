@@ -88,6 +88,10 @@ public class PingSender extends Thread {
       databuffer[i] = (byte) i ;
     }
 
+    ICMPMessage message = new ICMPMessage();
+    
+    ICMPMessage.icmpIdentifier = (short) ping.hashCode();
+    
     try {
 
       while( count -- != 0 ){
@@ -96,14 +100,14 @@ public class PingSender extends Thread {
             SocketUtils.longToBytes( new Date().getTime() , databuffer , 0 );
         }
 
-        socket.send( ping.hashCode() , 
-                     ICMP.ICMP_ECHO , 
-                     0 , 
-                     databuffer , 
-                     0 , 
-                     databuffer.length , 
-                     hostaddr.getAddress() );
-                     
+        message.populate( ICMP.ICMP_ECHO , 
+                          (byte) 0 , 
+                          databuffer , 
+                          0 , 
+                          databuffer.length );
+        
+        socket.send( message , hostaddr.getAddress() );
+        
         sleep( 1000 );
       }
       ping.interrupt();
