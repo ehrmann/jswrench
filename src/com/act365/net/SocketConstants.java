@@ -49,7 +49,7 @@ public interface SocketConstants {
                           IPPROTO_ICMP = 1 ,
                           IPPROTO_TCP  = 6 ,
                           IPPROTO_UDP  = 17 ,
-                          IPPROTO_TCPJ = 152 ,
+                          IPPROTO_TCPJ = 156 ,
                           IPPROTO_RAW  = 255 ;
 
   // Send/receive flags
