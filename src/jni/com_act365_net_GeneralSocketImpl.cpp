@@ -256,13 +256,15 @@ jobject JNICALL Java_com_act365_net_GeneralSocketImpl__1createInetAddress(JNIEnv
 
     env -> DeleteLocalRef( inetAddressClass );
 
-    in_addr unixAddress ;
+    if( address ){
+        in_addr unixAddress ;
 
-    if( SocketUtils::jbyteArrayToInAddr( env , address , & unixAddress ) ){
-        SocketUtils::writeAddress( env , 
-                                   inetAddress , 
-                                   family , 
-                                   unixAddress );
+        if( SocketUtils::jbyteArrayToInAddr( env , address , & unixAddress ) ){
+            SocketUtils::writeAddress( env , 
+                                       inetAddress , 
+                                       family , 
+                                       unixAddress );
+        }
     }
 
     return inetAddress ;
