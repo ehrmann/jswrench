@@ -305,7 +305,11 @@ public class SocketUtils {
 	*/
 
 	public static void dump( PrintStream printer , byte[] buffer , int offset , int count ){
-    
+
+      if( count == 0 ){
+      	return ;    
+      }
+      
 	  final int upper_bound = offset + ( count / 8 + 1 )* 8 ;
 
 	  int i = offset ;
