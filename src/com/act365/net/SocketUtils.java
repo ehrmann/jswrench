@@ -118,7 +118,7 @@ public class SocketUtils {
 		includeheader = true ;
 		DatagramSocket.setDatagramSocketImplFactory( new RawHdrUDPDatagramSocketImplFactory() );
 	  } else {
-		throw new IOException("Protocol" + protocollabel + " is not supported");
+		throw new IOException("Protocol " + protocollabel + " is not supported");
 	  }
 	}
     
@@ -144,20 +144,20 @@ public class SocketUtils {
 	 Standard internet checksum algorithm shared by IP, ICMP, UDP and TCP.
 	*/
 
-	public static short checksum( byte[] message , int length , int offset ) {
+	public static short checksum( byte[] message , int offset , int count ) {
      
 	  // Sum consecutive 16-bit words.
 
 	  int sum = 0 ;
 
-	  while( offset < length - 1 ){
+	  while( offset < count - 1 ){
 
 		sum += (int) integralFromBytes( message , offset , 2 );
 
 		offset += 2 ;
 	  } 
     
-	  if( offset == length - 1 ){
+	  if( offset == count - 1 ){
 
 		sum += ( message[offset] >= 0 ? message[offset] : message[offset] ^ 0xffffff00 ) << 8 ;
 	  }
@@ -182,13 +182,13 @@ public class SocketUtils {
 	public static short checksum( byte[] source ,
 								  byte[] destination ,
 								  byte   protocol ,
-								  short  length ,
 								  byte[] message ,
-								  int    offset ) {
+								  int    offset ,
+                                  int    count ) {
 
-	  int bufferlength = length + 12 ;
+	  int bufferlength = count + 12 ;
 
-	  boolean odd = length % 2 == 1 ;
+	  boolean odd = count % 2 == 1 ;
 
 	  if( odd ){
 		++ bufferlength ;
@@ -209,11 +209,11 @@ public class SocketUtils {
 	  buffer[8] = (byte) 0 ;
 	  buffer[9] = protocol ;
 
-	  shortToBytes( length , buffer , 10 );
+	  shortToBytes( (short) count  , buffer , 10 );
 
 	  int i = 11 ;
 
-	  while( ++ i < length + 12 ){
+	  while( ++ i < count + 12 ){
 		buffer[ i ] = message[ i + offset - 12 ] ;
 	  }
 
@@ -221,7 +221,7 @@ public class SocketUtils {
 		buffer[ i ] = (byte) 0 ;
 	  }
 
-	  return checksum( buffer , buffer.length , 0 );
+	  return checksum( buffer , 0 , buffer.length );
 	}
 
 	/**
@@ -372,7 +372,7 @@ public class SocketUtils {
 
 		if( ( i - offset ) % 8 == 0 ){
 
-		  if( i > 0 ){
+		  if( i > offset ){
 
 			str.append(' ');
  
@@ -421,7 +421,7 @@ public class SocketUtils {
 
 		if( i < offset + count ){
 
-		  int unsigned = buffer[ i - offset ] >= 0 ? buffer[ i - offset ] : 0xffffff00 ^ buffer[ i - offset ] ;
+		  int unsigned = buffer[ i ] >= 0 ? buffer[ i ] : 0xffffff00 ^ buffer[ i ] ;
 
 		  if( unsigned < 16 ){
 			str.append('0');
