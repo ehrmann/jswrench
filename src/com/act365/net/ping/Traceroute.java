@@ -154,7 +154,7 @@ public class Traceroute {
       int sourceport = 42000 ,
           destinationport = 64000 ;
 
-      while( message == null || message.type != ICMP.ICMP_ECHOREPLY || message.type != ICMP.ICMP_DEST_UNREACH ){
+      while( message == null || message.type != ICMP.ICMP_ECHOREPLY && message.type != ICMP.ICMP_DEST_UNREACH ){
 
         SocketUtils.longToBytes( new Date().getTime() , timebuffer , 0 );
 
