@@ -129,7 +129,7 @@ public class Sniffer {
 
                         if( message.getSourcePort() == 53 ){
                             DNSMessage dnsMessage = new DNSMessage();
-                        	DNSReader.read( dnsMessage , message.getData() , message.getOffset() , message.getCount() );
+                            dnsMessage.read( message.getData() , message.getOffset() , message.getCount() );
                             dnsMessage.dump( System.out );
                         } else {
                             System.out.println( message.toString() );

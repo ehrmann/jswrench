@@ -141,13 +141,12 @@ public class DNSLookup {
       UDPMessage udpMessage = new UDPMessage();    
       DNSMessage dnsMessage = new DNSMessage();
     
-      int length = DNSWriter.write( (short) hashCode() , recursion_desired , domainname , dnsbuffer , 0 , dnsbuffer.length );
+      int length = new DNSMessage( (short) hashCode() , recursion_desired , domainname ).write( dnsbuffer , 0 );
 
       socket.send( new UDPMessage( (short) 1024 , (short) 53 , dnsbuffer , 0 , length ) , server.getAddress() );            
       socket.receive( null , udpMessage );
 
-      DNSReader.read( dnsMessage , udpMessage.getData() , udpMessage.getOffset() , udpMessage.getCount() );
-        
+      dnsMessage.read( udpMessage.getData() , udpMessage.getOffset() , udpMessage.getCount() );
       dnsMessage.dump( System.out );
   }
 }
