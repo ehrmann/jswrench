@@ -93,13 +93,13 @@ public class Ping {
         packet = new DatagramPacket( buffer , maxdatagramlength );
         socket.receive( packet );
 
-        if( ( message = ICMPReader.read( packet.getData() , packet.getLength() , 20 , false ) ) != null ){ 
+        if( ( message = ICMPReader.read( packet.getData() , 20 , packet.getLength() - 20 , true ) ) != null ){ 
 
           long t1 , t2 ;
  
           float dt ;
-
-          if( message.identifier != socket.hashCode() ){
+          
+          if( message.identifier != (short) socket.hashCode() ){
               continue ;
           }
           
@@ -109,13 +109,13 @@ public class Ping {
 
               ++ received ;
 
-              System.out.print( message.data.length + 8 + " bytes from ");
+              System.out.print( message.count + 8 + " bytes from ");
               System.out.print( packet.getAddress() + ": ");
               System.out.print( "icmp_seq=" + message.sequence_number + " " );
 
-              if( message.data.length >= 8 ){
+              if( message.count >= 8 ){
 
-                t1 = SocketUtils.longFromBytes( message.data , 0 );
+                t1 = SocketUtils.longFromBytes( message.data , message.offset );
                 t2 = new Date().getTime();
 
                 dt = t2 - t1 ;
