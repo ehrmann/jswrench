@@ -53,9 +53,12 @@ public class TCPMessage {
   	
   	StringBuffer sb = new StringBuffer();
   	
+  	sb.append("TCP: ");
+  	
   	sb.append( sourceport );
   	sb.append("-");
   	sb.append( destinationport );
+  	sb.append(" ");
   	
   	int count = 0 ;
   	
@@ -98,18 +101,35 @@ public class TCPMessage {
 		}
 		sb.append("ACK");
 	}
-  	
-	sb.append(":seq=");
-	sb.append( sequencenumber );
-  	
-	sb.append(",ack=");
-	sb.append( acknowledgementnumber );
 
-	sb.append(",window=");
+    int unsigned ;
+      	
+	sb.append(" seq-");
+
+	unsigned = sequencenumber >= 0 ? sequencenumber : 0xffffff00 ^ sequencenumber ;
+
+	if( unsigned < 16 ){
+	  sb.append('0');
+	}
+	
+	sb.append( Integer.toHexString( unsigned ) );
+	
+	sb.append(" ack-");
+
+	unsigned = acknowledgementnumber >= 0 ? acknowledgementnumber : 0xffffff00 ^ acknowledgementnumber ;
+
+	if( unsigned < 16 ){
+	  sb.append('0');
+	}
+	
+	sb.append( Integer.toHexString( unsigned ) );
+  	
+	sb.append(" window-");
 	sb.append( windowsize );
       	
-    sb.append(":length=");
+    sb.append(" length-");
     sb.append( data.length );
+    sb.append(" bytes");
     
   	return sb.toString();
   }
