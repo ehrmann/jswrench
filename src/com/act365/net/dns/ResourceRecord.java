@@ -67,10 +67,13 @@ public class ResourceRecord {
 
   public String toString() {
       StringBuffer sb = new StringBuffer();
-      if( type < DNSMessage.dnsTypes.length ){
+      String typeLabel ;
+      try {
+          typeLabel = DNSMessage.getTypeLabel( type );
           sb.append("type ");
-          sb.append( DNSMessage.dnsTypes[type] );
+          sb.append( typeLabel );
           sb.append(':');
+      } catch( java.io.IOException e ){
       }
       sb.append( data_string );
       return sb.toString();

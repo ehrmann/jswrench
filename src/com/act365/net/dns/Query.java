@@ -83,10 +83,13 @@ public class Query {
 
   public String toString() {
       StringBuffer sb = new StringBuffer();
-      if( query_type < DNSMessage.dnsTypes.length ){
+      String typeLabel ;
+      try {
+          typeLabel = DNSMessage.getTypeLabel( query_type );
           sb.append("type ");
-          sb.append( DNSMessage.dnsTypes[query_type] );
+          sb.append( typeLabel );
           sb.append(':');
+      } catch( IOException e ){
       }
       sb.append( domain_name );
       return sb.toString();

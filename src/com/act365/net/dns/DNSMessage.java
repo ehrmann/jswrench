@@ -29,6 +29,7 @@ package com.act365.net.dns ;
 import com.act365.net.* ;
 
 import java.io.* ;
+import java.util.StringTokenizer ;
 
 /**
  * Represents a DNS message.
@@ -39,6 +40,13 @@ public class DNSMessage implements IServiceMessage {
 
   // Type and Query Type values
 
+    final static int phaseITypesBegin   = 1 ,
+                     phaseITypesEnd     = 49 ,
+                     phaseIITypesBegin  = 100 ,
+                     phaseIITypesEnd    = 104 ,
+                     phaseIIITypesBegin = 249 ,
+                     phaseIIITypesEnd   = 256 ;
+                     
     public final static int A        = 1 ,    // Host address
                             NS       = 2 ,    // Authoritative name server
                             MD       = 3 ,    // Mail destination (obsolete)
@@ -98,56 +106,122 @@ public class DNSMessage implements IServiceMessage {
                             MAILA    = 254 ,  // Mail agent RRs
                             ANY      = 255 ;  // Request for all records
 
-    public final static String dnsTypes[] = { "" ,
-                                              "A",
-                                              "NS",
-                                              "MD",
-                                              "MF",
-                                              "CNAME",
-                                              "SOA",
-                                              "MB",
-                                              "MG",
-                                              "MR",
-                                              "NULL",
-                                              "WKS",
-                                              "PTR",
-                                              "HINFO",
-                                              "MINFO",
-                                              "MX",
-                                              "TXT",
-                                              "RP",
-                                              "AFSDB",
-                                              "X25",
-                                              "ISDN",
-                                              "RT",
-                                              "NSAP",
-                                              "NSAP_PTR",
-                                              "SIG",
-                                              "KEY",
-                                              "PX",
-                                              "GPOS",
-                                              "AAAA",
-                                              "LOC",
-                                              "NXT",
-                                              "EID",
-                                              "NIMLOC",
-                                              "SRV",
-                                              "ATMA",
-                                              "NAPTR",
-                                              "KX",
-                                              "CERT",
-                                              "A6",
-                                              "DNAME",
-                                              "SINK",
-                                              "OPT",
-                                              "APL",
-                                              "DS",
-                                              "SSHFP",
-                                              "RRSIG",
-                                              "NSEC",
-                                              "DNSKEY"
-                                            };
+    public final static String phaseIDNSTypes[] = { "A",
+                                                    "NS",
+                                                    "MD",
+                                                    "MF",
+                                                    "CNAME",
+                                                    "SOA",
+                                                    "MB",
+                                                    "MG",
+                                                    "MR",
+                                                    "NULL",
+                                                    "WKS",
+                                                    "PTR",
+                                                    "HINFO",
+                                                    "MINFO",
+                                                    "MX",
+                                                    "TXT",
+                                                    "RP",
+                                                    "AFSDB",
+                                                    "X25",
+                                                    "ISDN",
+                                                    "RT",
+                                                    "NSAP",
+                                                    "NSAP_PTR",
+                                                    "SIG",
+                                                    "KEY",
+                                                    "PX",
+                                                    "GPOS",
+                                                    "AAAA",
+                                                    "LOC",
+                                                    "NXT",
+                                                    "EID",
+                                                    "NIMLOC",
+                                                    "SRV",
+                                                    "ATMA",
+                                                    "NAPTR",
+                                                    "KX",
+                                                    "CERT",
+                                                    "A6",
+                                                    "DNAME",
+                                                    "SINK",
+                                                    "OPT",
+                                                    "APL",
+                                                    "DS",
+                                                    "SSHFP",
+                                                    "Unsupported",
+                                                    "RRSIG",
+                                                    "NSEC",
+                                                    "DNSKEY"
+                                                   };
+                                                   
+    public final static String phaseIIDNSTypes[] = { "UINFO" ,
+                                                     "UID" ,
+                                                     "GID" ,
+                                                     "UNSPEC"
+                                                    };
 
+    public final static String phaseIIIDNSTypes[] = { "TKEY",
+                                                      "TSIG" ,   
+                                                      "IXFR" ,   
+                                                      "AXFR" ,  
+                                                      "MAILB" ,  
+                                                      "MAILA" ,  
+                                                      "ANY"     
+                                                    };
+
+    /**
+     * Returns the DNS code associated with a given label.
+     */
+    
+    public static int getType( String label ) throws IOException {
+        int i ;
+        
+        i = phaseITypesBegin ;
+        while( i < phaseITypesEnd ){
+            if( label.equalsIgnoreCase( phaseIDNSTypes[ i - phaseITypesBegin ] ) ){
+                return i ;
+            }
+            ++ i ;
+        }
+        
+        i = phaseIITypesBegin ;
+        while( i < phaseIITypesEnd ){
+            if( label.equalsIgnoreCase( phaseIIDNSTypes[ i - phaseIITypesBegin ] ) ){
+                return i ;
+            }
+            ++ i ;
+        }
+        
+        i = phaseIIITypesBegin ;
+        while( i < phaseIIITypesEnd ){
+            if( label.equalsIgnoreCase( phaseIIIDNSTypes[ i - phaseIIITypesBegin ] ) ){
+                return i ;
+            }
+            ++ i ;
+        }
+        
+        throw new IOException("Unsupported DNS Type");
+    }
+    
+    /**
+     * Returns the label associated with a given DNS code. 
+     */
+
+    public static String getTypeLabel( int type ) throws IOException {
+        
+        if( type >= phaseITypesBegin && type < phaseITypesEnd ){
+            return phaseIDNSTypes[ type - phaseITypesBegin ];
+        } else if( type >= phaseIITypesBegin && type < phaseIITypesEnd ){
+            return phaseIIDNSTypes[ type - phaseIITypesBegin ];
+        } else if( type >= phaseIIITypesBegin && type < phaseIIITypesEnd ){
+            return phaseIIIDNSTypes[ type - phaseIIITypesBegin ];
+        } else {
+            throw new IOException("Unsupported DNS Type");
+        }
+    }
+    
     // Opcode values
     
     public final static int STANDARD_QUERY = 0 ,
@@ -786,5 +860,42 @@ public class DNSMessage implements IServiceMessage {
 
     return length ;
   }    
+  
+  /**
+   * Attempts to convert a string of the form "140.252.13.33" into the string
+   * "33.13.252.140.in-addr.arpa" ready for an inverse DNS lookup.
+   * When the string isn't of that form, <code>null</code> is returned.
+   * @param ipAddress string of the form "140.252.13.33"
+   * @return string of the form "33.13.252.140.in-addr.arpa" or <code>null</code>
+   */
+  
+  public static String parse( String ipAddress ) {
+
+    StringTokenizer parser = new StringTokenizer( ipAddress , "." );
+
+    int[] ip = new int[4];
+
+    int i = 0 ;
+    while( i < 4 && parser.hasMoreTokens() ){
+        try {
+            ip[i++] = Integer.parseInt( parser.nextToken() );
+        } catch( NumberFormatException e ) {
+            return null ;
+        }
+    }
+    
+    StringBuffer sb = new StringBuffer();
+    
+    sb.append(ip[3]);
+    sb.append('.');
+    sb.append(ip[2]);
+    sb.append('.');
+    sb.append(ip[1]);
+    sb.append('.');
+    sb.append(ip[0]);
+    sb.append(".in-addr.arpa");
+    
+    return sb.toString();    
+  }
 }
 

@@ -99,18 +99,24 @@ public class DNSLookup {
         System.exit( 3 );    
     }
     
-    int dnstype ;
+    int dnstype = DNSMessage.A ;
     
     if( type instanceof String ){
-        dnstype = -1 ;
-        while( ! type.equalsIgnoreCase( DNSMessage.dnsTypes[++ dnstype ] ) );
-        if( dnstype == DNSMessage.dnsTypes.length ){
-            System.err.println("Unknown DNS lookup type");
+        try {
+            dnstype = DNSMessage.getType( type );
+        } catch ( IOException e ) {
+            System.err.println( e.getMessage() );
             System.exit( 4 );
         }
     } else {
-        // Determine whether the domain name is a host name or an IP address.
-        dnstype = DNSMessage.A ;
+        // Determine whether the domain name is an IP address rather
+        // than a host name, in which case a reverse look-up should
+        // be performed.
+        String ptrDomainName = DNSMessage.parse( domainname );
+        if( ptrDomainName instanceof String ){
+            domainname = ptrDomainName ;
+            dnstype = DNSMessage.PTR ;
+        }
     }
     
     InetAddress server = null ,
