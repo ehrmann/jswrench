@@ -80,6 +80,8 @@ public class ICMPWriter {
   public int write( byte type , 
                     byte code , 
                     byte[] data , 
+                    int dataOffset ,
+                    int dataCount ,
                     byte[] buffer , 
                     int offset ) throws IOException 
   {
@@ -91,6 +93,8 @@ public class ICMPWriter {
     message.identifier = identifier ;
     message.sequence_number = counter ++ ;
     message.data = data ;
+    message.offset = dataOffset ;
+    message.count = dataCount ;
 
     int length = 0 ;
     
@@ -112,11 +116,13 @@ public class ICMPWriter {
   
   public byte[] write( byte type ,
                        byte code ,
-                       byte[] data ) throws IOException  
+                       byte[] data ,
+                       int dataOffset ,
+                       int dataCount ) throws IOException  
   {
       byte[] buffer = new byte[ 8 + data.length ];
       
-      write( type , code , data , buffer , 0 );
+      write( type , code , data , dataOffset , dataCount , buffer , 0 );
       
       return buffer ;
   }
