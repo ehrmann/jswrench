@@ -120,7 +120,7 @@ public class TFTP extends TFTPBase {
      			  if( arg < args.length - 1 ){
      			    hostname = args[ ++ arg ];
      			  } else {
-     			  	quit("-h requires another argument");
+                      ErrorHandler.quit("-h requires another argument");
      			  }
      			  
      			  break;
@@ -140,14 +140,14 @@ public class TFTP extends TFTPBase {
                   if( arg < args.length - 1 ){
                     protocolLabel = args[ ++ arg ];
                   } else {
-                    quit("-n requires another argument");
+                      ErrorHandler.quit("-n requires another argument");
                   }
                   
                   break;
                   
      			default:
      			
-     			  quit("Unknown command line option: " + args[ arg ] );
+                ErrorHandler.quit("Unknown command line option: " + args[ arg ] );
      		}
      		
      		++ arg ;
@@ -158,7 +158,7 @@ public class TFTP extends TFTPBase {
         try {
             SocketUtils.setProtocol( protocolLabel );
         } catch ( IOException e ) {
-            quit("Unable to set protocol");
+            ErrorHandler.quit("Unable to set protocol");
         }
         
         INetworkImpl network = null ;
@@ -167,18 +167,18 @@ public class TFTP extends TFTPBase {
         
         case SocketConstants.IPPROTO_UDP:
 
-            network = new UDPNetworkImpl( System.err );
+            network = new UDPNetworkImpl();
             break;
             
         case SocketConstants.IPPROTO_TCP:
         case SocketConstants.IPPROTO_TCPJ:
         
-            network = new TCPNetworkImpl( System.err );
+            network = new TCPNetworkImpl();
             break;
             
         default:
         
-            quit("Unsupported protocol");
+        ErrorHandler.quit("Unsupported protocol");
         }
                                     
         try {	
@@ -196,7 +196,7 @@ public class TFTP extends TFTPBase {
       * @param args - list of command-line arguments
       * @param arg - position of first filename within command-line arguments
       * @param hostname - remote hostname
-      * @param trace - where debug is to be written 
+      * @param trace - whether debug is required 
       * @param verbose - whether verbosity is required
       * @param network - network implementation to use
       * @throws TFTPException - can't read from input or can't execute it
@@ -205,14 +205,17 @@ public class TFTP extends TFTPBase {
      public TFTP( String[] args ,
                   int arg ,
                   String hostname ,
-                  boolean trace ,
+                  boolean debug ,
                   boolean verbose ,
                   INetworkImpl network ) throws TFTPException {
      	
-        super( network , System.err );
+        super( network );
         	
         this.hostname = hostname ;
         this.verbose = verbose ;
+
+        ErrorHandler.setDebugStream( System.out );
+        ErrorHandler.setTrace( debug );        
         
      	// Execute tftp on each filename specified or, in the case that no filenames
      	// have been provided, use standard input.
@@ -275,10 +278,10 @@ public class TFTP extends TFTPBase {
      		      continue;
      		  
      		    case StreamTokenizer.TT_NUMBER:
-     		      quit("Unexpected numerical input " + st.nval );
+                  ErrorHandler.quit("Unexpected numerical input " + st.nval );
                   
                 default:
-                  quit("Unexpected character");
+                ErrorHandler.quit("Unexpected character");
      		  }
      		  
             } catch ( TFTPCommandException e ) {
@@ -330,7 +333,7 @@ public class TFTP extends TFTPBase {
      	}
      	
      	if( command == TFTPConstants.commands.length ){
-     		command( "Unknown command " + st.sval );
+            ErrorHandler.command( "Unknown command " + st.sval );
      	}
      	
      	boolean exit = false ;
@@ -371,14 +374,14 @@ public class TFTP extends TFTPBase {
               if( st.nextToken() == StreamTokenizer.TT_WORD ){
               	hostname = st.sval ;
               } else {
-              	command("Hostname must be specified");
+                  ErrorHandler.command("Hostname must be specified");
               }
               
               if( st.nextToken() == StreamTokenizer.TT_WORD ){
                 try {
                     port = Integer.parseInt( st.sval );
                 } catch ( NumberFormatException e ) {
-                    command("Port number should be an integer");
+                    ErrorHandler.command("Port number should be an integer");
                 }
               }
               
@@ -412,7 +415,7 @@ public class TFTP extends TFTPBase {
      	      	if( st.nextToken() == StreamTokenizer.TT_WORD ){
      	      	  remotefilename = st.sval ;
      	      	} else {
-     	      	  command("Remote filename must be specified");	 
+                    ErrorHandler.command("Remote filename must be specified");	 
      	      	}
      	      	
                 int colonPos = remotefilename.indexOf('|');
@@ -425,11 +428,11 @@ public class TFTP extends TFTPBase {
 				if( st.nextToken() == StreamTokenizer.TT_WORD ){
 				  localfilename = st.sval ;
 				} else {
-				  command("Local filename must be specified");	 
+                    ErrorHandler.command("Local filename must be specified");	 
 				}
 				
 				if( localfilename.indexOf('|') != -1 ){
-				  command("Cannot specify hostname for local file");
+                    ErrorHandler.command("Cannot specify hostname for local file");
 				}
 				
 				get( remotefilename , localfilename );
@@ -469,7 +472,7 @@ public class TFTP extends TFTPBase {
 			    if( st.nextToken() == StreamTokenizer.TT_WORD ){
 				  mode = st.sval ;
 			    } else {
-				  command("Mode type must be specified");	 
+                    ErrorHandler.command("Mode type must be specified");	 
 			    }
 			  
 			    if( mode.equals("ascii") ){
@@ -477,7 +480,7 @@ public class TFTP extends TFTPBase {
 			    } else if( mode.equals("binary") ){
 			  	  modetype = TFTPConstants.MODE_BINARY ;
 			    } else {
-			  	  command("Mode must be 'ascii' or 'binary'");
+                    ErrorHandler.command("Mode must be 'ascii' or 'binary'");
 			    }
               }
 
@@ -499,17 +502,17 @@ public class TFTP extends TFTPBase {
 				if( st.nextToken() == StreamTokenizer.TT_WORD ){
 				  localfilename = st.sval ;
 				} else {
-				  command("Local filename must be specified");	 
+                    ErrorHandler.command("Local filename must be specified");	 
 				}
 								
 				if( localfilename.indexOf('|') != -1 ){
-				  command("Cannot specify hostname for local file");
+                    ErrorHandler.command("Cannot specify hostname for local file");
 				}
 
 				if( st.nextToken() == StreamTokenizer.TT_WORD ){
 				  remotefilename = st.sval ;
 				} else {
-				  command("Remote filename must be specified");	 
+                    ErrorHandler.command("Remote filename must be specified");	 
 				}
      	      	
                 int colonPos = remotefilename.indexOf('|');
@@ -520,7 +523,7 @@ public class TFTP extends TFTPBase {
                 }
                 
 				if( hostname == null ){
-				  command("Hostname must be specified");	      	
+                    ErrorHandler.command("Hostname must be specified");	      	
 				}
      	      	    				
 				put( localfilename , remotefilename );
@@ -547,7 +550,7 @@ public class TFTP extends TFTPBase {
 			 
 			case TFTPConstants.CMD_TRACE:
 			
-			  trace = ! trace ;
+			  ErrorHandler.toggleTrace();
 			  break;
 			 
 			/*
@@ -600,7 +603,7 @@ public class TFTP extends TFTPBase {
      	
 		sb.append(", trace=");
      	
-		if( trace ){
+		if( ErrorHandler.trace ){
 		  sb.append("on");
 		} else {
 		  sb.append("off");
@@ -620,7 +623,7 @@ public class TFTP extends TFTPBase {
         try {
             openOutputFile( new File( localfilename ) , 1 );
         } catch ( FileNotFoundException e ){
-            system( "File " + localfilename + " not found" );
+            ErrorHandler.system( "File " + localfilename + " not found" );
         }
         
         ((INetworkImpl) network ).open( hostname , port );
@@ -655,7 +658,7 @@ public class TFTP extends TFTPBase {
         try {
      	    openInputFile( new File( localfilename ) , 0 );
         } catch ( FileNotFoundException e ) {
-            system("File " + localfilename + " not found");
+            ErrorHandler.system("File " + localfilename + " not found");
         }
         
      	((INetworkImpl) network ).open( hostname , port );

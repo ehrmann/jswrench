@@ -34,8 +34,8 @@ public class FSMError implements IFSMFunction {
 
 	public boolean receive( TFTPBase fsm , TFTPMessage message ) throws TFTPException {
                                 
-      fsm.debug("error received: opSent = " + TFTPConstants.opCodes[ fsm.sendMessage.opcode ] 
-                        + ", opReceived = " + TFTPConstants.opCodes[ message.opcode ] );
+      ErrorHandler.debug("error received: opSent = " + TFTPConstants.opCodes[ fsm.sendMessage.opcode ] 
+                                 + ", opReceived = " + TFTPConstants.opCodes[ message.opcode ] );
       
       return true ;
 	}

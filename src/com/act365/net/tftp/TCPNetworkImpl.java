@@ -38,16 +38,13 @@ public class TCPNetworkImpl extends TCPNetworkBase implements INetworkImpl {
     Socket socket = null ;
   
     /**
-     * Creates an connected TCPNetworkImpl with optional debug.
+     * Creates an connected TCPNetworkImpl.
      * 
      * @param socket - socket that connects to the server
-     * @param debug - where debug is to be written (null for no debug)
      */    
     
-    public TCPNetworkImpl( Socket socket , OutputStream debug ) throws TFTPException {
+    public TCPNetworkImpl( Socket socket ) throws TFTPException {
     
-        super( debug );
-        
         try {
             this.socket = socket ;
             this.input = socket.getInputStream();
@@ -55,18 +52,16 @@ public class TCPNetworkImpl extends TCPNetworkBase implements INetworkImpl {
             this.destAddress = socket.getInetAddress();
             this.destPort = socket.getPort();
         } catch ( IOException e ) {
-            system("Problem with socket");
+            ErrorHandler.system("Problem with socket");
         }
     }
     
     /**
-     * Creates an unconnected TCPNetworkImpl with optional debug.
-     * 
-     * @param debug - where debug is to be written (null for no debug)
+     * Creates an unconnected TCPNetworkImpl.
      */    
     
-    public TCPNetworkImpl( OutputStream debug ){
-        super( debug ); 
+    public TCPNetworkImpl() {
+        socket = null ;
     }
     
     /**
@@ -81,7 +76,7 @@ public class TCPNetworkImpl extends TCPNetworkBase implements INetworkImpl {
         try {
             destAddress = Inet4Address.getByName( hostname );
         } catch( UnknownHostException e ) {
-            system("Unknown host " + hostname );
+            ErrorHandler.system("Unknown host " + hostname );
         }
         
         try {
@@ -89,10 +84,10 @@ public class TCPNetworkImpl extends TCPNetworkBase implements INetworkImpl {
             input = socket.getInputStream();
             output = socket.getOutputStream();
         } catch( Exception e ){
-            system("Cannot create socket");
+            ErrorHandler.system("Cannot create socket");
         }
         
-        debug("open: " + toString() );
+        ErrorHandler.debug("open: " + toString() );
 	}
 
     /**
@@ -101,12 +96,12 @@ public class TCPNetworkImpl extends TCPNetworkBase implements INetworkImpl {
     
     public void close() throws TFTPException {
         
-        debug("close: " + toString() );
+        ErrorHandler.debug("close: " + toString() );
       
         try {  
             socket.close();
         } catch ( IOException e ) {
-            system("Cannot close connection");
+            ErrorHandler.system("Cannot close connection");
         }
     }
 }

@@ -35,7 +35,7 @@ import java.net.InetAddress ;
  * TCPNetworkImpl implements standard shared client- and server-side TFTP network functions with TCP/IP.
  */
 
-public class TCPNetworkBase extends ErrorHandler {
+public class TCPNetworkBase {
 
   protected InputStream input = null ;
   
@@ -46,23 +46,13 @@ public class TCPNetworkBase extends ErrorHandler {
   protected int destPort = 0 ;
     
   /**
-   * Creates a TCPNetworkBase instance with optional debug.
-   * 
-   * @param debug - whether debug is to be written (null for no debug)
-   */
-  
-  protected TCPNetworkBase( OutputStream debug ){
-      super( debug );
-  }
-
-  /**
    * Transmits data. The TFTP message is prefaced with a 2-byte record
    * that describes the length of the record. 
    */
     
   public void send( byte[] buffer , int count ) throws TFTPException {
 
-      debug("send: sent " + count + " bytes to " + toString() );
+      ErrorHandler.debug("send: sent " + count + " bytes to " + toString() );
 
       byte[] countBuffer = new byte[ 2 ];
       
@@ -72,7 +62,7 @@ public class TCPNetworkBase extends ErrorHandler {
           output.write( countBuffer , 0 , 2 );
           output.write( buffer , 0 , count );
       } catch ( IOException e ) {
-          system("Transmission error");
+          ErrorHandler.system("Transmission error");
       }
   }
 
@@ -91,20 +81,20 @@ public class TCPNetworkBase extends ErrorHandler {
       try {
           size = input.read( countBuffer );
           if( size != 2 ){
-              dump("receive: incorrect size for length prefix");
+              ErrorHandler.dump("receive: incorrect size for length prefix");
           }
           count = SocketUtils.shortFromBytes( countBuffer , 0 );   
           size = input.read( buffer , 0 , count );
           if( size != count ){
-              dump("receive: incorrect size for record");
+              ErrorHandler.dump("receive: incorrect size for record");
           }
       } catch ( InterruptedIOException i ) {
           throw i ;
       } catch ( IOException e ) {
-          system("Receive error");
+          ErrorHandler.system("Receive error");
       }
         
-      debug("receive: " + size + " bytes from " + toString() );
+      ErrorHandler.debug("receive: " + size + " bytes from " + toString() );
                
       return size ;
   }

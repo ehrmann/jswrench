@@ -32,35 +32,51 @@ import java.io.* ;
  * ErrorHandler provides error-handling for the entire TFTP project.
  */
 
-public class ErrorHandler {
+public final class ErrorHandler {
     
-    protected OutputStream debug ;
-    
-    PrintWriter writer ;
+    static PrintWriter writer = null ;
 
-    protected boolean trace ;
+    static boolean trace = false ;
         
     /**
      * Creates an error-handler
      * 
-     * @param output - where debug is to be written (null if no debug required)
+     * @param debug - where debug is to be written (null if no debug required)
      */
     
-    protected ErrorHandler( OutputStream debug ){
+    public static void setDebugStream( OutputStream debug ){
         if( debug instanceof OutputStream ){
-            this.debug = debug ;        
             writer = new PrintWriter( debug , true );
+        } else {
+            writer = null ;       
         }
-        trace = true ;
     }
 
+    /**
+     * Switches the trace facility on or off.
+     * 
+     * @param newTrace
+     */
+    
+    public static void setTrace( boolean newTrace ){
+        trace = newTrace ;
+    }
+    
+    /**
+     * Toggles the trace facility.
+     */
+        
+    public static void toggleTrace(){
+        trace = ! trace ;
+    }
+    
     /**
      * Writes debug to the chosen stream.
      * 
      * @param errortext - debug text
      */
     
-    protected void debug( String errortext ){       
+    public static void debug( String errortext ){       
         if( trace && writer instanceof PrintWriter ){
             writer.println( errortext );
         }
@@ -73,7 +89,7 @@ public class ErrorHandler {
      * @throws TFTPException
      */
     
-    protected static void dump( String errortext ) throws TFTPException {
+    public static void dump( String errortext ) throws TFTPException {
         throw new TFTPException( errortext );
     }
     
@@ -85,7 +101,7 @@ public class ErrorHandler {
      * @throws TFTPException
      */
         
-    protected static void system( String errortext ) throws TFTPSystemException {
+    public static void system( String errortext ) throws TFTPSystemException {
         throw new TFTPSystemException( errortext );
     }
     
@@ -96,7 +112,7 @@ public class ErrorHandler {
      * @throws TFTPCommandException
      */
         
-    protected static void command( String errortext ) throws TFTPCommandException {
+    public static void command( String errortext ) throws TFTPCommandException {
         throw new TFTPCommandException( errortext );
     }
     
@@ -106,7 +122,7 @@ public class ErrorHandler {
      * @param errortext
      */
     
-    protected static void quit( String errortext ){
+    public static void quit( String errortext ){
         System.err.println( errortext );
         System.exit( 1 );
     }
@@ -118,7 +134,7 @@ public class ErrorHandler {
      * @param e
      */
     
-    protected static void quit( Exception e ){        
+    public static void quit( Exception e ){        
         quit( e.getMessage() );
     }
 }

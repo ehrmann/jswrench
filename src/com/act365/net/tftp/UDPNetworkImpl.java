@@ -36,16 +36,6 @@ import java.net.* ;
 public class UDPNetworkImpl extends UDPNetworkBase implements INetworkImpl {
 
     /**
-     * Creates a UDPNetworkImpl with optional debug.
-     * 
-     * @param debug - where debug is to be written (null for no debug)
-     */    
-    
-    public UDPNetworkImpl( OutputStream debug ){
-        super( debug ); 
-    }
-    
-    /**
      * Opens a connection to a given port on a remote host.
      *       
      */
@@ -57,16 +47,16 @@ public class UDPNetworkImpl extends UDPNetworkBase implements INetworkImpl {
         try {
             destAddress = InetAddress.getByName( hostname );
         } catch( UnknownHostException e ) {
-            system("Unknown host " + hostname );
+            ErrorHandler.system("Unknown host " + hostname );
         }
         
         try {
             socket = new DatagramSocket();
         } catch( SocketException e ){
-            system("Cannot create socket");
+            ErrorHandler.system("Cannot create socket");
         }
         
-        debug("open: " + toString() );
+        ErrorHandler.debug("open: " + toString() );
         
         receiveFirst = true ;
 	}
@@ -84,12 +74,12 @@ public class UDPNetworkImpl extends UDPNetworkBase implements INetworkImpl {
         } catch ( InterruptedIOException i ) {
             throw i ;
         } catch ( IOException e ) {
-            system("Receive error");
+            ErrorHandler.system("Receive error");
         }
         
-        debug("receive: " + packet.getLength() + 
-              " bytes from host " + packet.getAddress().toString() + 
-              ", port# " + packet.getPort() );
+        ErrorHandler.debug("receive: " + packet.getLength() + 
+                           " bytes from host " + packet.getAddress().toString() + 
+                           ", port# " + packet.getPort() );
         
         /*
          * The TFTP client using UDP/IP has a funny requirement due to
@@ -103,7 +93,7 @@ public class UDPNetworkImpl extends UDPNetworkBase implements INetworkImpl {
         if( receiveFirst ){
             
             if( packet.getPort() == destPort ){
-                dump("first receive from port#" + packet.getPort() ); 
+                ErrorHandler.dump("first receive from port#" + packet.getPort() ); 
             } 
             
             destPort     = packet.getPort();
@@ -111,7 +101,7 @@ public class UDPNetworkImpl extends UDPNetworkBase implements INetworkImpl {
             
         } else if( packet.getPort() != destPort ){
             
-            dump("received from port# " + packet.getPort() + ", expected from port# " + destPort );
+            ErrorHandler.dump("received from port# " + packet.getPort() + ", expected from port# " + destPort );
         }
         
 		return packet.getLength() ;

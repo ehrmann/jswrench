@@ -34,7 +34,7 @@ import java.io.* ;
  * TFTPServer implements the TFTP protocol on the server side.
  */
 
-public class TFTPServer extends ErrorHandler implements Runnable {
+public class TFTPServer implements Runnable {
 	
     /**
      * TFTPServer accepts the following command-line options
@@ -70,10 +70,10 @@ public class TFTPServer extends ErrorHandler implements Runnable {
                     try {
                       port = Integer.parseInt( args[ ++ arg ] );
                     } catch ( NumberFormatException e ) {
-                      quit("port must be an integer value");
+                      ErrorHandler.quit("port must be an integer value");
                     }
                   } else {
-                    quit("-p requires another argument");
+                      ErrorHandler.quit("-p requires another argument");
                   }
                   
                   break;
@@ -83,7 +83,7 @@ public class TFTPServer extends ErrorHandler implements Runnable {
                   if( arg < args.length - 1 ){
                       logfile = args[ ++ arg ];
                   } else {
-                    quit("-l requires another argument");
+                      ErrorHandler.quit("-l requires another argument");
                   }
                   
                   if( logfile.equals("-") ){
@@ -92,7 +92,7 @@ public class TFTPServer extends ErrorHandler implements Runnable {
                       try {
                           debug = new FileOutputStream( logfile );
                       } catch ( FileNotFoundException e ) {
-                          quit("File " + logfile + " not found");
+                          ErrorHandler.quit("File " + logfile + " not found");
                       }
                   }
                   
@@ -103,14 +103,14 @@ public class TFTPServer extends ErrorHandler implements Runnable {
                   if( arg < args.length - 1 ){
                       protocolLabel = args[ ++ arg ];
                   } else {
-                      quit("-n requires another argument");
+                      ErrorHandler.quit("-n requires another argument");
                   }
                   
                   break;
                   
                 default:
                 
-                  quit("Unknown command line option: " + args[ arg ] );
+                ErrorHandler.quit("Unknown command line option: " + args[ arg ] );
             }
             
             ++ arg ;
@@ -121,7 +121,7 @@ public class TFTPServer extends ErrorHandler implements Runnable {
         try {
             SocketUtils.setProtocol( protocolLabel );
         } catch ( IOException e ) {
-            quit("Unable to set protocol");
+            ErrorHandler.quit("Unable to set protocol");
         }
         
         INetworkServerImpl network = null ;
@@ -130,26 +130,29 @@ public class TFTPServer extends ErrorHandler implements Runnable {
         
         case SocketConstants.IPPROTO_UDP:
 
-            network = new UDPNetworkServerImpl( debug );
+            network = new UDPNetworkServerImpl();
             break;
             
         case SocketConstants.IPPROTO_TCP:
         case SocketConstants.IPPROTO_TCPJ:
         
-            network = new TCPNetworkServerImpl( debug );
+            network = new TCPNetworkServerImpl();
             break;
             
         default:
         
-            quit("Unsupported protocol");
+            ErrorHandler.quit("Unsupported protocol");
         }
-                                    
+            
+        ErrorHandler.setDebugStream( debug );
+        ErrorHandler.setTrace( true );
+                                
         try {  
             network.init( port );
-            new Thread( new TFTPServer( network , debug ) ).run();
+            new Thread( new TFTPServer( network ) ).run();
         } catch ( TFTPException e ) {
             e.printStackTrace();
-            quit( e );
+            ErrorHandler.quit( e );
         }
     }
     
@@ -161,12 +164,9 @@ public class TFTPServer extends ErrorHandler implements Runnable {
      * Creates a server with a given network connection and optional debug.
      * 
      * @param network - network connection
-     * @param debug - where debug is to be written
      */
     
-    public TFTPServer( INetworkServerImpl network , OutputStream debug ){
-        
-        super( debug );
+    public TFTPServer( INetworkServerImpl network ){
         
         this.network = network ;
     }
@@ -183,10 +183,10 @@ public class TFTPServer extends ErrorHandler implements Runnable {
         while( true ){   
           try {     
             newNetwork = network.open();
-            new Thread( new TFTPWorker( newNetwork , debug ) ).run();
+            new Thread( new TFTPWorker( newNetwork ) ).run();
           } catch ( TFTPException e ) {    
             e.printStackTrace();
-            quit( e );
+            ErrorHandler.quit( e );
           }
         }
     }

@@ -41,16 +41,12 @@ public class UDPNetworkServerImpl extends UDPNetworkBase implements INetworkServ
     
     int receiveSize = -1 ;
     
-    public UDPNetworkServerImpl( OutputStream debug ){
-        super( debug );
-    }
-    
 	public void init( int port ) throws TFTPException {
         
         try {
             socket = new DatagramSocket( port > 0 ? port : TFTPConstants.defaultPort );
         } catch ( SocketException e ) {
-            system("Cannot create socket");
+            ErrorHandler.system("Cannot create socket");
         }
 	}
 
@@ -77,12 +73,12 @@ public class UDPNetworkServerImpl extends UDPNetworkBase implements INetworkServ
        * to the existing client.
        */      
        
-      UDPNetworkServerImpl network = new UDPNetworkServerImpl( debug );
+      UDPNetworkServerImpl network = new UDPNetworkServerImpl();
 
       try {      
           network.socket = new DatagramSocket();
       } catch ( SocketException e ) {
-          system("Cannot create socket");
+          ErrorHandler.system("Cannot create socket");
       }
       
       network.destAddress = GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , destAddress.getAddress() );
@@ -141,12 +137,12 @@ public class UDPNetworkServerImpl extends UDPNetworkBase implements INetworkServ
         } catch ( InterruptedIOException i ) {
             throw i ;
         } catch ( IOException e ) {
-            system("Receive error");
+            ErrorHandler.system("Receive error");
         }
         
-        debug("receive: " + packet.getLength() + 
-              " bytes from host " + packet.getAddress().toString() + 
-              ", port# " + packet.getPort() );
+        ErrorHandler.debug("receive: " + packet.getLength() + 
+                           " bytes from host " + packet.getAddress().toString() + 
+                           ", port# " + packet.getPort() );
         
         /*
          * When receiveFirst is set, the client address is stored.
@@ -163,7 +159,7 @@ public class UDPNetworkServerImpl extends UDPNetworkBase implements INetworkServ
          */
          
         if( destPort != 0 && packet.getPort() != destPort ){
-            dump("received from port# " + packet.getPort() + ", expected from port# " + destPort );
+            ErrorHandler.dump("received from port# " + packet.getPort() + ", expected from port# " + destPort );
         }
         
         return packet.getLength() ;

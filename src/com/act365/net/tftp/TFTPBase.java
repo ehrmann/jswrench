@@ -34,12 +34,9 @@ import java.io.*;
  * Utilities common to client and server
  */
 
-public abstract class TFTPBase extends ErrorHandler {
+public abstract class TFTPBase {
 
-  protected TFTPBase( INetworkImplBase network ,
-                      OutputStream debug ){
-      super( debug );
-      
+  protected TFTPBase( INetworkImplBase network ){
       this.network = network ;
   }
   
@@ -78,7 +75,7 @@ public abstract class TFTPBase extends ErrorHandler {
 	lastChar = false ;
 	nextChar = -1 ;
         
-	debug("openOutputFile: opened " + file.getName() );
+	ErrorHandler.debug("openOutputFile: opened " + file.getName() );
   }
 
   /**
@@ -104,7 +101,7 @@ public abstract class TFTPBase extends ErrorHandler {
 	lastChar = false ;
 	nextChar = -1 ;
         
-	debug("openInputFile: opened " + file.getName() );
+    ErrorHandler.debug("openInputFile: opened " + file.getName() );
   }
 
   /**
@@ -115,9 +112,9 @@ public abstract class TFTPBase extends ErrorHandler {
   protected void close() throws TFTPException {
     
     if( lastChar ){
-      dump("final character was a CR");
+        ErrorHandler.dump("final character was a CR");
     } else if( nextChar >= 0 ) {
-      dump("nextChar >= 0");
+        ErrorHandler.dump("nextChar >= 0");
     }
 
     try {
@@ -131,7 +128,7 @@ public abstract class TFTPBase extends ErrorHandler {
       }
       
     } catch ( IOException e ) {
-      system( "Cannot close file");
+        ErrorHandler.system( "Cannot close file");
     }
   }
 
@@ -157,11 +154,11 @@ public abstract class TFTPBase extends ErrorHandler {
         try {  	  
   	      size = localInput.read( buffer , offset , count );
         } catch ( IOException e ) {
-          dump( e.getMessage() );
+            ErrorHandler.dump( e.getMessage() );
         }
   	  
   	    if( size < 0 ){
-  	      dump("read error on local file");  
+            ErrorHandler.dump("read error on local file");  
   	    }
   	    
   	    break;
@@ -183,7 +180,7 @@ public abstract class TFTPBase extends ErrorHandler {
             try {
                 c = localInput.read();
             } catch( IOException e ) {
-                dump( e.getMessage() );           
+                ErrorHandler.dump( e.getMessage() );           
             }
             
             if( c == -1 ){ // End-of-file
@@ -207,7 +204,7 @@ public abstract class TFTPBase extends ErrorHandler {
   	    
   	  default:
   	  
-  	    dump("unknown MODE value");
+      ErrorHandler.dump("unknown MODE value");
   	}
   	
   	return size ;
@@ -233,7 +230,7 @@ public abstract class TFTPBase extends ErrorHandler {
   	    try {
             localOutput.write( buffer , offset , count );
   	    } catch( IOException e ) {
-            dump( e.getMessage() );
+            ErrorHandler.dump( e.getMessage() );
   	    }
   	    
   	    break;
@@ -263,7 +260,7 @@ public abstract class TFTPBase extends ErrorHandler {
   	      	  } else if( c == '\0' ){
   	      	  	c = '\r';
   	      	  } else {
-  	      	  	dump("CR followed by " + (char) c );
+                  ErrorHandler.dump("CR followed by " + (char) c );
   	      	  }
   	      	  
   	      	  lastChar = false ;
@@ -278,7 +275,7 @@ public abstract class TFTPBase extends ErrorHandler {
             try {
                 localOutput.write( c );
             } catch( IOException e ) {
-                dump( e.getMessage() );
+                ErrorHandler.dump( e.getMessage() );
             }
   	      }
   	    }
@@ -287,7 +284,7 @@ public abstract class TFTPBase extends ErrorHandler {
   	    
   	  default:
   	  
-  	    dump("unknown MODE value");
+      ErrorHandler.dump("unknown MODE value");
   	}
   }
   
@@ -336,7 +333,7 @@ public abstract class TFTPBase extends ErrorHandler {
      
   boolean receiveRQERR( TFTPMessage message ) throws TFTPException {
 
-    debug("ERROR received, " + message.length() + " bytes, error code " + message.errorcode );
+      ErrorHandler.debug("ERROR received, " + message.length() + " bytes, error code " + message.errorcode );
        
     System.out.println("Error# " + message.errorcode + ": " + message.errortext );
        
@@ -345,7 +342,7 @@ public abstract class TFTPBase extends ErrorHandler {
 
   void sendACK( int blockNumber ) throws TFTPException {
                            	
-    debug("sending ACK for block# " + blockNumber );
+      ErrorHandler.debug("sending ACK for block# " + blockNumber );
     
     sendMessage.opcode = (short) TFTPConstants.OP_ACK ;
     sendMessage.block = (short) blockNumber ;
@@ -355,7 +352,7 @@ public abstract class TFTPBase extends ErrorHandler {
   
   void sendDATA( int blockNumber ) throws TFTPException {
                             	
-    debug("sending " + sendMessage.count + " bytes of DATA with block# " + blockNumber );
+      ErrorHandler.debug("sending " + sendMessage.count + " bytes of DATA with block# " + blockNumber );
                             	
     sendMessage.opcode = (short) TFTPConstants.OP_DATA ;
     sendMessage.block = (short) blockNumber ;
@@ -367,7 +364,7 @@ public abstract class TFTPBase extends ErrorHandler {
                              	
     int receivedBlockNumber = message.block ;
     
-    debug("DATA received, " + message.count + " bytes, block# " + receivedBlockNumber );
+    ErrorHandler.debug("DATA received, " + message.count + " bytes, block# " + receivedBlockNumber );
     
     if( receivedBlockNumber == nextBlockNumber ){
     	
@@ -403,7 +400,7 @@ public abstract class TFTPBase extends ErrorHandler {
        * #(n+1), so the other end has reverted in time. Something is wrong. 
        */
        
-        dump("receivedBlockNumber < nextBlockNumber - 1 ");
+       ErrorHandler.dump("receivedBlockNumber < nextBlockNumber - 1 ");
        
     } else if( receivedBlockNumber > nextBlockNumber ) {
     	
@@ -413,7 +410,7 @@ public abstract class TFTPBase extends ErrorHandler {
     	 * received an ACK for block #(n-1). Something is wrong.
     	 */
     	 
-    	dump("receivedBlockNumber > nextBlockNumber");
+        ErrorHandler.dump("receivedBlockNumber > nextBlockNumber");
     
     } 
     
@@ -449,7 +446,7 @@ public abstract class TFTPBase extends ErrorHandler {
   
     int receivedBlockNumber = message.block ;
     
-    debug("ACK received, block# " + receivedBlockNumber );
+    ErrorHandler.debug("ACK received, block# " + receivedBlockNumber );
     
     if( receivedBlockNumber == nextBlockNumber ){
       
@@ -606,7 +603,7 @@ public abstract class TFTPBase extends ErrorHandler {
   	      sendERROR( new TFTPException( TFTPConstants.ERR_NOFILE , e.getMessage() ) );
           return true ;
         } catch( IOException io ) {
-          dump( io.getMessage() );
+            ErrorHandler.dump( io.getMessage() );
   	    } catch ( SecurityException se ) {
   	      sendERROR( new TFTPException( TFTPConstants.ERR_ACCESS , "File lacks global read access") );
           return true ;
@@ -629,7 +626,7 @@ public abstract class TFTPBase extends ErrorHandler {
   	      sendERROR( new TFTPException( TFTPConstants.ERR_NOFILE , fe.getMessage() ) );
           return true ;
         } catch( IOException io ) {
-          dump( io.getMessage() );
+            ErrorHandler.dump( io.getMessage() );
   	    } catch ( SecurityException se ) {
   	      sendERROR( new TFTPException( TFTPConstants.ERR_ACCESS , "Directory lacks global write permissions") );
           return true ;
@@ -653,7 +650,7 @@ public abstract class TFTPBase extends ErrorHandler {
    
   void sendERROR( TFTPException e ) throws TFTPException {
   	
-  	debug("sending ERROR, code = " + e.getErrorCode() + ", string = " + e.getMessage() );
+      ErrorHandler.debug("sending ERROR, code = " + e.getErrorCode() + ", string = " + e.getMessage() );
   	
   	sendMessage.opcode = TFTPConstants.OP_ERROR ;
   	sendMessage.errorcode = (short) e.getErrorCode() ;
@@ -710,9 +707,9 @@ public abstract class TFTPBase extends ErrorHandler {
               // Timeout 
               
               if( timer.timeout() ){
-                  system( "Transmission timeout" );
+                  ErrorHandler.system( "Transmission timeout" );
               }
-              debug( timer.toString() );
+              ErrorHandler.debug( timer.toString() );
               
               // Retransmit 
               
@@ -721,7 +718,7 @@ public abstract class TFTPBase extends ErrorHandler {
           }
        
           timer.stop();
-          debug( timer.toString() );
+          ErrorHandler.debug( timer.toString() );
           
           try {
               TFTPReader.read( receiveMessage , receiveBuffer , 0 , size );

@@ -13,7 +13,7 @@ import java.net.* ;
  * UDPNetworkImpl implements standard shared client- and server-side TFTP network functions with UDP/IP.
  */
 
-public class UDPNetworkBase extends ErrorHandler {
+public class UDPNetworkBase {
 
   protected DatagramSocket socket ;
   
@@ -24,22 +24,12 @@ public class UDPNetworkBase extends ErrorHandler {
   protected boolean receiveFirst = false ;
 
   /**
-   * Creates a UDPNetworkBase instance with optional debug.
-   * 
-   * @param trace - whether debug is required
-   */
-  
-  protected UDPNetworkBase( OutputStream debug ){
-      super( debug );
-  }
-
-  /**
    * Closes a connection.
    */
     
   public void close() {
         
-      debug("close: " + toString() );
+      ErrorHandler.debug("close: " + toString() );
         
       socket.close();
   }
@@ -50,12 +40,12 @@ public class UDPNetworkBase extends ErrorHandler {
     
   public void send( byte[] buffer , int count ) throws TFTPException {
 
-      debug("send: sent " + count + " bytes to " + toString() );
+      ErrorHandler.debug("send: sent " + count + " bytes to " + toString() );
       
       try {
           socket.send( new DatagramPacket( buffer , count , destAddress , destPort ) );
       } catch ( IOException e ) {
-          system("Retransmission error");
+          ErrorHandler.system("Retransmission error");
       }
   }
 
@@ -76,7 +66,7 @@ public class UDPNetworkBase extends ErrorHandler {
       try {
           socket.setSoTimeout( timeout * 1000 );
       } catch ( SocketException e ){
-          system("Cannot set timeout for connection");
+          ErrorHandler.system("Cannot set timeout for connection");
       }
   }
 }

@@ -26,8 +26,6 @@
 
 package com.act365.net.tftp;
 
-import java.io.*;
-
 /**
  * TFTPWorker instances are spawned by the server in order to handle 
  * new client requests. 
@@ -90,8 +88,8 @@ public class TFTPWorker extends TFTPBase implements Runnable {
      * @param debug - where debug is to be written
      */
     
-    public TFTPWorker( INetworkImplBase network , OutputStream debug ){
-        super( network , debug );
+    public TFTPWorker( INetworkImplBase network ){
+        super( network );
     }
     
     /**
