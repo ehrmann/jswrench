@@ -43,18 +43,20 @@ public class Traceroute {
    
   /**
    Executes the Traceroute service.
-   <p>Usage: <code>Traceroute -p protocol -l localhost -d host</code>
+   <p>Usage: <code>Traceroute -p protocol -l localhost -d -f first_ttl host</code>
    <p><code>protocol</code> is the protocol to be used for broadcast. The default 
    is ICMP - the alternative is UDP.
    <p><code>localhost</code> is the local host address, which should be specified
    if UDP is used. (The information is used to calculate the UDP checksum).
    <p><code>-d</code> should be specified if debug is required.
+   <p><code>-f first_ttl</code> is the TTL value used for the first packet.
+   (The default value is 1). 
    <p><code>host</code> is the remote hostname and is mandatory.
   */
 
   public static void main( String[] args ){
 
-    final String errortext = "Usage: Traceroute -p protocol -l localhost -d host";
+    final String errortext = "Usage: Traceroute -p protocol -l localhost -d -f first_ttl host";
     
     if( args.length == 0 ){
     	System.err.println( errortext );
@@ -65,6 +67,8 @@ public class Traceroute {
            localhost = null ;
 
     String protocollabel = null ;
+
+	short ttl = 0 ;
    
     boolean debug = false ;
 
@@ -82,6 +86,13 @@ public class Traceroute {
         localhost = args[ ++ i ]; 
       } else if( args[ i ].equals("-d") ){
         debug = true ;
+      } else if( args[ i ].equals("-f") ){
+		try {
+		  ttl = Short.parseShort( args[ ++ i ] );  
+		} catch( NumberFormatException e ){
+		  System.err.println("Invalid TTL value");
+		  System.exit( 3 );
+		}
       } else {
         System.err.println( errortext );
         System.exit( 1 );
@@ -149,8 +160,6 @@ public class Traceroute {
             mindt = Float.MAX_VALUE ,
             maxdt = Float.MIN_VALUE ;
 
-      short ttl = 0 ;
-
       int sourceport = 42000 ,
           destinationport = 64000 ;
 
@@ -179,7 +188,7 @@ public class Traceroute {
 
 
         sendbuffer = IP4Writer.write( IP4.TOS_ICMP , 
-                                      ++ ttl , 
+                                      ttl ++ , 
                                       (byte) protocol , 
                                       localaddr != null ? localaddr.getAddress() : new byte[ 4 ] , 
                                       hostaddr.getAddress() , 
