@@ -57,9 +57,9 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
 
   final static boolean includeipheader = SocketUtils.includeHeader();
 
-  static double alpha = 0.9 ,
-                beta = 2.0 ,
-                packetloss = 0.1 ;
+  static double alpha ,
+                beta ,
+                packetloss ;
 
   final static InetAddress ip0 = GeneralSocketImpl.createInetAddress() ,
                            iplocalhost = GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , new byte[] {127,0,0,1} );
@@ -112,6 +112,8 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
 		   betalabel = System.getProperty("tcpj.rto.beta"),
 		   packetlosslabel = System.getProperty("tcpj.packetloss.rate");
   	
+  	alpha = 0.9 ;
+  	
 	if( alphalabel instanceof String ){    
 		try {
 			alpha = Double.valueOf( alphalabel ).doubleValue();
@@ -119,13 +121,17 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
 		}
 	}
 	
+	beta = 2.0 ;
+	
 	if( betalabel instanceof String ){    
 		try {
 			beta = Double.valueOf( betalabel ).doubleValue();
 		} catch ( NumberFormatException e ) {
 		}
 	}
-	
+
+    packetloss = 0.1 ;
+    	
 	if( packetlosslabel instanceof String ){    
 		try {
 			packetloss = Double.valueOf( packetlosslabel ).doubleValue();
@@ -158,52 +164,6 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     }
   }
   
-  /** 
-   Sends a TCP message to the destination but doesn't await acknowledgement. 
-   Checks whether the receiver is ready to receive.
-  */ 
-
-  void send( int flags , TCPOptions options , byte[] buffer , int offset , int count , boolean retransmission ) throws IOException {
-
-    int sendsize ;
-
-    if( ( flags & TCP.PSH ) > 0 ){
-      sendsize = localseqnum - acknowledgedseqnum ;
-      while( count > 0 ){
-        while( sendsize >= destwindowsize ){
-          try {
-            wait(); // Persist timer
-          } catch( InterruptedException ie ) {
-          }
-        }
-        sendsize = Math.min( count , acknowledgedseqnum + destwindowsize - localseqnum );
-        transmit( flags , options , buffer , offset , sendsize , retransmission );
-        offset += sendsize ;
-        count -= sendsize ; 
-      } 
-    } else {
-      transmit( flags , options , buffer , offset , count , retransmission );
-    }
-  }
-
-  /**
-   Updates the Retransmission Timeout Value (RTO).
-  */
-
-  void updateRTO(){
-  
-    if( sendtime > 0 && receivetime > 0 ){
-      rtt = (long)( alpha * rtt + ( 1 - alpha )*( receivetime - sendtime ) );
-      rto = (long)( beta * rtt );
-      sendtime = 0 ;
-      receivetime = 0 ;
-
-      if( debug ){
-        System.err.println("Updated rto: " + rto );
-      }
-    }
-  }
-
   /**
    Sends a message and awaits acknowledgement. Updates the estimate 
    of the connection round-trip time.
@@ -223,6 +183,8 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
       delay *= 2 ;
       sendsize = acknowledgedseqnum == 0 ? 0 : localseqnum - acknowledgedseqnum ;
       while( ( acknowledgedseqnum == 0 || sendsize > 0  ) && counter ++ < transmissionlimit ){
+      	System.err.println("localseqnum: " + localseqnum );
+      	System.err.println("acknowledgedseqnum: " + acknowledgedseqnum );
         send( flags , options , buffer , Math.max( offset - sendsize , 0 ) , Math.min( sendsize , buffer.length ) , true );
         wait( delay );
         delay *= 2 ;
@@ -240,14 +202,6 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   }
 
   /**
-   Sends a message with no data but doesn't await acknowledgement.
-  */
-
-  void send( int flags ) throws IOException {
-    send( flags , new TCPOptions() , new byte[0] , 0 , 0 , false );
-  }
-
-  /**
    Sends a message with no data and awaits acknowledgement.
   */
 
@@ -261,6 +215,42 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
 
   void sendAndAwaitACK( int flags , TCPOptions options ) throws IOException {
     sendAndAwaitACK( flags , options , new byte[0] , 0 , 0 );
+  }
+
+  /** 
+   Sends a TCP message to the destination but doesn't await acknowledgement. 
+   Checks whether the receiver is ready to receive.
+  */ 
+
+  void send( int flags , TCPOptions options , byte[] buffer , int offset , int count , boolean retransmission ) throws IOException {
+
+	int sendsize ;
+
+	if( ( flags & TCP.PSH ) > 0 ){
+	  sendsize = localseqnum - acknowledgedseqnum ;
+	  while( count > 0 ){
+		while( sendsize >= destwindowsize ){
+		  try {
+			wait(); // Persist timer
+		  } catch( InterruptedException ie ) {
+		  }
+		}
+		sendsize = Math.min( count , acknowledgedseqnum + destwindowsize - localseqnum );
+		transmit( flags , options , buffer , offset , sendsize , retransmission );
+		offset += sendsize ;
+		count -= sendsize ; 
+	  } 
+	} else {
+	  transmit( flags , options , buffer , offset , count , retransmission );
+	}
+  }
+
+  /**
+   Sends a message with no data but doesn't await acknowledgement.
+  */
+
+  void send( int flags ) throws IOException {
+	send( flags , new TCPOptions() , new byte[0] , 0 , 0 , false );
   }
 
   /** 
@@ -342,6 +332,24 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     }
 
     socket.send( new DatagramPacket( sendbuffer , sendbuffer.length , address , port ) );
+  }
+
+  /**
+   Updates the Retransmission Timeout Value (RTO).
+  */
+
+  void updateRTO(){
+  
+	if( sendtime > 0 && receivetime > 0 ){
+	  rtt = (long)( alpha * rtt + ( 1 - alpha )*( receivetime - sendtime ) );
+	  rto = (long)( beta * rtt );
+	  sendtime = 0 ;
+	  receivetime = 0 ;
+
+	  if( debug ){
+		System.err.println("Updated rto: " + rto );
+	  }
+	}
   }
 
   /**
@@ -613,6 +621,8 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     }
 
     resetSocket();
+    
+    socket.close();
   }
       
   synchronized void setState( int state ){
