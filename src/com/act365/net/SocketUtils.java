@@ -66,46 +66,51 @@ public class SocketUtils {
 		protocol = SocketConstants.IPPROTO_ICMP ;
 		includeheader = false ; 
 		DatagramSocket.setDatagramSocketImplFactory( new ICMPDatagramSocketImplFactory() );
-	  } else if( protocollabel.equalsIgnoreCase("RawICMP") ){
+	  } else if( protocollabel.equalsIgnoreCase("HdrICMP") ){
 		protocol = SocketConstants.IPPROTO_ICMP ;
 		includeheader = true ;
-		DatagramSocket.setDatagramSocketImplFactory( new RawICMPDatagramSocketImplFactory() );
+		DatagramSocket.setDatagramSocketImplFactory( new HdrICMPDatagramSocketImplFactory() );
 	  } else if( protocollabel.equalsIgnoreCase("TCP") ){
 		protocol = SocketConstants.IPPROTO_TCP ;
 		includeheader = false ;
-		DatagramSocket.setDatagramSocketImplFactory( new TCPDatagramSocketImplFactory() );
 		Socket.setSocketImplFactory( new TCPSocketImplFactory() );
 		ServerSocket.setSocketFactory( new TCPSocketImplFactory() );
 	  } else if( protocollabel.equalsIgnoreCase("RawTCP") ){
 		protocol = SocketConstants.IPPROTO_TCP ;
-		includeheader = true ;
-		DatagramSocket.setDatagramSocketImplFactory( new RawTCPDatagramSocketImplFactory() );
-		Socket.setSocketImplFactory( new TCPSocketImplFactory() );
-		ServerSocket.setSocketFactory( new TCPSocketImplFactory() );
-	  } else if( protocollabel.equalsIgnoreCase("TCPJ") ){
-		protocol = SocketConstants.IPPROTO_TCPJ ;
 		includeheader = false ;
-		DatagramSocket.setDatagramSocketImplFactory( new TCPJDatagramSocketImplFactory() );
-		Socket.setSocketImplFactory( new TCPJSocketImplFactory() );
-		ServerSocket.setSocketFactory( new TCPJSocketImplFactory() );      	
+		DatagramSocket.setDatagramSocketImplFactory( new RawTCPDatagramSocketImplFactory() );
+		Socket.setSocketImplFactory( new RawTCPSocketImplFactory() );
+		ServerSocket.setSocketFactory( new RawTCPSocketImplFactory() );
+	  } else if( protocollabel.equalsIgnoreCase("RawHdrTCP") ){
+		protocol = SocketConstants.IPPROTO_TCP ;
+		includeheader = true ;
+		DatagramSocket.setDatagramSocketImplFactory( new RawHdrTCPDatagramSocketImplFactory() );
+		Socket.setSocketImplFactory( new RawTCPSocketImplFactory() );
+		ServerSocket.setSocketFactory( new RawTCPSocketImplFactory() );
 	  } else if( protocollabel.equalsIgnoreCase("RawTCPJ") ){
 		protocol = SocketConstants.IPPROTO_TCPJ ;
-		includeheader = true ;
-		DatagramSocket.setDatagramSocketImplFactory( new RawTCPJDatagramSocketImplFactory() );
-		Socket.setSocketImplFactory( new TCPJSocketImplFactory() );
-		ServerSocket.setSocketFactory( new TCPJSocketImplFactory() );      	
-	  } else if( protocollabel.equalsIgnoreCase("SystemUDP") ){
-		protocol = SocketConstants.IPPROTO_UDP ;
 		includeheader = false ;
-		DatagramSocket.setDatagramSocketImplFactory( new UDPSocketImplFactory() );
+		DatagramSocket.setDatagramSocketImplFactory( new RawTCPJDatagramSocketImplFactory() );
+		Socket.setSocketImplFactory( new RawTCPSocketImplFactory() );
+		ServerSocket.setSocketFactory( new RawTCPSocketImplFactory() );      	
+	  } else if( protocollabel.equalsIgnoreCase("RawHdrTCPJ") ){
+		protocol = SocketConstants.IPPROTO_TCPJ ;
+		includeheader = true ;
+		DatagramSocket.setDatagramSocketImplFactory( new RawHdrTCPJDatagramSocketImplFactory() );
+		Socket.setSocketImplFactory( new RawTCPSocketImplFactory() );
+		ServerSocket.setSocketFactory( new RawTCPSocketImplFactory() );      	
 	  } else if( protocollabel.equalsIgnoreCase("UDP") ){
 		protocol = SocketConstants.IPPROTO_UDP ;
 		includeheader = false ;
 		DatagramSocket.setDatagramSocketImplFactory( new UDPDatagramSocketImplFactory() );
 	  } else if( protocollabel.equalsIgnoreCase("RawUDP") ){
 		protocol = SocketConstants.IPPROTO_UDP ;
-		includeheader = true ;
+		includeheader = false ;
 		DatagramSocket.setDatagramSocketImplFactory( new RawUDPDatagramSocketImplFactory() );
+	  } else if( protocollabel.equalsIgnoreCase("RawHdrUDP") ){
+		protocol = SocketConstants.IPPROTO_UDP ;
+		includeheader = true ;
+		DatagramSocket.setDatagramSocketImplFactory( new RawHdrUDPDatagramSocketImplFactory() );
 	  } else {
 		throw new IOException("Protocol" + protocollabel + " is not supported");
 	  }

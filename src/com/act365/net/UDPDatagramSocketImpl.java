@@ -32,7 +32,8 @@ import com.act365.net.SocketConstants ;
 
 /**
  * A socket class for the transmission of UDP packets.
- * The operating system will write the necessary IP headers. 
+ * The user simply writes the data - the operating system 
+ * will write the necessary UDP and IP headers. 
  */
 
 public class UDPDatagramSocketImpl extends GeneralDatagramSocketImpl {
@@ -42,7 +43,7 @@ public class UDPDatagramSocketImpl extends GeneralDatagramSocketImpl {
   */
 
   public void create () throws SocketException {
-    create( SocketConstants.SOCK_RAW , SocketConstants.IPPROTO_UDP , false );
+    create( SocketConstants.SOCK_DGRAM , SocketConstants.IPPROTO_IP , false );
   }
 };
 

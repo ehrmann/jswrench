@@ -35,7 +35,7 @@ import com.act365.net.SocketConstants ;
  * The user will write the necessary IP headers. 
  */
 
-public class RawICMPDatagramSocketImpl extends GeneralDatagramSocketImpl {
+public class HdrICMPDatagramSocketImpl extends GeneralDatagramSocketImpl {
 
   /**
    Creates a new unconnected ICMP socket.

@@ -29,17 +29,17 @@ package com.act365.net;
 import java.net.*;
 
 /**
- * Factory to create <code>RawICMPDatagramSocketImpl</code> objects.
- * @see RawICMPDatagramSocketImpl
+ * Factory to create <code>HdrICMPDatagramSocketImpl</code> objects.
+ * @see HdrICMPDatagramSocketImpl
  */
 
-public class RawICMPDatagramSocketImplFactory implements DatagramSocketImplFactory {
+public class HdrICMPDatagramSocketImplFactory implements DatagramSocketImplFactory {
 
   /**
-   * Creates a <code>RawDatagramSocketImpl</code> instance.
+   * Creates a <code>HdrICMPDatagramSocketImpl</code> instance.
    */
   
   public DatagramSocketImpl createDatagramSocketImpl() {
-    return new RawICMPDatagramSocketImpl();
+    return new HdrICMPDatagramSocketImpl();
   }
 } 
