@@ -27,6 +27,7 @@
 package com.act365.net.icmp ;
 
 import com.act365.net.*;
+import com.act365.net.ip.*;
 
 import java.io.* ;
 
@@ -86,6 +87,19 @@ public class ICMPReader {
      message.offset = offset + datastart ;
      message.count = count - datastart ;
 
+     if( ! isQuery ){
+
+         int i = 0 ;
+     
+         while( i < 4 ){
+             if( message.data[ message.offset + i ++ ] != 0 ){
+                 throw new IOException("ICMP error messages lacks zero padding");
+             }
+         }
+         
+         message.ip4Message = IP4Reader.read( message.data , message.offset + 4 , message.count , false );
+     }
+     
      return message ;
   }
 }
