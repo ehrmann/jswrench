@@ -94,13 +94,7 @@ public abstract class GeneralDatagramSocketImpl extends DatagramSocketImpl {
   */
 
   public void bind( int localPort , InetAddress inetAddress ) throws SocketException {
-
-    if( ! SocketWrenchSession.isRaw() ){
-        _bind( getSocketDescriptor( fd ) , inetAddress.getAddress() , localPort );
-    } else {
-        _send( getSocketDescriptor( fd ) , inetAddress.getAddress() , localPort , new byte[0]  , 0 );
-    }
-    
+    _bind( getSocketDescriptor( fd ) , inetAddress.getAddress() , localPort );    
     this.localPort = localPort ;
   }
 
