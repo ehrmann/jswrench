@@ -46,9 +46,7 @@ public abstract class GeneralDatagramSocketImpl extends DatagramSocketImpl {
    and call the version in the superclass with the parameters set
    appropriately. When a raw socket is set up, the user has the option to write
    his own IP header sockets (set <code>headerincluded</code> to <code>true</code>)
-   or to allow the operating system to write the headers. NB The option does
-   not exist on Windows, where the <code>IP_HDRINCL</code> symbol is 
-   unsupported.
+   or to allow the operating system to write the headers. 
    @see com.act365.net.SocketConstants
    @param socketType the socket type as defined in <code>SocketConstants</code> e.g. SOCK_RAW
    @param protocol the protocol as defined in <code>SocketConstants</code> e.g. IPPROTO_UDP
