@@ -31,6 +31,7 @@ import com.act365.net.icmp.*;
 import com.act365.net.ip.*;
 import com.act365.net.udp.*;
 
+import java.io.InterruptedIOException;
 import java.net.*;
 import java.util.*;
 
@@ -68,7 +69,7 @@ public class Traceroute {
 
     String protocollabel = null ;
 
-	short ttl = 0 ;
+	short ttl = 1 ;
    
     boolean debug = false ;
 
@@ -161,6 +162,8 @@ public class Traceroute {
       int sourceport = 42000 ,
           destinationport = 64000 ;
 
+      socket.setSoTimeout( 3000 );
+      
       while( message == null || message.type != ICMP.ICMP_ECHOREPLY && message.type != ICMP.ICMP_DEST_UNREACH ){
 
         SocketUtils.longToBytes( new Date().getTime() , timebuffer , 0 );
@@ -201,8 +204,14 @@ public class Traceroute {
 
         packet = new DatagramPacket( recvbuffer , maxdatagramlength );
 
-        socket.receive( packet );
-
+        try {
+          socket.receive( packet );
+        } catch( InterruptedIOException e ){
+          message = null ;
+          System.out.println( ttl ++ + ". *.*.*.*/*.*.*.*");            
+          continue ;
+        }
+        
         if( ( message = ICMPReader.read( packet.getData() , 20 , packet.getLength() - 20 , false ) ) != null ){ 
 
           if( message.isQuery() && ( message.identifier != socket.hashCode() ) ){
@@ -214,7 +223,7 @@ public class Traceroute {
             SocketUtils.dump( System.err , packet.getData() , 0 , packet.getLength() );
           }  
 
-          System.out.print( ttl + ". ");
+          System.out.print( ttl ++ + ". ");
           
           if( message.type == ICMP.ICMP_TIME_EXCEEDED ||
               message.type == ICMP.ICMP_ECHOREPLY || 
@@ -223,8 +232,6 @@ public class Traceroute {
           } else {
             System.out.println( message.toString() );
           }
-          
-          ++ ttl ;
         }
       }
 
