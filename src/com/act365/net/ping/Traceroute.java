@@ -220,6 +220,10 @@ public class Traceroute {
           
           if( debug ){
             System.err.println("RECEIVE:");
+            System.err.println( message.toString() );
+            if( message.ip4Message != null ){
+                System.err.println( message.ip4Message );
+            }
             SocketUtils.dump( System.err , packet.getData() , 0 , packet.getLength() );
           }  
 
