@@ -53,7 +53,7 @@ public:
     static u_short javaPortToUnixPort( jint javaPort );
     static int socketConstants( const int socketid );
     static int socketOptions( const int optid , int& platform_optid , int& platform_level ); 
-    static int errorCode();
+    static void throwError( JNIEnv* env , const jclass& exceptionclass , const char*  prefix = NULL );
 };
 
 #include <ostream>

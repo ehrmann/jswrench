@@ -35,6 +35,7 @@
 #endif
 
 #include <assert.h>
+#include <errno.h>
 
 int SocketUtils::jbyteArrayToInAddr( JNIEnv*    env ,
                                      jbyteArray javaAddress ,
@@ -267,13 +268,258 @@ int SocketUtils::socketOptions( const int optid , int& platform_optid , int& pla
     return TRUE ;
 }
 
-int SocketUtils::errorCode()
+void SocketUtils::throwError( JNIEnv*       env ,
+                              const jclass& exceptionclass ,
+                              const char*   prefix )
 {
+    // Determine the error code.
+
+    int errorcode ;
+
 #ifdef WIN32
-    return WSAGetLastError();
+    errorcode = WSAGetLastError();
 #else
-    return errno ;
+    errorcode = errno ;
 #endif
+
+    // Convert the error code into a text message.
+
+    char errortext[100];
+
+    if( prefix ){    
+        sprintf( errortext , "%s: error %d: ", prefix , errorcode );
+    } else {
+        sprintf( errortext , "error %d: ", errorcode );
+    }
+
+#ifdef WIN32
+
+    switch( errorcode ){
+
+    case WSAEINTR:
+        strcat( errortext , "Interrupted function call (WSAEINTR)" );
+        break;
+
+    case WSAEACCES:
+        strcat( errortext , "Permission denied (WSAEACCES)" );
+        break;
+
+    case WSAEFAULT:
+        strcat( errortext , "Bad address (WSAEFAULT)" );
+        break;
+
+    case WSAEINVAL:
+        strcat( errortext , "Invalid argument (WSAEINVAL)" );
+        break;
+
+    case WSAEMFILE:
+        strcat( errortext , "Too many open files (WSAEMFILE)" );
+        break;
+
+    case WSAEWOULDBLOCK:
+        strcat( errortext , "Resource temporarily unavailable (WSAEWOULDBLOCK)" );
+        break;
+
+    case WSAEINPROGRESS:
+        strcat( errortext , "Operation now in progress (WSAEINPROGRESS)" );
+        break;
+
+    case WSAEALREADY:
+        strcat( errortext , "Operation already in progress (WSAEALREADY)" );
+        break;
+
+    case WSAENOTSOCK:
+        strcat( errortext , "Socket operation on nonsocket (WSAENOTSOCK)" );
+        break;
+
+    case WSAEDESTADDRREQ:
+        strcat( errortext , "Destination address required (WSAEDESTADDRREQ)" );
+        break;
+
+    case WSAEMSGSIZE:
+        strcat( errortext , "Message too long (WSAEMSGSIZE)" );
+        break;
+
+    case WSAEPROTOTYPE:
+        strcat( errortext , "Protocol wrong type for socket (WSAEPROTOTYPR)" );
+        break;
+
+    case WSAENOPROTOOPT:
+        strcat( errortext , "Bad protocol option (WSAENOPROTOOPT)" );
+        break;
+
+    case WSAEPROTONOSUPPORT:
+        strcat( errortext , "Protocol not supported (WSAEPROTONOSUPPORT)" );
+        break;
+
+    case WSAESOCKTNOSUPPORT:
+        strcat( errortext , "Socket type not supported (WSASOCKTNOSUPPORT)" );
+        break;
+
+    case WSAEOPNOTSUPP:
+        strcat( errortext , "Operation not supported (WSAEOPNOTSUPP)" );
+        break;
+
+    case WSAEPFNOSUPPORT:
+        strcat( errortext , "Protocol family not supported (WSAEPFNOSUPPORT)" );
+        break;
+
+    case WSAEAFNOSUPPORT:
+        strcat( errortext , "Address family not supported by protocol family (WSAEAFNOSUPPORT)" );
+        break;
+
+    case WSAEADDRINUSE:
+        strcat( errortext , "Address already in use (WSAEADDRINUSE)" );
+        break;
+
+    case WSAEADDRNOTAVAIL:
+        strcat( errortext , "Cannot assign requested address (WSAEADDRNOTAVAIL)" );
+        break;
+
+    case WSAENETDOWN:
+        strcat( errortext , "Network is down (WSAENETDOWN)" );
+        break;
+
+    case WSAENETUNREACH:
+        strcat( errortext , "Network is unreachable (WSAENETUNREACH)" );
+        break;
+
+    case WSAENETRESET:
+        strcat( errortext , "Network dropped connection on reset (WSAENETRESET)" );
+        break;
+
+    case WSAECONNABORTED:
+        strcat( errortext , "Software caused connection abort (WSAECONNABORTED)" );
+        break;
+
+    case WSAECONNRESET:
+        strcat( errortext , "Connection reset by peer (WSAECONNRESET)" );
+        break;
+
+    case WSAENOBUFS:
+        strcat( errortext , "No buffer space available (WSAENOBUFS)" );
+        break;
+
+    case WSAEISCONN:
+        strcat( errortext , "Socket is already connected (WSAEISCONN)" );
+        break;
+
+    case WSAENOTCONN:
+        strcat( errortext , "Socket is not connected (WSAENOTCONN)" );
+        break;
+
+    case WSAESHUTDOWN:
+        strcat( errortext , "Cannot send after socket shutdown (WSAESHUTDOWN)" );
+        break;
+
+    case WSAETIMEDOUT:
+        strcat( errortext , "Connection timed out (WSAETIMEDOUT)" );
+        break;
+
+    case WSAECONNREFUSED:
+        strcat( errortext , "Connection refused (WSAECONNREFUSED)" );
+        break;
+
+    case WSAEHOSTDOWN:
+        strcat( errortext , "Host is down (WSAEHOSTDOWN)" );
+        break;
+
+    case WSAEHOSTUNREACH:
+        strcat( errortext , "No route to host (WSAEHOSTUNREACH)" );
+        break;
+
+    case WSAEPROCLIM:
+        strcat( errortext , "Too many processes (WSAEPROCLIM)" );
+        break;
+
+    case WSASYSNOTREADY:
+        strcat( errortext , "Network subsystem is unavailable (WSASYSNOTREADY)" );
+        break;
+
+    case WSAVERNOTSUPPORTED:
+        strcat( errortext , "winsock.dll version out of range (WSAVERNOTSUPPORTED)" );
+        break;
+
+    case WSANOTINITIALISED:
+        strcat( errortext , "Successful WSAStartup not yet performed (WSANOTINITIALISED)" );
+        break;
+
+    case WSAEDISCON:
+        strcat( errortext , "Graceful shutdown in progress (WSAEDISCON)" );
+        break;
+
+    case WSATYPE_NOT_FOUND:
+        strcat( errortext , "Class type not found (WSATYPE_NOT_FOUND)" );
+        break;
+
+    case WSAHOST_NOT_FOUND:
+        strcat( errortext , "Host not found (WSAHOST_NOT_FOUND)" );
+        break;
+
+    case WSATRY_AGAIN:
+        strcat( errortext , "Nonauthorative host not found (WSATRY_AGAIN)" );
+        break;
+
+    case WSANO_RECOVERY:
+        strcat( errortext , "This is a nonrecoverable error (WSANO_RECOVERY)" );
+        break;
+
+    case WSANO_DATA:
+        strcat( errortext , "Valid name, no data record of requested type (WSANO_DATA)" );
+        break;
+
+    case WSA_INVALID_HANDLE:
+        strcat( errortext , "Specified event object handle is invalid (WSA_INVALID_HANDLE)" );
+        break;
+
+    case WSA_INVALID_PARAMETER:
+        strcat( errortext , "One or more parameters is invalid (WSA_INVALID_PARAMETER)" );
+        break;
+
+    case WSA_IO_INCOMPLETE:
+        strcat( errortext , "Overlapped I/O event object not in signalled state (WSA_IO_INCOMPLETE)" );
+        break;
+
+    case WSA_IO_PENDING:
+        strcat( errortext , "Overlapped operations will complete later (WSA_IO_PENDING)" );
+        break;
+
+    case WSA_NOT_ENOUGH_MEMORY:
+        strcat( errortext , "Insufficient memory available (WSA_NOT_ENOUGH_MEMORY)" );
+        break;
+
+    case WSA_OPERATION_ABORTED:
+        strcat( errortext , "Overlapped operation aborted (WSA_OPERATION_ABORTED)" );
+        break;
+/*
+    case WSAINVALIDPROCTABLE:
+        strcat( errortext , "Invalid procedure table from service provider (WSAINVALIDPROCTABLE)" );
+        break;
+
+    case WSAINVALIDPROVIDER:
+        strcat( errortext , "Invalid service provider version number (WSAINVALIDPROVIDER)" );
+        break;
+
+    case WSAPROVIDERFAILEDINIT:
+        strcat( errortext , "Unable to initialize a service provider (WSAPROVIDERFAILEDINIT)" );
+        break;
+*/
+    case WSASYSCALLFAILURE:
+        strcat( errortext , "System call failure (WSASYSCALLFAILURE)" );
+        break;
+
+    default:
+        strcat( errortext , "Unknown" );
+        break;
+    }
+
+#else
+
+    strcat( errortext , strerror( errorcode ) );
+
+#endif
+
+    env -> ThrowNew( exceptionclass , errortext );
 }
 
 ostream& operator<<( ostream& str , const sockaddr_in& address )

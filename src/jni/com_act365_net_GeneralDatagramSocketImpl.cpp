@@ -29,7 +29,6 @@
 #include "SocketUtils.h"
 
 #include <assert.h>
-#include <errno.h>
 
 #ifdef WIN32
 #include <winsock2.h>
@@ -62,52 +61,23 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1socket( JNIEnv* env
 
       jclass exceptionClass = env -> FindClass("java/net/SocketException");
 
-      switch( errno ){
-
-        case EINVAL:
-          env -> ThrowNew( exceptionClass , "socket(): Unknown protocol" );
-          break;
-
-        case ENFILE:
-          env -> ThrowNew( exceptionClass , "socket(): Not enough kernel memory" );
-          break;
-
-        case EMFILE:
-          env -> ThrowNew( exceptionClass , "socket(): Process file table overflow" );
-          break;
-
-        case EACCES:
-          env -> ThrowNew( exceptionClass , "socket(): Permission denied" );
-          break;
-
-#ifndef WIN32
-        case ENOBUFS:
-#endif
-
-        case ENOMEM:
-          env -> ThrowNew( exceptionClass , "socket(): Insufficient memory available" );
-          break;
-
-#ifndef WIN32
-        case EPROTONOSUPPORT:
-          env -> ThrowNew( exceptionClass , "socket(): Protocol not supported" );
-          break;
-#endif
-
-        default:
-            {
-                char errorText[50];
-                sprintf( errorText , "socket(): Unknown I/O error: %d" , errno );
-                env -> ThrowNew( exceptionClass , errorText );
-            }
-            break;
-      }
+      SocketUtils::throwError( env , exceptionClass , "socket()" );
 
       env -> DeleteLocalRef( exceptionClass );
     }
 
     if(  type == SOCK_RAW && headerincluded ){
-      setsockopt( ret , IPPROTO_IP , IP_HDRINCL , (char*) & headerincluded , sizeof( headerincluded ) );
+
+        int one = 1 ; // Necessary for Windows
+
+        if( setsockopt( ret , IPPROTO_IP , IP_HDRINCL , (char*) & one , sizeof( one ) ) ){
+
+            jclass exceptionClass = env -> FindClass("java/net/SocketException");
+             
+            SocketUtils::throwError( env , exceptionClass , "setsockopt()" );
+
+            env -> DeleteLocalRef( exceptionClass );
+        }
     }
 
     return ret ;
@@ -134,81 +104,7 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1bind( JNIEnv*    en
 
           jclass exceptionClass = env -> FindClass("java/net/SocketException");
 
-          switch( SocketUtils::errorCode() ){
-
-            case EBADF:
-              env -> ThrowNew( exceptionClass , "bind(): Invalid descriptor" );
-              break;
-
-            case EINVAL:
-              env -> ThrowNew( exceptionClass , "bind(): Socket already bound" );
-              break;
-
-            case EACCES:
-              env -> ThrowNew( exceptionClass , "bind(): Address is protected" );
-              break;
-
-            case ENOENT:
-              env -> ThrowNew( exceptionClass , "bind(): No such file or directory" );
-              break;
-
-#ifndef WIN32
-            case ENOTSOCK:
-              env -> ThrowNew( exceptionClass , "bind(): Descriptor describes file" );
-              break;
-
-#else 
-
-            case WSANOTINITIALISED:
-                env ->ThrowNew( exceptionClass , "bind(): Winsock 2 not initialised" );
-                break;
-
-            case WSAENETDOWN:
-                env -> ThrowNew( exceptionClass , "bind(): Network subsystem has failed" );
-                break;
-
-            case WSAEACCES:
-                env -> ThrowNew( exceptionClass , "bind(): setsockopt option SO_BROADCAST not enabled" );
-                break;
-
-            case WSAEADDRINUSE:
-                env -> ThrowNew( exceptionClass , "bind(): Socket already bound" );
-                break;
-
-            case WSAEADDRNOTAVAIL:
-                env -> ThrowNew( exceptionClass , "bind(): Specified address is invalid" );
-                break;
-
-            case WSAEFAULT:
-                env -> ThrowNew( exceptionClass , "bind(): Name is not a valid part of the user address space" );
-                break;
-
-            case WSAEINPROGRESS:
-                env -> ThrowNew( exceptionClass , "bind(): Blocking call is in progress" );
-                break;
-
-            case WSAEINVAL:
-                env -> ThrowNew( exceptionClass , "bind(): Socket already bound" );
-                break;
-
-            case WSAENOBUFS:
-                env -> ThrowNew( exceptionClass , "bind(): Not enough buffers available" );
-                break;
-
-            case WSAENOTSOCK:
-                env -> ThrowNew( exceptionClass , "bind(): Descriptor is not a socket" );
-                break;
-
-#endif
-
-            default:
-                {
-                    char errorText[50];
-                    sprintf( errorText , "bind(): Unknown I/O error: %d" , errno );
-                    env -> ThrowNew( exceptionClass , errorText );
-                }
-                break;
-          }
+          SocketUtils::throwError( env , exceptionClass , "bind()" );
 
           env -> DeleteLocalRef( exceptionClass );
         } 
@@ -238,21 +134,8 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1close(JNIEnv* env ,
     if( ret == -1 ){
 
       jclass exceptionClass = env -> FindClass("java/net/SocketException");
-   
-      switch( errno ){
 
-        case EBADF:
-          env -> ThrowNew( exceptionClass , "close(): Invalid descriptor" );
-          break;
-
-        default:
-            {
-                char errorText[50];
-                sprintf( errorText , "close(): Unknown I/O error: %d" , errno );
-                env -> ThrowNew( exceptionClass , errorText );
-            }
-            break;
-      }
+      SocketUtils::throwError( env , exceptionClass , "close()" );
 
       env -> DeleteLocalRef( exceptionClass );
     }
@@ -296,64 +179,7 @@ void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1receive( JNIEnv* en
 
     jclass exceptionClass = env -> FindClass("java/io/IOException");
 
-    switch( errno ){
-  
-    case EINTR:
-      env -> ThrowNew( exceptionClass , "Interrupted by signal" );
-      break;
-
-    case EAGAIN:
-      env -> ThrowNew( exceptionClass , "No data available with non-blocking I/O selected" );
-      break;
-
-    case EIO:
-      env -> ThrowNew( exceptionClass , "Low-level I/O error" );
-      break;
-
-    case EISDIR:
-      env -> ThrowNew( exceptionClass , "Socket descriptor refers to a directory" );
-      break;
-
-    case EBADF:
-      env -> ThrowNew( exceptionClass , "Socket descriptor is invalid");
-      break;
-
-    case EINVAL:
-      env -> ThrowNew( exceptionClass , "Socket descriptor attached to unreadable object");
-      break;
-
-    case EFAULT:
-      env -> ThrowNew( exceptionClass , "Buffer lies outside accessible address space");
-      break;
-
-    case ENOENT:
-      env -> ThrowNew( exceptionClass , "No such file or directory" );
-      break;
-
-#ifndef WIN32
-
-    case ENOTCONN:
-      env -> ThrowNew( exceptionClass , "Socket is not connected" );
-      break;
-
-    case ENOTSOCK:
-      env -> ThrowNew( exceptionClass , "Descriptor does not refer to a socket" );
-      break;
-
-    case ECONNRESET:
-      env -> ThrowNew( exceptionClass , "Connection reset by peer" );
-      break ;
-
-#endif
-
-    default:
-      {
-        char errorText[50];
-        sprintf( errorText , "Unknown I/O error: %d" , errno );
-        env -> ThrowNew( exceptionClass , errorText );
-      }
-      break;
-    }
+    SocketUtils::throwError( env , exceptionClass , "recvfrom()" );
 
     env -> DeleteLocalRef( exceptionClass );
 

@@ -26,6 +26,8 @@
 
 #include "com_act365_net_GeneralSocketInputStream.h"
 
+#include "SocketUtils.h"
+
 #ifdef WIN32
 #include <winsock2.h>
 #else
@@ -33,8 +35,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #endif
-
-#include <errno.h>
 
 JNIEXPORT 
 jint JNICALL Java_com_act365_net_GeneralSocketInputStream__1read( JNIEnv *   env , 
@@ -52,49 +52,14 @@ jint JNICALL Java_com_act365_net_GeneralSocketInputStream__1read( JNIEnv *   env
   int ret = 0 , nLeft = count , nRead ;
 
   while( nLeft > 0 ){
+    
     nRead = recv( socketDescriptor , pStream , nLeft , 0 );
+
     if( nRead < 0 ){
 
       jclass exceptionClass = env -> FindClass("java/io/IOException");
 
-      switch( errno ){
-  
-      case EINTR:
-        env -> ThrowNew( exceptionClass , "read(): Interrupted by signal" );
-        break;
-
-      case EAGAIN:
-        env -> ThrowNew( exceptionClass , "read(): No data available with non-blocking I/O selected" );
-        break;
-
-      case EIO:
-        env -> ThrowNew( exceptionClass , "read(): Low-level I/O error" );
-        break;
-
-      case EISDIR:
-        env -> ThrowNew( exceptionClass , "read(): Socket descriptor refers to a directory" );
-        break;
-
-      case EBADF:
-        env -> ThrowNew( exceptionClass , "read(): Socket descriptor is not open to be read");
-        break;
-
-      case EINVAL:
-        env -> ThrowNew( exceptionClass , "read(): Socket descriptor attached to unreadable object");
-        break;
-
-      case EFAULT:
-        env -> ThrowNew( exceptionClass , "read(): Buffer lies outside accessible address space");
-        break;
-
-      default:
-          {
-              char errorText[50];
-              sprintf( errorText , "read(): Unknown I/O error: %d" , errno );
-              env -> ThrowNew( exceptionClass , errorText );
-          }
-          break;
-      }
+      SocketUtils::throwError( env , exceptionClass , "recv()" );
 
       env -> DeleteLocalRef( exceptionClass );
 
