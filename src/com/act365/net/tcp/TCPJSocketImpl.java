@@ -394,7 +394,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     writestart = 0 ;
     writeend = 0 ;
  
-    rtt = 1000 ;
+    rtt = 5000 ;
     rto = (long)( beta * rtt );
     sendtime = 0 ;
     receivetime = 0 ;
@@ -886,15 +886,15 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     tcpjsocket.destwindowsize = destwindowsize ;
 
     if( ! address.equals( ip0 ) ){
-      tcpjsocket.localhost = GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , address.getAddress() );
+      tcpjsocket.address = GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , address.getAddress() );
     } else {
-      tcpjsocket.localhost = GeneralSocketImpl.createInetAddress();
+      tcpjsocket.address = GeneralSocketImpl.createInetAddress();
     }
 
     if( ! localhost.equals( ip0 ) ){
-      tcpjsocket.address = GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , localhost.getAddress() );
+      tcpjsocket.localhost = GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , localhost.getAddress() );
     } else {
-      tcpjsocket.address = GeneralSocketImpl.createInetAddress();
+      tcpjsocket.localhost = GeneralSocketImpl.createInetAddress();
     }
 
     port  = 0 ;
