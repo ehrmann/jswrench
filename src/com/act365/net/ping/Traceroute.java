@@ -29,6 +29,7 @@ package com.act365.net.ping ;
 import com.act365.net.*;
 import com.act365.net.icmp.*;
 import com.act365.net.ip.*;
+import com.act365.net.tcp.* ;
 import com.act365.net.udp.* ;
 
 import java.io.InterruptedIOException;
@@ -37,7 +38,9 @@ import java.util.*;
 
 /**
  Implements the well-known Traceroute network utility. The app supports
- the broadcast of UDP or ICMP ECHO_REQUEST packets.
+ the broadcast of UDP, ICMP ECHO_REQUEST, TCP or TCP/J packets. Note that the 
+ TCP version of the app won't terminate correctly because the TCP RST
+ signal sent by the remote host isn't read.
 */
 
 public class Traceroute {
@@ -46,7 +49,7 @@ public class Traceroute {
    Executes the Traceroute service.
    <p>Usage: <code>Traceroute -p protocol -l localhost -d -f first_ttl host</code>
    <p><code>protocol</code> is the protocol to be used for broadcast. The default 
-   is ICMP - the alternative is UDP.
+   is ICMP - the alternatives are UDP, TCP or TCPJ.
    <p><code>localhost</code> is the local host address, which should be specified
    (though it isn't compulsory) to ensure the correct IP header is formed.
    <p><code>-d</code> should be specified if debug is required.
@@ -103,6 +106,10 @@ public class Traceroute {
             protocol = SocketConstants.IPPROTO_ICMP ;
         } else if( protocollabel.equalsIgnoreCase("UDP") ){
             protocol = SocketConstants.IPPROTO_UDP ;
+        } else if( protocollabel.equalsIgnoreCase("TCP") ){
+            protocol = SocketConstants.IPPROTO_TCP ;
+        } else if( protocollabel.equalsIgnoreCase("TCPJ") ){
+            protocol = SocketConstants.IPPROTO_TCPJ ;
         } else {    
             System.err.println("Unsupported protocol");
             System.exit( 2 );
@@ -207,7 +214,49 @@ public class Traceroute {
             socket.setSourcePort( sourceport ++ );
           
             break;
-        }
+            
+        case SocketConstants.IPPROTO_TCP:
+        
+            message = new TCPMessage( (short) sourceport ,
+                                      (short) destinationport ++ ,
+                                      0 ,
+                                      0 ,
+                                      false ,
+                                      false ,
+                                      true ,
+                                      false ,
+                                      false ,
+                                      (short) -1 ,
+                                      new TCPOptions() ,
+                                      new byte[] {} ,
+                                      0 ,
+                                      0 );
+                                      
+           socket.setSourcePort( sourceport ++ );
+            
+           break;
+
+       case SocketConstants.IPPROTO_TCPJ:
+        
+           message = new TCPJMessage( (short) sourceport ,
+                                      (short) destinationport ++ ,
+                                      0 ,
+                                      0 ,
+                                      false ,
+                                      false ,
+                                      true ,
+                                      false ,
+                                      false ,
+                                      (short) -1 ,
+                                      new TCPOptions() ,
+                                      new byte[] {} ,
+                                      0 ,
+                                      0 );
+                                      
+           socket.setSourcePort( sourceport ++ );
+          
+           break;
+       }
                                          
         socket.send( message , hostaddr );
 
