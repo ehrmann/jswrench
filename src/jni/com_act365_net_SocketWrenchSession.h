@@ -49,6 +49,14 @@ JNIEXPORT jint JNICALL Java_com_act365_net_SocketWrenchSession__1startup
 JNIEXPORT jint JNICALL Java_com_act365_net_SocketWrenchSession__1shutdown
   (JNIEnv *, jclass);
 
+/*
+ * Class:     com_act365_net_SocketWrenchSession
+ * Method:    _deinstallProvider
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_com_act365_net_SocketWrenchSession__1deinstallProvider
+  (JNIEnv *, jclass, jint);
+
 #ifdef __cplusplus
 }
 #endif
