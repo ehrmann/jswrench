@@ -27,7 +27,7 @@
 package com.act365.net.tftp;
 
 import java.net.* ;
-import java.io.IOException ;
+import java.io.* ;
 
 /**
  * TCPNetworkImpl implements standard client-side TFTP network functions with TCP/IP.
@@ -41,12 +41,12 @@ public class TCPNetworkImpl extends TCPNetworkBase implements INetworkImpl {
      * Creates an connected TCPNetworkImpl with optional debug.
      * 
      * @param socket - socket that connects to the server
-     * @param trace - whether debug is required
+     * @param debug - where debug is to be written (null for no debug)
      */    
     
-    public TCPNetworkImpl( Socket socket , boolean trace ) throws TFTPException {
+    public TCPNetworkImpl( Socket socket , OutputStream debug ) throws TFTPException {
     
-        super( trace );
+        super( debug );
         
         try {
             this.socket = socket ;
@@ -62,11 +62,11 @@ public class TCPNetworkImpl extends TCPNetworkBase implements INetworkImpl {
     /**
      * Creates an unconnected TCPNetworkImpl with optional debug.
      * 
-     * @param trace - whether debug is required
+     * @param debug - where debug is to be written (null for no debug)
      */    
     
-    public TCPNetworkImpl( boolean trace ){
-        super( trace ); 
+    public TCPNetworkImpl( OutputStream debug ){
+        super( debug ); 
     }
     
     /**

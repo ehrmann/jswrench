@@ -26,33 +26,43 @@
 
 package com.act365.net.tftp;
 
+import java.io.* ;
+
 /**
  * ErrorHandler provides error-handling for the entire TFTP project.
  */
 
 public class ErrorHandler {
     
-    boolean trace ;
+    protected OutputStream debug ;
     
+    PrintWriter writer ;
+
+    protected boolean trace ;
+        
     /**
      * Creates an error-handler
      * 
-     * @param trace - whether debug is required
+     * @param output - where debug is to be written (null if no debug required)
      */
     
-    protected ErrorHandler( boolean trace ){
-        this.trace = trace ;
+    protected ErrorHandler( OutputStream debug ){
+        if( debug instanceof OutputStream ){
+            this.debug = debug ;        
+            writer = new PrintWriter( debug , true );
+        }
+        trace = true ;
     }
 
     /**
-     * Writes debug to standard error.
+     * Writes debug to the chosen stream.
      * 
      * @param errortext - debug text
      */
     
     protected void debug( String errortext ){       
-        if( trace ){
-            System.err.println( errortext );
+        if( trace && writer instanceof PrintWriter ){
+            writer.println( errortext );
         }
     }
     

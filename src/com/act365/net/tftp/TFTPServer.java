@@ -28,6 +28,8 @@ package com.act365.net.tftp;
 
 import com.act365.net.* ;
 
+import java.io.* ;
+
 /**
  * TFTPServer implements the TFTP protocol on the server side.
  */
@@ -38,18 +40,19 @@ public class TFTPServer extends ErrorHandler implements Runnable {
      * TFTPServer accepts the following command-line options
      * 
      * -p port#     port to listen on
-     * -t           turns on trace facility
+     * -l logfile   turns on debug
+     * -i           interactive (instead of daemon)
      * 
      * @param args - command-line argument
      */
     
     public static void main( String[] args ) throws Exception {
         
-        // Main code
-        
-        boolean trace = false ;
+        OutputStream debug = null ;
         
         int port = 0 ;
+        
+        String logfile = "";
         
         // Parse the command line options.
         
@@ -73,11 +76,26 @@ public class TFTPServer extends ErrorHandler implements Runnable {
                   
                   break;
                   
-                case 't':
+                case 'l':
                 
-                  trace = true ;
-                  break;
+                  if( arg < args.length - 1 ){
+                      logfile = args[ ++ arg ];
+                  } else {
+                    quit("-l requires another argument");
+                  }
                   
+                  if( logfile.equals("-") ){
+                      debug = System.err ;
+                  } else {
+                      try {
+                          debug = new FileOutputStream( logfile );
+                      } catch ( FileNotFoundException e ) {
+                          quit("File " + logfile + " not found");
+                      }
+                  }
+                  
+                  break;
+        
                 default:
                 
                   quit("Unknown command line option: " + args[ arg ] );
@@ -90,11 +108,11 @@ public class TFTPServer extends ErrorHandler implements Runnable {
         
         SocketUtils.setProtocol("UDP");
         
-        UDPNetworkServerImpl network = new UDPNetworkServerImpl( trace );
+        UDPNetworkServerImpl network = new UDPNetworkServerImpl( debug );
                             
         try {  
             network.init( port );
-            new Thread( new TFTPServer( network , trace ) ).run();
+            new Thread( new TFTPServer( network , debug ) ).run();
         } catch ( TFTPException e ) {
             e.printStackTrace();
             quit( e );
@@ -109,12 +127,12 @@ public class TFTPServer extends ErrorHandler implements Runnable {
      * Creates a server with a given network connection and optional debug.
      * 
      * @param network - network connection
-     * @param trace - whether debug is required
+     * @param debug - where debug is to be written
      */
     
-    public TFTPServer( UDPNetworkServerImpl network , boolean trace ){
+    public TFTPServer( UDPNetworkServerImpl network , OutputStream debug ){
         
-        super( trace );
+        super( debug );
         
         this.network = network ;
     }
@@ -131,7 +149,7 @@ public class TFTPServer extends ErrorHandler implements Runnable {
         while( true ){   
           try {     
             newNetwork = network.open();
-            new Thread( new TFTPWorker( newNetwork , trace ) ).run();
+            new Thread( new TFTPWorker( newNetwork , debug ) ).run();
           } catch ( TFTPException e ) {    
             e.printStackTrace();
             quit( e );

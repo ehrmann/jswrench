@@ -38,11 +38,11 @@ public class UDPNetworkImpl extends UDPNetworkBase implements INetworkImpl {
     /**
      * Creates a UDPNetworkImpl with optional debug.
      * 
-     * @param trace - whether debug is required
+     * @param debug - where debug is to be written (null for no debug)
      */    
     
-    public UDPNetworkImpl( boolean trace ){
-        super( trace ); 
+    public UDPNetworkImpl( OutputStream debug ){
+        super( debug ); 
     }
     
     /**

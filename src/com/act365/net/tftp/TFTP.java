@@ -142,7 +142,7 @@ public class TFTP extends TFTPBase {
      		++ arg ;
      	}
 
-        UDPNetworkImpl network = new UDPNetworkImpl( trace );
+        UDPNetworkImpl network = new UDPNetworkImpl( System.err );
          
         new SocketWrenchSession();
             
@@ -161,7 +161,7 @@ public class TFTP extends TFTPBase {
       * @param args - list of command-line arguments
       * @param arg - position of first filename within command-line arguments
       * @param hostname - remote hostname
-      * @param trace - whether debug is required
+      * @param trace - where debug is to be written 
       * @param verbose - whether verbosity is required
       * @param network - network implementation to use
       * @throws TFTPException - can't read from input or can't execute it
@@ -174,7 +174,7 @@ public class TFTP extends TFTPBase {
                   boolean verbose ,
                   INetworkImpl network ) throws TFTPException {
      	
-        super( network , trace );
+        super( network , System.err );
         	
         this.hostname = hostname ;
         this.verbose = verbose ;
@@ -240,10 +240,10 @@ public class TFTP extends TFTPBase {
      		      continue;
      		  
      		    case StreamTokenizer.TT_NUMBER:
-     		      command("Unexpected numerical input " + st.nval );
+     		      quit("Unexpected numerical input " + st.nval );
                   
                 default:
-                  command("Unexpected character");
+                  quit("Unexpected character");
      		  }
      		  
             } catch ( TFTPCommandException e ) {

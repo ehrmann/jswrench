@@ -37,8 +37,8 @@ import java.io.*;
 public abstract class TFTPBase extends ErrorHandler {
 
   protected TFTPBase( INetworkImplBase network ,
-                      boolean trace ){
-      super( trace );
+                      OutputStream debug ){
+      super( debug );
       
       this.network = network ;
   }

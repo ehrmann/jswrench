@@ -37,8 +37,8 @@ public class TCPNetworkServerImpl extends TCPNetworkBase implements INetworkServ
 
     ServerSocket socket = null ;
     
-    public TCPNetworkServerImpl( boolean trace ){
-        super( trace );
+    public TCPNetworkServerImpl( OutputStream debug ){
+        super( debug );
     }
     
 	public void init( int port ) throws TFTPException {
@@ -60,7 +60,7 @@ public class TCPNetworkServerImpl extends TCPNetworkBase implements INetworkServ
           system("Cannot accept connection from client");
       }
       
-      return new TCPNetworkImpl( clientSocket , trace );
+      return new TCPNetworkImpl( clientSocket , debug );
 	}
 
     /**

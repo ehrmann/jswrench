@@ -6,7 +6,7 @@
  */
 package com.act365.net.tftp;
 
-import java.io.IOException ;
+import java.io.* ;
 import java.net.* ;
 
 /**
@@ -29,8 +29,8 @@ public class UDPNetworkBase extends ErrorHandler {
    * @param trace - whether debug is required
    */
   
-  protected UDPNetworkBase( boolean trace ){
-      super( trace );
+  protected UDPNetworkBase( OutputStream debug ){
+      super( debug );
   }
 
   /**

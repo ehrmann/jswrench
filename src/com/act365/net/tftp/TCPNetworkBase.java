@@ -48,11 +48,11 @@ public class TCPNetworkBase extends ErrorHandler {
   /**
    * Creates a TCPNetworkBase instance with optional debug.
    * 
-   * @param trace - whether debug is required
+   * @param debug - whether debug is to be written (null for no debug)
    */
   
-  protected TCPNetworkBase( boolean trace ){
-      super( trace );
+  protected TCPNetworkBase( OutputStream debug ){
+      super( debug );
   }
 
   /**

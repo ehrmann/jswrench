@@ -41,8 +41,8 @@ public class UDPNetworkServerImpl extends UDPNetworkBase implements INetworkServ
     
     int receiveSize = -1 ;
     
-    public UDPNetworkServerImpl( boolean trace ){
-        super( trace );
+    public UDPNetworkServerImpl( OutputStream debug ){
+        super( debug );
     }
     
 	public void init( int port ) throws TFTPException {
@@ -77,7 +77,7 @@ public class UDPNetworkServerImpl extends UDPNetworkBase implements INetworkServ
        * to the existing client.
        */      
        
-      UDPNetworkServerImpl network = new UDPNetworkServerImpl( trace );
+      UDPNetworkServerImpl network = new UDPNetworkServerImpl( debug );
 
       try {      
           network.socket = new DatagramSocket();
