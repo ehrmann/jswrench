@@ -48,8 +48,7 @@ public class JSWDatagramSocket extends DatagramSocket {
     byte[] sendBuffer ,
            receiveBuffer ,
            sourceAddress ;
-    
-                   
+                       
     protected JSWDatagramSocket() throws SocketException {
         super();
         
@@ -81,12 +80,12 @@ public class JSWDatagramSocket extends DatagramSocket {
      * @throws IOException
      */
     
-    public void send( byte[] buffer ,
+    public void send( int srcPort ,
+                      byte[] destAddress , 
+                      int destPort ,
+                      byte[] buffer ,
                       int offset ,
-                      int count , 
-                      int srcPort ,
-                      InetAddress destAddress , 
-                      int destPort ) throws IOException {
+                      int count ) throws IOException {
     
         if( ! SocketWrenchSession.isRaw() && 
             SocketWrenchSession.getProtocol() != SocketConstants.IPPROTO_UDP ){
@@ -101,7 +100,7 @@ public class JSWDatagramSocket extends DatagramSocket {
                                        (short) timeToLive ,
                                        (byte) SocketConstants.IPPROTO_UDP ,
                                        sourceAddress ,
-                                       destAddress.getAddress() ,
+                                       destAddress ,
                                        new byte[0] ,
                                        sendBuffer ,
                                        cursor );                                                   
@@ -111,7 +110,7 @@ public class JSWDatagramSocket extends DatagramSocket {
             
             cursor += UDPWriter.write( sourceAddress ,
                                        (byte) srcPort ,
-                                       destAddress.getAddress() ,
+                                       destAddress ,
                                        (short)  destPort ,
                                         buffer ,
                                         offset ,
@@ -133,14 +132,16 @@ public class JSWDatagramSocket extends DatagramSocket {
             }
         }
         
-        send( new DatagramPacket( sendBuffer , cursor , destAddress , destPort ) );
+        send( new DatagramPacket( sendBuffer , cursor , GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , destAddress ) , destPort ) );
     }
 
-    public void send( byte[] data ,
-                      int identifier ,
+    public void send( int identifier ,
                       int type ,
                       int code ,
-                      InetAddress destAddress ) throws IOException {
+                      byte[] data ,
+                      int dataOffset ,
+                      int dataCount ,
+                      byte[] destAddress ) throws IOException {
     
         if( ! SocketWrenchSession.isRaw() ){
             throw new IOException("Sending of ICMP messages incompatible with selected protocol");
@@ -154,17 +155,91 @@ public class JSWDatagramSocket extends DatagramSocket {
                                        (short) timeToLive ,
                                        (byte) SocketConstants.IPPROTO_ICMP ,
                                        sourceAddress ,
-                                       destAddress.getAddress() ,
+                                       destAddress ,
                                        new byte[0] ,
                                        sendBuffer ,
                                        cursor );                                                   
         }
 
-        cursor += new ICMPWriter( (short) identifier ).write( (byte) type , (byte) code , data , sendBuffer , cursor );
+        cursor += new ICMPWriter( (short) identifier ).write( (byte) type , (byte) code , data , dataOffset , dataCount , sendBuffer , cursor );
                         
-        send( new DatagramPacket( sendBuffer , cursor , destAddress , 0 ) );
+        send( new DatagramPacket( sendBuffer , cursor , GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , destAddress ) , 0 ) );
     }
-    
+
+    public void send( int sourcePort ,
+                      byte[] destAddress ,
+                      int destPort ,
+                      int seqNumber ,
+                      int ackNumber ,
+                      boolean ack ,
+                      boolean rst ,
+                      boolean syn ,
+                      boolean fin ,
+                      boolean psh ,
+                      int windowSize ,
+                      TCPOptions options ,
+                      byte[] writeBuffer ,
+                      int writeStart ,
+                      int writeEnd ) throws IOException {
+                                
+      if( ! SocketWrenchSession.isRaw() && 
+            SocketWrenchSession.getProtocol() != SocketConstants.IPPROTO_TCP ){
+            throw new IOException("Sending of TCP messages incompatible with selected protocol");
+      }
+        
+      int cursor = 0 ;
+        
+      if( SocketWrenchSession.includeHeader() ){
+
+          cursor += IP4Writer.write( (byte) typeOfService ,
+                                     (short) timeToLive ,
+                                     (byte) SocketConstants.IPPROTO_UDP ,
+                                     sourceAddress ,
+                                     destAddress ,
+                                     new byte[0] ,
+                                     sendBuffer ,
+                                     cursor );                                                   
+      }
+        
+      if( SocketWrenchSession.isRaw()){
+                      
+          cursor += TCPWriter.write( sourceAddress ,
+                                     (short) sourcePort ,
+                                     destAddress ,
+                                     (short) destPort ,
+                                     seqNumber ,
+                                     ackNumber ,
+                                     ack ,
+                                     rst ,
+                                     syn ,
+                                     fin ,
+                                     psh ,
+                                     (short) windowSize ,
+                                     options ,
+                                     writeBuffer ,
+                                     writeStart ,
+                                     writeEnd ,
+                                     sendBuffer ,
+                                     cursor );
+      } else {
+            
+          try {
+ 
+              int i = 0 ,
+                  count = ( writeEnd - writeStart )% writeBuffer.length ;
+            
+              while( i < count ){
+                  sendBuffer[ cursor ++ ] = writeBuffer[( writeStart + i ++ )% writeBuffer.length ]; 
+              }
+                
+          } catch ( ArrayIndexOutOfBoundsException e ) {                
+              throw new IOException("UDP Write buffer overflow");
+          }
+      }
+        
+      send( new DatagramPacket( sendBuffer , cursor , GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , destAddress ) , destPort ) );
+    }
+                             
     public int receive( IP4Message ip4Message ,
                         UDPMessage udpMessage ) throws IOException {
     
@@ -227,6 +302,38 @@ public class JSWDatagramSocket extends DatagramSocket {
         }
         
         return SocketConstants.IPPROTO_ICMP ;
+    }
+    
+    public int receive( IP4Message ip4Message ,
+                        TCPMessage udpMessage ) throws IOException {
+    
+        DatagramPacket dgram = new DatagramPacket( receiveBuffer , receiveBuffer.length );
+        
+        receive( dgram );
+        
+        int cursor = 0 ,
+            length = dgram.getLength() ,
+            size ;
+        
+        if( SocketWrenchSession.isRaw() && ip4Message instanceof IP4Message ){
+            size = IP4Reader.read( ip4Message , receiveBuffer , cursor , length , true );
+        } else {
+            size = ip4HeaderLength ;
+        }
+    
+        cursor += size ;
+        length -= size ;
+        
+        size = TCPReader.read( udpMessage , receiveBuffer , cursor , length , true , sourceAddress , dgram.getAddress().getAddress() );
+        
+        cursor += size ;
+        length -= size ;
+        
+        if( cursor != dgram.getLength() || length != 0 ){
+            throw new IOException("Illegal TCP message format");
+        }
+        
+        return SocketConstants.IPPROTO_TCP ;
     }
     
     public int receive( IP4Message ip4Message ,
