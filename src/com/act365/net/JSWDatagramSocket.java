@@ -342,11 +342,15 @@ public class JSWDatagramSocket extends DatagramSocket {
                     if( protocol != SocketConstants.IPPROTO_UDP ){
                         throw new IOException("Non-UDP Datagram packet");    
                     }
-                    if( sourceAddress[ 0 ] != ip4Message.destination[ 0 ] ||
-                        sourceAddress[ 1 ] != ip4Message.destination[ 1 ] ||
-                        sourceAddress[ 2 ] != ip4Message.destination[ 2 ] ||
-                        sourceAddress[ 3 ] != ip4Message.destination[ 3 ] ){
-                            continue ;
+                    if( ( sourceAddress[ 0 ] != 0 ||
+                          sourceAddress[ 1 ] != 0 ||
+                          sourceAddress[ 2 ] != 0 ||
+                          sourceAddress[ 3 ] != 0 ) && 
+                        ( sourceAddress[ 0 ] != ip4Message.destination[ 0 ] ||
+                          sourceAddress[ 1 ] != ip4Message.destination[ 1 ] ||
+                          sourceAddress[ 2 ] != ip4Message.destination[ 2 ] ||
+                          sourceAddress[ 3 ] != ip4Message.destination[ 3 ] ) ){
+                              continue ;
                     }
                         
                 } else {
@@ -432,11 +436,15 @@ public class JSWDatagramSocket extends DatagramSocket {
                 if( protocol != SocketConstants.IPPROTO_ICMP ){
                     throw new IOException("Non-ICMP Datagram packet");    
                 }
-                if( sourceAddress[ 0 ] != ip4Message.destination[ 0 ] ||
-                    sourceAddress[ 1 ] != ip4Message.destination[ 1 ] ||
-                    sourceAddress[ 2 ] != ip4Message.destination[ 2 ] ||
-                    sourceAddress[ 3 ] != ip4Message.destination[ 3 ] ){
-                        continue ;
+                if( ( sourceAddress[ 0 ] != 0 ||
+                      sourceAddress[ 1 ] != 0 ||
+                      sourceAddress[ 2 ] != 0 ||
+                      sourceAddress[ 3 ] != 0 ) && 
+                    ( sourceAddress[ 0 ] != ip4Message.destination[ 0 ] ||
+                      sourceAddress[ 1 ] != ip4Message.destination[ 1 ] ||
+                      sourceAddress[ 2 ] != ip4Message.destination[ 2 ] ||
+                      sourceAddress[ 3 ] != ip4Message.destination[ 3 ] ) ){
+                          continue ;
                 }
             } else {
                 size = ip4HeaderLength ;
@@ -495,11 +503,15 @@ public class JSWDatagramSocket extends DatagramSocket {
                         protocol != SocketConstants.IPPROTO_TCPJ ){
                         throw new IOException("Non-TCP Datagram packet");    
                     }
-                    if( sourceAddress[ 0 ] != ip4Message.destination[ 0 ] ||
-                        sourceAddress[ 1 ] != ip4Message.destination[ 1 ] ||
-                        sourceAddress[ 2 ] != ip4Message.destination[ 2 ] ||
-                        sourceAddress[ 3 ] != ip4Message.destination[ 3 ] ){
-                            continue ;
+                    if( ( sourceAddress[ 0 ] != 0 ||
+                          sourceAddress[ 1 ] != 0 ||
+                          sourceAddress[ 2 ] != 0 ||
+                          sourceAddress[ 3 ] != 0 ) && 
+                        ( sourceAddress[ 0 ] != ip4Message.destination[ 0 ] ||
+                          sourceAddress[ 1 ] != ip4Message.destination[ 1 ] ||
+                          sourceAddress[ 2 ] != ip4Message.destination[ 2 ] ||
+                          sourceAddress[ 3 ] != ip4Message.destination[ 3 ] ) ){
+                              continue ;
                     }
                         
                 } else {
