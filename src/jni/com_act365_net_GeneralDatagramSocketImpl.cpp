@@ -55,6 +55,17 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1socket( JNIEnv* env
 {
     int type = SocketUtils::socketConstants( socketType );
 
+#ifdef WIN32
+    if( type == SOCK_RAW ){
+
+      jclass exceptionClass = env -> FindClass("java/net/SocketException");
+
+      env -> ThrowNew( exceptionClass , "User-defined IP headers not supported on Windows");
+
+      return -1 ;
+    }
+#endif
+
     int ret = socket( addressFamily , type , protocol );
 
     if( ret == -1 ){
@@ -104,13 +115,13 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1socket( JNIEnv* env
 
       env -> DeleteLocalRef( exceptionClass );
     }
-  
+
 #ifndef WIN32
     if( type == SOCK_RAW ){
       setsockopt( ret , IPPROTO_IP , IP_HDRINCL , (char*) & headerincluded , sizeof( headerincluded ) );
     }
 #endif
-  
+
     return ret ;
 }
 
