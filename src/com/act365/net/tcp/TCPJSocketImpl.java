@@ -227,9 +227,9 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
 
   void transmit( int flags , TCPOptions options , byte[] buffer , int offset , int count , boolean retransmit ) throws IOException {
 
-    if( localhost == null ){
+    if( localhost.equals( ip0 ) ){
       throw new IOException("Local address not yet set");
-    } else if( address == null ){
+    } else if( address.equals( ip0 ) ){
       throw new IOException("Destination address not yet set");
     } else if( port == 0 ){
       throw new IOException("Destination port not yet set");
@@ -498,7 +498,8 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     }
   
     if( ! message.rst ){
-      System.err.println("RST from state: " + state );
+      System.err.println("RST from state: " + TCP.statelabels[ state ] );
+      System.err.println( message );
       send( TCP.RST );
     }
 
@@ -949,6 +950,12 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
       sb.append(":");
       sb.append( port );
     }
+    
+    if( count ++ > 0 ){
+    	sb.append(",");
+    }
+    sb.append("state=");
+    sb.append( TCP.statelabels[ state ] );
     
     return sb.toString();    
   }
