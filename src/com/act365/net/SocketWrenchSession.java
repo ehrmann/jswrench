@@ -61,14 +61,42 @@ public class SocketWrenchSession {
   */
 
   protected void finalize() {
-    try {
-      _shutdown();
-    } catch ( SocketException e ) {
-      System.err.println( e.getMessage() );
-    }
+      shutdown();
   }
 
   native static int _shutdown() throws SocketException ;
+  
+  /**
+   * Since the <code>System.runFinalizersOnExit()</code> method
+   * has been deprecated, the user should call <code>shutdown()</code>
+   * at the end of each app in order to ensure that all resources
+   * (especially on Windows) are recovered.
+   */
+  
+  public static void shutdown(){
+      try {
+        _shutdown();
+      } catch ( SocketException e ) {
+        System.err.println( e.getMessage() );
+      }
+  }
+  
+  /**
+   * Removes the local service provider for the given protocol.
+   * Typically, the function will be used to disable the local TCP
+   * service on Windows (in favour of RawTCP). The function will
+   * do nothing on Linux.
+   * 
+   * @param protocol the protocol to be disabled
+   * @return whether the protocol service provider has been successfullly disabled 
+   */
+  
+  static boolean deinstallProvider( int protocol ) throws SocketException {
+      return _deinstallProvider( protocol ) > 0 ;
+  }
+  
+  native static int _deinstallProvider( int protocol ) throws SocketException ;
+  
   /**
    * The protocol in use in the current session.
    */
@@ -79,7 +107,7 @@ public class SocketWrenchSession {
                  isRaw = false ;
     
   /**
-   * Sets the factory classes for <code>Socket</code>, <code>ServerSocket</code>
+   * <p>Sets the factory classes for <code>Socket</code>, <code>ServerSocket</code>
    * and <code>DatagramSocket</code> according to the choice of protocol. 
    * The TCP, TCP/J, UDP and ICMP protocols are supported. (TCP/J is a clone
    * of TCP that uses the IP protocol code 156). The addition of the 'Raw' 
@@ -87,11 +115,22 @@ public class SocketWrenchSession {
    * underlying implementation, in which case the user will have to construct
    * the protocol-specific header for transmitted packets. The addition of
    * the 'Hdr' prefix to the protocol indicates that the user wishes to
-   * construct the IP header in addition to the protocol-specific header.
+   * construct the IP header in addition to the protocol-specific header.</p>
    *   
-   * The <code>Socket</code> and <code>ServerSocket</code> factory objects 
-   * will be set for TCP-based protocols.
-   * 
+   * <p>The <code>Socket</code> and <code>ServerSocket</code> factory objects 
+   * will be set for TCP-based protocols.</p>
+   *
+   * <p>The calls to <code>deinstallProvider</code> have been commented
+   * out because the deinstallation of TCP providers does not enable raw
+   * TCP sockets on Windows. Anyone who intends to experiment with the
+   * deinstallation of service providers is advised to define a Restore
+   * Point (see System Restore under the XP Help and Support menu) beforehand,
+   * because the deinstallation involves permanent writes to the registry.
+   * In many cases, the writes will be cancelled by the <code>shutdown()</code>
+   * call - however, some apps, such as <code>Sniffer</code>, do not call 
+   * <code>shutdown()</code>, which means they will effectively leave
+   * TCP disabled upon exit.</p>
+   *  
    * @param proto protocol to be used in the app
    */
     
@@ -134,6 +173,7 @@ public class SocketWrenchSession {
               protocol = SocketConstants.IPPROTO_TCP ;
               includeheader = false ;
               isRaw = true ;
+//              deinstallProvider( SocketConstants.IPPROTO_TCP );
               DatagramSocket.setDatagramSocketImplFactory( new RawTCPDatagramSocketImplFactory() );
               Socket.setSocketImplFactory( new RawTCPSocketImplFactory() );
               ServerSocket.setSocketFactory( new RawTCPSocketImplFactory() );
@@ -143,6 +183,7 @@ public class SocketWrenchSession {
               protocol = SocketConstants.IPPROTO_TCP ;
               includeheader = true ;
               isRaw = true ;
+//              deinstallProvider( SocketConstants.IPPROTO_TCP );
               DatagramSocket.setDatagramSocketImplFactory( new RawHdrTCPDatagramSocketImplFactory() );
               Socket.setSocketImplFactory( new RawTCPSocketImplFactory() );
               ServerSocket.setSocketFactory( new RawTCPSocketImplFactory() );
