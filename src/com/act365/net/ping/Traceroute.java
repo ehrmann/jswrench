@@ -185,7 +185,7 @@ public class Traceroute {
       socket.setSoTimeout( 3000 );
       
       while( protocol == SocketConstants.IPPROTO_ICMP && icmpMessage.isQuery() && identifier != recIdentifier || 
-             icmpMessage.type != ICMP.ICMP_ECHOREPLY && icmpMessage.code != ICMP.ICMP_PORT_UNREACH ){
+             icmpMessage.type != ICMP.ICMP_ECHOREPLY && icmpMessage.code != ICMP.ICMP_PORT_UNREACH && icmpMessage.code != ICMP.ICMP_PROT_UNREACH ){
 
         socket.setTimeToLive( ttl );
 
@@ -277,7 +277,8 @@ public class Traceroute {
 
             if( icmpMessage.type != ICMP.ICMP_TIME_EXCEEDED &&
                 icmpMessage.type != ICMP.ICMP_ECHOREPLY && 
-                icmpMessage.code != ICMP.ICMP_PORT_UNREACH ){
+                icmpMessage.code != ICMP.ICMP_PORT_UNREACH &&
+                icmpMessage.code != ICMP.ICMP_PROT_UNREACH ){
                 continue ;
             } 
                 
