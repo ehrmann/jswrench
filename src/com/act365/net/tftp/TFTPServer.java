@@ -41,7 +41,6 @@ public class TFTPServer implements Runnable {
      * 
      * -p port#     port to listen on
      * -l logfile   turns on debug
-     * -i           interactive (instead of daemon)
      * -n protocol  network protocol
      * 
      * @param args - command-line argument

@@ -28,6 +28,7 @@ package com.act365.net.ping ;
 
 import com.act365.net.*;
 import com.act365.net.icmp.*;
+import com.act365.net.ip.*;
 
 import java.net.*;
 import java.util.*;
@@ -38,7 +39,7 @@ import java.util.*;
 
 public class Ping {
 
-  DatagramSocket socket ;
+  JSWDatagramSocket socket ;
 
   int transmitted ;
 
@@ -48,7 +49,7 @@ public class Ping {
    Creates a Ping object to listen for ICMP messages.
   */
 
-  public Ping( DatagramSocket socket , int transmitted ){
+  public Ping( JSWDatagramSocket socket , int transmitted ){
     this.socket = socket ;
     this.transmitted = transmitted ;
     isinterrupted = false ;
@@ -70,13 +71,9 @@ public class Ping {
 
     try {
 
-      final int maxdatagramlength = 512 ;
-
-      byte[] buffer = new byte[ maxdatagramlength ];
-
-      DatagramPacket packet ;
-
-      ICMPMessage message = null ;
+      IP4Message ip4Message = new IP4Message();
+      
+      ICMPMessage message = new ICMPMessage();
 
       int received = 0 ;
 
@@ -90,59 +87,54 @@ public class Ping {
       }
 
       while( !( transmitted >= 0  && received >= transmitted ) && ! isinterrupted ){
-        packet = new DatagramPacket( buffer , maxdatagramlength );
-        socket.receive( packet );
 
-        if( ( message = ICMPReader.read( packet.getData() , 20 , packet.getLength() - 20 , true ) ) != null ){ 
+        socket.receive( ip4Message , message );
 
-          long t1 , t2 ;
+        long t1 , t2 ;
  
-          float dt ;
+        float dt ;
           
-          if( message.identifier != (short) socket.hashCode() ){
-              continue ;
-          }
+        if( message.identifier != (short) hashCode() ){
+            continue ;
+        }
           
-          switch( message.type ) {
+        switch( message.type ) {
 
-            case ICMP.ICMP_ECHOREPLY:
+          case ICMP.ICMP_ECHOREPLY:
 
-              ++ received ;
+            ++ received ;
 
-              System.out.print( message.count + 8 + " bytes from ");
-              System.out.print( packet.getAddress() + ": ");
-              System.out.print( "icmp_seq=" + message.sequence_number + " " );
+            System.out.print( message.count + 8 + " bytes from ");
+            System.out.print( GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , ip4Message.source ).toString() + ": ");
+            System.out.print( "icmp_seq=" + message.sequence_number + " " );
 
-              if( message.count >= 8 ){
+            if( message.count >= 8 ){
 
-                t1 = SocketUtils.longFromBytes( message.data , message.offset );
-                t2 = new Date().getTime();
+              t1 = SocketUtils.longFromBytes( message.data , message.offset );
+              t2 = new Date().getTime();
 
-                dt = t2 - t1 ;
+              dt = t2 - t1 ;
 
-                sumdt += dt ;
+              sumdt += dt ;
 
-                if( dt < mindt ){
-                  mindt = dt ;
-                }
-
-                if( dt > maxdt ){
-                  maxdt = dt ;
-                }
-
-                System.out.println( "time=" + dt + " ms" );
-
-              } else {
-                System.out.println();
+              if( dt < mindt ){
+                mindt = dt ;
               }
-              break;
 
-            case ICMP.ICMP_DEST_UNREACH:
+              if( dt > maxdt ){
+                maxdt = dt ;
+              }
 
-              throw new Exception("Host unreachable");
-          }
-        } else {
-          System.err.println("Null message received");
+              System.out.println( "time=" + dt + " ms" );
+
+            } else {
+              System.out.println();
+            }
+            break;
+
+          case ICMP.ICMP_DEST_UNREACH:
+
+            throw new Exception("Host unreachable");
         }
       }
 
@@ -168,7 +160,7 @@ public class Ping {
    Executes the Ping service.
    Usage: <code>Ping -c count -s nbytes -p protocol -l localhost -t ttl hostname</code>.
    <p><code>-c count</code> (optional) defines the number of packets to be broadcast.
-   By default, the broadcast will continue endlessly. 
+   The default value is 10. 
    <p><code>-s nbytes</code> (optional) defines the number of bytes to appear
    in each packet. The default is 56.
    <p><code>-p protocol</code> (optional) defines the socket protocol to be used.
@@ -193,7 +185,7 @@ public class Ping {
            protocollabel = "ICMP",
            localhost = null ;
 
-    int count = -1 ;
+    int count = 10 ;
 
     int i = -1 ,
         nbytes = 56 ;
@@ -260,10 +252,15 @@ public class Ping {
       System.exit( 6 );
     }
 
-    DatagramSocket socket = null ;
+    JSWDatagramSocket socket = null ;
 
     try {
-      socket = new DatagramSocket();
+      socket = new JSWDatagramSocket();
+      socket.setTimeToLive( ttl );
+      socket.setTypeOfService( IP4.TOS_ICMP );
+      if( localaddr instanceof InetAddress ){
+          socket.setSourceAddress( localaddr.getAddress() );
+      }
     } catch ( SocketException e ) {
       System.err.println( e.getMessage() );
       System.exit( 7 );
@@ -273,12 +270,9 @@ public class Ping {
  
     ( new PingSender( socket , 
                       hostaddr , 
-                      localaddr , 
-                      (short) socket.hashCode() , 
                       receiver , 
                       count , 
-                      nbytes , 
-                      ttl ) ).start();
+                      nbytes ) ).start();
 
     receiver.receive();
   }

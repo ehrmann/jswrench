@@ -53,8 +53,8 @@ class EchoWorker extends Thread {
       StringBuffer buffer = new StringBuffer();
 
       int ch = in.read();
-
-      while( ch > -1 ){
+      
+      while( ch > -1 ){          
         if( ch == 0 ){
           break;
         } else if( ch != '\n' ){

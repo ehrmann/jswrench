@@ -66,18 +66,12 @@ public class DatagramEchoServer {
         port = 0 ,
         maxDatagramLength = 512 ;
 
-    String protocollabel = "",
+    String protocollabel = "JDKUDP",
            localhost = null ;
     
     while( ++ i < args.length ){
       if( args[ i ].equals("-p") && i < args.length - 1 ){
       	protocollabel = args[ ++ i ];
-		if( ! protocollabel.equalsIgnoreCase("UDP") &&
-			! protocollabel.equalsIgnoreCase("RawUDP") &&
-			! protocollabel.equalsIgnoreCase("SystemUDP") ){
-		  System.err.println("Unsupported protocol");
-		  System.exit( 1 );
-		}
       } else if( args[ i ].equals("-l") && i < args.length - 2 ){
       	localhost = args[ ++ i ];
         try {
@@ -99,26 +93,31 @@ public class DatagramEchoServer {
       }
     }
 
+    InetAddress localaddr = null ;
+    
+    try {
+      if( localhost instanceof String ){
+        localaddr = InetAddress.getByName( localhost );
+      }
+    } catch( UnknownHostException e ){
+      System.err.println("Address " + e.getMessage() + " is unknown");
+      System.exit( 5 );
+    }
+
+    new SocketWrenchSession();
+
 	try {
 	  SocketWrenchSession.setProtocol( protocollabel );
 	} catch ( java.io.IOException e ) {
 	  System.err.println("Unsupported protocol");
 	  System.exit( 1 );
 	}
-    
-	InetAddress localaddr = null ;
-    
-	try {
-	  if( localhost instanceof String ){
-		localaddr = InetAddress.getByName( localhost );
-	  }
-	} catch( UnknownHostException e ){
-	  System.err.println("Address " + e.getMessage() + " is unknown");
-	  System.exit( 5 );
-	}
 
-	new SocketWrenchSession();
-
+    if( SocketWrenchSession.getProtocol() != SocketConstants.IPPROTO_UDP ){    
+      System.err.println("UDP protocol must be selected");
+      System.exit( 1 );
+    }
+    
     new DatagramEchoServer( localaddr , port , maxDatagramLength );
   }
 
@@ -128,13 +127,13 @@ public class DatagramEchoServer {
 
     try {
 
-      DatagramSocket server = null ;
+      JSWDatagramSocket server = null ;
 
 	  try { 
 		if( localaddr instanceof InetAddress ){
-		  server = new DatagramSocket( port , localaddr );   	
+		  server = new JSWDatagramSocket( port , localaddr );   	
 		} else {
-		  server = new DatagramSocket( port );
+		  server = new JSWDatagramSocket( port );
 		}
 	  } catch( IOException e ){
 		System.err.println( e.getMessage() );
@@ -144,57 +143,19 @@ public class DatagramEchoServer {
 	  System.err.println("Local address: " + server.getLocalAddress() );
 	  System.err.println("Local port: " + server.getLocalPort() );
       
-      byte[] buffer ;
-
-      int bufferlength ;
+      IP4Message ip4Message = new IP4Message();
       
-      DatagramPacket received = null ;
-
+      UDPMessage udpMessage = new UDPMessage();
+      
       while( true ){
 
-        buffer = new byte[ maxDatagramLength ];
-        
-        received = new DatagramPacket( buffer , maxDatagramLength );
+        server.receive( ip4Message , udpMessage );
 
-        server.receive( received );
-
-        buffer = received.getData();
-        bufferlength = received.getLength();
-        
-        if( SocketWrenchSession.includeHeader() ){
-
-          buffer = IP4Reader.read( received.getData() , 0 , received.getLength() , false ).data ;
-
-          UDPMessage udp = UDPReader.read( buffer , 0 , buffer.length );
-          
-          if( udp.sourceport == port ){
-          	continue;
-          }
-          
-          buffer = udp.data ;
-          
-		  buffer = UDPWriter.write( localaddr != null ? localaddr.getAddress() : new byte[4] ,
-									(short) port ,
-									received.getAddress().getAddress() ,
-									udp.sourceport ,
-									buffer ,
-                                    0 ,
-									buffer.length );
-            
-		  buffer = IP4Writer.write( IP4.TOS_DATA ,
-									(byte) 127 ,
-									(byte) SocketConstants.IPPROTO_UDP ,
-									localaddr != null ? localaddr.getAddress() : new byte[4] ,
-									received.getAddress().getAddress() ,
-									buffer );
-									
-          bufferlength = buffer.length ;
-        }
-                
-        server.send( new DatagramPacket( buffer , 
-                                         buffer.length , 
-                                         received.getAddress() ,
-                                         received.getPort() ) );
+        server.send( ip4Message.source , 
+                     udpMessage.sourceport >= 0 ? udpMessage.sourceport : udpMessage.sourceport ^ 0xffffff00 ,
+                     udpMessage.data ,
+                     udpMessage.offset ,
+                     udpMessage.count );
       }
 
     } catch ( SocketException se ) {
@@ -204,6 +165,7 @@ public class DatagramEchoServer {
       System.err.println( ioe.getMessage() );
       System.exit( 5 );
     } catch( Exception e ){
+        e.printStackTrace();
       System.err.println( e.getMessage() );
       System.exit( 6 );
     }

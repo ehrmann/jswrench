@@ -105,7 +105,7 @@ public class DNSWriter {
     SocketUtils.shortToBytes( (short) message.authority_records.length , buffer , offset + 8 );
     SocketUtils.shortToBytes( (short) message.additional_records.length , buffer , offset + 10 );
    
-    int cursor = 12 ;
+    int cursor = offset + 12 ;
 
     int i = -1 ;
 
@@ -131,7 +131,7 @@ public class DNSWriter {
       cursor += write( message.additional_records[ i ] , buffer , cursor );
     }
 
-    return cursor ;
+    return length ;
   }
 
   /**

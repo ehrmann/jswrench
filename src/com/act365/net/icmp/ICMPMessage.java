@@ -45,7 +45,7 @@ public class ICMPMessage {
   public IP4Message ip4Message ;  
 
   public int length(){
-      return 8 + count ;
+      return count + ( isQuery() ? 8 : 4 );
   }
   
   public String getTypeLabel(){

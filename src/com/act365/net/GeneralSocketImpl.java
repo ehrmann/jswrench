@@ -177,6 +177,9 @@ public abstract class GeneralSocketImpl extends SocketImpl {
   */
 
   public static InetAddress createInetAddress( int family , byte[] ipAddress ){
+    if( ipAddress == null ){
+        throw new NullPointerException("ipAddress has not been defined in GeneralSocketImpl.createInetAddress()");
+    }
 	return _createInetAddress( family , ipAddress );
   }
 

@@ -28,28 +28,22 @@ package com.act365.net.dns ;
 
 import com.act365.net.*;
 
+import java.io.* ;
+
 /**
  * Reads DNS messages from bytestreams.
  */
 
 public class DNSReader {
 
-  int headerLength ;
-
-  /**
-   Constructs a parser to decode DNS bytestreams. 
-   @param headerLength length of the transport header, e.g. 8 for UDP or 20 for TCP
-  */
-
-  public DNSReader( int headerLength ){
-    this.headerLength = headerLength ;
-  }
-
   /**
    Extracts a domain name string from a DNS message, even if compressed.
   */
 
-  int domainName( byte[] buffer , int offset , StringBuffer name ) throws Exception {
+  static int domainName( int initialOffset ,
+                         byte[] buffer , 
+                         int offset , 
+                         StringBuffer name ) throws UnsupportedEncodingException {
 
     final int start = offset ;
 
@@ -64,7 +58,7 @@ public class DNSReader {
         next = buffer[ offset ++ ];
         inext = next >= 0 ? next : 0xffffff00 ^ next ;
         compressed_offset |= inext ;
-        domainName( buffer , compressed_offset + headerLength , compressed );
+        domainName( initialOffset , buffer , compressed_offset + initialOffset , compressed );
         name.append( compressed.toString() );
         break;
       } else {
@@ -85,7 +79,7 @@ public class DNSReader {
    Converts the data in a ResourceRecord object into an appropriate string.
   */
 
-  String dataString( byte[] buffer , int offset , int count , short type ) throws Exception {
+  static String dataString( int initialOffset , byte[] buffer , int offset , int count , short type ) throws UnsupportedEncodingException {
 
     StringBuffer name = new StringBuffer();
 
@@ -109,7 +103,7 @@ public class DNSReader {
       case DNSMessage.CNAME :
       case DNSMessage.PTR :
 
-        domainName( buffer , offset , name );
+        domainName( initialOffset , buffer , offset , name );
 
         break;
 
@@ -119,29 +113,53 @@ public class DNSReader {
         
     return name.toString();
   }
-
+  
   /**
    Reads all of the information from a DNS response.
   */
 
-  public DNSMessage read( byte[] buffer ) throws Exception {
+  public static void read( DNSMessage message , byte[] buffer , int offset , int count ) throws IOException {
+      
+      try {
+          count -= read( message , buffer , offset );
+      } catch ( ArrayIndexOutOfBoundsException e ) {
+          throw new IOException("DNS Read buffer overflow");
+      }
+      
+      if( count != 0 ){
+          throw new IOException("DNS message format error");
+      }
+  }
+  
+  public static int read( DNSMessage message , byte[] buffer , int offset ) throws UnsupportedEncodingException {
 
-    DNSMessage message = new DNSMessage();
+    final int initialOffset = offset ;
+    
+    message.identification = SocketUtils.shortFromBytes( buffer , offset );
+    offset += 2 ;
+    message.flags = SocketUtils.shortFromBytes( buffer , offset );
+    offset += 2 ;
 
-    message.identification = SocketUtils.shortFromBytes( buffer , headerLength );
-    message.flags = SocketUtils.shortFromBytes( buffer , headerLength + 2 );
+    short n_questions ,
+          n_answers ,
+          n_authority ,
+          n_additional ;
 
-    short n_questions  = SocketUtils.shortFromBytes( buffer , headerLength + 4 ) ,
-          n_answers    = SocketUtils.shortFromBytes( buffer , headerLength + 6 ) ,
-          n_authority  = SocketUtils.shortFromBytes( buffer , headerLength + 8 ) ,
-          n_additional = SocketUtils.shortFromBytes( buffer , headerLength + 10 );
-
+    n_questions  = SocketUtils.shortFromBytes( buffer , offset );
+    offset += 2 ;
+    n_answers    = SocketUtils.shortFromBytes( buffer , offset );
+    offset += 2 ;
+    n_authority  = SocketUtils.shortFromBytes( buffer , offset );
+    offset += 2 ;
+    n_additional = SocketUtils.shortFromBytes( buffer , offset );
+    offset += 2 ;
+    
     message.questions = new Query[ n_questions ];
     message.answers = new ResourceRecord[ n_answers ];
     message.authority_records = new ResourceRecord[ n_authority ];
     message.additional_records = new ResourceRecord[ n_additional ];
 
-    int i = -1 , j , offset = headerLength + 12 ;
+    int i = -1 , j ;
 
     StringBuffer name ;
 
@@ -155,7 +173,7 @@ public class DNSReader {
 
     while( ++ i < n_questions ){
       name = new StringBuffer();
-      offset += domainName( buffer , offset , name );
+      offset += domainName( initialOffset , buffer , offset , name );
       namebuffer = name.toString().getBytes("UTF8");
       type_value = SocketUtils.shortFromBytes( buffer , offset );
       offset += 2 ;
@@ -169,7 +187,7 @@ public class DNSReader {
 
     while( ++ i < n_answers ){
       name = new StringBuffer();
-      offset += domainName( buffer , offset , name );
+      offset += domainName( initialOffset , buffer , offset , name );
       namebuffer = name.toString().getBytes("UTF8");
       type_value = SocketUtils.shortFromBytes( buffer , offset );
       offset += 2 ;
@@ -179,7 +197,7 @@ public class DNSReader {
       offset += 4 ;
       data_length = SocketUtils.shortFromBytes( buffer , offset );
       offset += 2 ;
-      datastring = dataString( buffer , offset , data_length , type_value );
+      datastring = dataString( initialOffset , buffer , offset , data_length , type_value );
       databuffer = new byte[ data_length ];
       j = -1 ;
       while( ++ j < data_length ){
@@ -198,7 +216,7 @@ public class DNSReader {
 
     while( ++ i < n_authority ){
       name = new StringBuffer();
-      offset += domainName( buffer , offset , name );
+      offset += domainName( initialOffset , buffer , offset , name );
       namebuffer = name.toString().getBytes("UTF8");
       type_value = SocketUtils.shortFromBytes( buffer , offset );
       offset += 2 ;
@@ -208,7 +226,7 @@ public class DNSReader {
       offset += 4 ;
       data_length = SocketUtils.shortFromBytes( buffer , offset );
       offset += 2 ;
-      datastring = dataString( buffer , offset , data_length , type_value );
+      datastring = dataString( initialOffset , buffer , offset , data_length , type_value );
       databuffer = new byte[ data_length ];
       j = -1 ;
       while( ++ j < data_length ){
@@ -227,7 +245,7 @@ public class DNSReader {
 
     while( ++ i < n_additional ){
       name = new StringBuffer();
-      offset += domainName( buffer , offset , name );
+      offset += domainName( initialOffset , buffer , offset , name );
       namebuffer = name.toString().getBytes("UTF8");
       type_value = SocketUtils.shortFromBytes( buffer , offset );
       offset += 2 ;
@@ -237,7 +255,7 @@ public class DNSReader {
       offset += 4 ;
       data_length = SocketUtils.shortFromBytes( buffer , offset );
       offset += 2 ;
-      datastring = dataString( buffer , offset , data_length , type_value );
+      datastring = dataString( initialOffset , buffer , offset , data_length , type_value );
       databuffer = new byte[ data_length ];
       j = -1 ;
       while( ++ j < data_length ){
@@ -252,7 +270,7 @@ public class DNSReader {
                                                             datastring );
     }
       
-    return message ;
+    return offset - initialOffset ;
   }
 }
 

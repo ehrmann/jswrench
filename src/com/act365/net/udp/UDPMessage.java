@@ -49,9 +49,9 @@ public class UDPMessage {
     StringBuffer sb = new StringBuffer();
 
     sb.append("UDP: source port-");
-    sb.append( sourceport );
+    sb.append( sourceport >= 0 ? sourceport : sourceport ^ 0xffffff00 );
     sb.append(" destination port-");
-    sb.append( destinationport );
+    sb.append( destinationport >= 0 ? destinationport : destinationport ^ 0xffffff00 );
     sb.append(" length-");
     sb.append( length );
     sb.append(" bytes");
@@ -64,7 +64,7 @@ public class UDPMessage {
    */
   
   public int length() {
-      return 8 + data.length ;  
+      return 8 + count ;  
   }
 }
 

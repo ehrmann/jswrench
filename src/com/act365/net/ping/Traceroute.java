@@ -29,7 +29,6 @@ package com.act365.net.ping ;
 import com.act365.net.*;
 import com.act365.net.icmp.*;
 import com.act365.net.ip.*;
-import com.act365.net.udp.*;
 
 import java.io.InterruptedIOException;
 import java.net.*;
@@ -46,9 +45,9 @@ public class Traceroute {
    Executes the Traceroute service.
    <p>Usage: <code>Traceroute -p protocol -l localhost -d -f first_ttl host</code>
    <p><code>protocol</code> is the protocol to be used for broadcast. The default 
-   is HdrICMP - the alternative is HdrUDP.
+   is ICMP - the alternative is UDP.
    <p><code>localhost</code> is the local host address, which should be specified
-   if HdrUDP is used. (The information is used to calculate the UDP checksum).
+   (though it isn't compulsory) to ensure the correct IP header is formed.
    <p><code>-d</code> should be specified if debug is required.
    <p><code>-f first_ttl</code> is the TTL value used for the first packet.
    (The default value is 1). 
@@ -78,11 +77,6 @@ public class Traceroute {
     while( i < args.length - 1 ){
       if( args[ i ].equals("-p") && i < args.length - 2 ){
         protocollabel = args[ ++ i ];
-        if( ! protocollabel.equalsIgnoreCase("HdrICMP") && 
-            ! protocollabel.equalsIgnoreCase("RawHdrUDP") ){
-          System.err.println("Unsupported protocol");
-          System.exit( 2 );
-        }
       } else if( args[ i ].equals("-l") && i < args.length - 2 ){
         localhost = args[ ++ i ]; 
       } else if( args[ i ].equals("-d") ){
@@ -101,18 +95,19 @@ public class Traceroute {
       ++ i ;
     }
 
-    try {
-		SocketWrenchSession.setProtocol("HdrICMP");
-    } catch ( java.io.IOException e ) {
-    	System.err.println("Unsupported protocol");
-    	System.exit( 4 );
-    }
-
-    int protocol = protocollabel instanceof String && protocollabel.equalsIgnoreCase("RawHdrUDP") 
-                               ? SocketConstants.IPPROTO_UDP : SocketConstants.IPPROTO_ICMP ;
+    int protocol = SocketConstants.IPPROTO_ICMP ;
     
-    new SocketWrenchSession();
-
+    if( protocollabel instanceof String ){    
+        if( protocollabel.equalsIgnoreCase("ICMP") ){
+            protocol = SocketConstants.IPPROTO_ICMP ;
+        } else if( protocollabel.equalsIgnoreCase("UDP") ){
+            protocol = SocketConstants.IPPROTO_UDP ;
+        } else {    
+            System.err.println("Unsupported protocol");
+            System.exit( 2 );
+        }
+    }
+    
     InetAddress hostaddr = null ,
                 localaddr = null ;
 
@@ -126,35 +121,52 @@ public class Traceroute {
       System.exit( 5 );
     }
 
-    if( protocol == SocketConstants.IPPROTO_UDP && localaddr == null ){
-      System.err.println("localhost must be defined if RawHdrUDP is to be used");
-      System.exit( 6 );
+    new Traceroute( protocol , hostaddr , localaddr , ttl , debug );
+  }
+  
+  public Traceroute( int protocol ,
+                     InetAddress hostaddr ,
+                     InetAddress localaddr ,
+                     int ttl ,
+                     boolean debug )
+  {
+    new SocketWrenchSession();
+    
+    try {
+		SocketWrenchSession.setProtocol( SocketConstants.JSWPROTO_HDRICMP );
+    } catch ( java.io.IOException e ) {
+    	System.err.println("Unsupported protocol");
+    	System.exit( 4 );
     }
 
-    DatagramSocket socket = null ;
+    JSWDatagramSocket socket = null ;
 
     try {
-      socket = new DatagramSocket();
+      socket = new JSWDatagramSocket();
+      socket.setTypeOfService( IP4.TOS_ICMP );
+      if( localaddr instanceof InetAddress ){
+          socket.setSourceAddress( localaddr.getAddress() );
+      }
+      if( debug ){
+          socket.setDebug( System.err );
+      }
     } catch ( SocketException e ) {
       System.err.println( e.getMessage() );
       System.exit( 7 );
     }
 
+    final int identifier = hashCode();
+    
     try {
 
-      final int maxdatagramlength = 512 ;
+      byte[] timebuffer = new byte[ 8 ];
 
-      byte[] recvbuffer = new byte[ maxdatagramlength ] ,
-             timebuffer = new byte[ 8 ] ,
-             messagebuffer ,
-             sendbuffer ;
-
-      DatagramPacket packet ;
-
-      ICMPWriter writer = new ICMPWriter( (short) socket.hashCode() );
-
-      ICMPMessage message = null ;
-
+      IP4Message ip4Message = new IP4Message();
+      
+      int recIdentifier = 0 ;
+      
+      ICMPMessage icmpMessage = new ICMPMessage();
+      
       float sumdt = 0 ,
             mindt = Float.MAX_VALUE ,
             maxdt = Float.MIN_VALUE ;
@@ -164,78 +176,53 @@ public class Traceroute {
 
       socket.setSoTimeout( 3000 );
       
-      while( message == null || message.type != ICMP.ICMP_ECHOREPLY && message.code != ICMP.ICMP_PORT_UNREACH ){
+      while( identifier != recIdentifier || icmpMessage.type != ICMP.ICMP_ECHOREPLY && icmpMessage.code != ICMP.ICMP_PORT_UNREACH ){
+
+        socket.setTimeToLive( ttl );
 
         SocketUtils.longToBytes( new Date().getTime() , timebuffer , 0 );
 
         switch( protocol ){
     
         case SocketConstants.IPPROTO_ICMP:
-          messagebuffer = writer.write( ICMP.ICMP_ECHO , (byte) 0 , timebuffer , 0 , timebuffer.length );
+        
+          socket.send( identifier , ICMP.ICMP_ECHO , 0 , timebuffer , 0 , timebuffer.length , hostaddr.getAddress() );
+
           break;
 
         case SocketConstants.IPPROTO_UDP:
-          messagebuffer = UDPWriter.write( localaddr.getAddress() , 
-                                           (short) sourceport ++ , 
-                                           hostaddr.getAddress() , 
-                                           (short) destinationport ++ ,
-                                           timebuffer ,
-                                           0 ,
-                                           timebuffer.length );
+        
+          socket.setSourcePort( sourceport ++ );
+          
+          socket.send( hostaddr.getAddress() , 
+                       destinationport ++ ,
+                       timebuffer ,
+                       0 ,
+                       timebuffer.length );
+
           break;
-
-        default:
-          messagebuffer = new byte[0];
         }
-
-
-        sendbuffer = IP4Writer.write( IP4.TOS_ICMP , 
-                                      ttl , 
-                                      (byte) protocol , 
-                                      localaddr != null ? localaddr.getAddress() : new byte[ 4 ] , 
-                                      hostaddr.getAddress() , 
-                                      messagebuffer );
-
-        if( debug ){
-          System.err.println("SEND:");
-          SocketUtils.dump( System.err , sendbuffer , 0 , sendbuffer.length );
-        }
-
-        socket.send( new DatagramPacket( sendbuffer , sendbuffer.length , hostaddr , 0 ) );
-
-        packet = new DatagramPacket( recvbuffer , maxdatagramlength );
 
         try {
-          socket.receive( packet );
+          socket.receive( ip4Message , icmpMessage );
+          recIdentifier = icmpMessage.identifier >= 0 ? icmpMessage.identifier : icmpMessage.identifier ^ 0xffffff00 ;          
         } catch( InterruptedIOException e ){
-          message = null ;
+          recIdentifier = 0 ;
           System.out.println( ttl ++ + ". *.*.*.*/*.*.*.*");            
           continue ;
         }
         
-        if( ( message = ICMPReader.read( packet.getData() , 20 , packet.getLength() - 20 , false ) ) != null ){ 
-
-          if( message.isQuery() && ( message.identifier != socket.hashCode() ) ){
-              continue ;
-          }
-          
-          if( debug ){
-            System.err.println("RECEIVE:");
-            System.err.println( message.toString() );
-            if( message.ip4Message != null ){
-                System.err.println( message.ip4Message );
-            }
-            SocketUtils.dump( System.err , packet.getData() , 0 , packet.getLength() );
-          }  
-
-          System.out.println( ttl ++ + ". " + packet.getAddress() );
-          
-          if( message.type != ICMP.ICMP_TIME_EXCEEDED &&
-              message.type != ICMP.ICMP_ECHOREPLY && 
-              message.code != ICMP.ICMP_PORT_UNREACH ){
-            System.out.println( message.toString() );
-          } 
+        if( icmpMessage.isQuery() && ( recIdentifier != identifier ) ){
+            continue ;
         }
+
+        System.out.println( ttl ++ + ". " + GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , ip4Message.source ) );
+          
+        if( icmpMessage.type != ICMP.ICMP_TIME_EXCEEDED &&
+            icmpMessage.type != ICMP.ICMP_ECHOREPLY && 
+            icmpMessage.code != ICMP.ICMP_PORT_UNREACH ){
+          System.out.println( icmpMessage.toString() );
+        } 
       }
 
     } catch ( Exception e ) {

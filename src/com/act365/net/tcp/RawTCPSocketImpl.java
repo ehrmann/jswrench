@@ -66,7 +66,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
   
   static int nextEphemeralPort = 1024 ;
    
-  DatagramSocket socket ;
+  JSWDatagramSocket socket ;
 
   InetAddress localhost ;
 
@@ -154,8 +154,11 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
     
     resetSocket();
  
-    socket = new DatagramSocket();
+    socket = new JSWDatagramSocket();
 
+    socket.setTypeOfService( IP4.TOS_COMMAND );
+    socket.setTimeToLive( 255 );
+    
     msltimer = new TCPMSLTimer( this , msltimeout );
 
     RawTCPListener.getInstance().addPropertyChangeListener( this );
@@ -298,39 +301,28 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
       flags |= TCP.ACK ;
     }
 
-    byte[] sendbuffer = TCPWriter.write( localhost.getAddress() ,
-                                         (short) localport ,
-                                         address.getAddress() ,
-                                         (short) port ,
-                                         seqnum ,
-                                         destseqnum ,
-                                         ( flags & TCP.ACK ) > 0 ,
-                                         ( flags & TCP.RST ) > 0 ,
-                                         ( flags & TCP.SYN ) > 0 ,
-                                         ( flags & TCP.FIN ) > 0 ,
-                                         ( flags & TCP.PSH ) > 0 ,
-                                         (short) windowsize ,
-                                         options ,
-                                         writebuffer ,  
-                                         writestart ,
-                                         writeend );
+    socket.setSourceAddress( localhost.getAddress() );
+    socket.setSourcePort( localport );
 
-    if( includeipheader ){
-
-      sendbuffer = IP4Writer.write( IP4.TOS_COMMAND ,
-                                    (short) 255 ,
-                                    (byte) protocol ,
-                                    localhost.getAddress() ,
-                                    address.getAddress() , 
-                                    sendbuffer );
-    }
-
+    socket.send( address.getAddress() ,
+                 port ,
+                 seqnum ,
+                 destseqnum ,
+                 ( flags & TCP.ACK ) > 0 ,
+                 ( flags & TCP.RST ) > 0 ,
+                 ( flags & TCP.SYN ) > 0 ,
+                 ( flags & TCP.FIN ) > 0 ,
+                 ( flags & TCP.PSH ) > 0 ,
+                 windowsize ,
+                 options ,
+                 writebuffer ,  
+                 writestart ,
+                 writeend );
+                 
     if( debug ){
-      System.err.println("SEND:");
-      SocketUtils.dump( System.err , sendbuffer , 0 , sendbuffer.length );
+        System.err.println("SEND:");
+        SocketUtils.dump( System.err , writebuffer , writestart , ( writeend - writestart )% writebuffer.length );
     }
-
-    socket.send( new DatagramPacket( sendbuffer , sendbuffer.length , address , port ) );
   }
 
   /**
@@ -493,11 +485,11 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
         {
           int i = - 1 ;
           while( ++ i < message.data.length ){
-            readbuffer[( readoffset + readcount + i ) % maxwindowsize ] = message.data[ i ];
+            readbuffer[( readoffset + readcount + i ) % maxwindowsize ] = message.data[( message.datastart + i )% message.data.length ];
           }
         }
-        readcount += message.data.length ;
-        windowsize -= message.data.length ;
+        readcount += message.dataLength();
+        windowsize -= message.dataLength();
         acknowledge();
         notifyAll();
         return ;
@@ -693,7 +685,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 
     final int initialcount = count ,
               initialoffset = offset ;
-
+ 
     while( count > 0 ){
       while( readcount == 0 ){
         try {
@@ -757,11 +749,6 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
       return ;
     }
 
-    if( debug ){
-      System.err.println("RECEIVE:");
-      SocketUtils.dump( System.err , ipmessage.data , 0 , ipmessage.data.length );
-    }
-
     try {
       if( address.equals( ip0 ) ){
       	address = GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , ipmessage.source );
@@ -778,6 +765,13 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
       updateState( tcpmessage );
     } catch( Exception e ) {
       System.err.println("propertyChange: " + e.getMessage() );
+    }
+    
+    if( debug ){
+        System.err.println("RECEIVE:");
+        System.err.println( ipmessage.toString() );
+        System.err.println( tcpmessage.toString() );
+        SocketUtils.dump( System.err , tcpmessage.data , tcpmessage.datastart , ( tcpmessage.dataend - tcpmessage.datastart )% tcpmessage.data.length );
     }
   }
 

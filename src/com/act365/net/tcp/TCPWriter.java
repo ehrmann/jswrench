@@ -158,7 +158,7 @@ public class TCPWriter {
     int length = 0 ;
     
     try {
-        write( message , buffer , offset );
+        length = write( message , buffer , offset );
     } catch ( ArrayIndexOutOfBoundsException e ) {
         throw new IOException("TCP Write buffer overflow");
     }

@@ -109,6 +109,6 @@ public class IP4Reader {
     message.dataOffset = offset + 4 * message.headerlength ;
     message.dataCount = message.length - 4 * message.headerlength ;
     
-    return message.length();
+    return 4 * message.headerlength ;
   }
 }

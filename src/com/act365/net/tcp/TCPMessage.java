@@ -46,17 +46,17 @@ public class TCPMessage {
   public short windowsize ;
   public short checksum ;
   public short urgentpointer ;
-  public byte[] options ;
-  public byte[] data ; 
+  public byte[] options = new byte[ 0 ];
+  public byte[] data = new byte[ 0 ]; 
   public int datastart ;
   public int dataend ;
   
   public int dataLength(){
-      return ( dataend - datastart )% data.length ;
+      return data.length > 0 ? ( dataend - datastart )% data.length : 0 ;
   }
   
   public int length() {
-      return 20 + options.length + dataLength();
+      return 4 * headerlength + dataLength();
   }
   
   public String toString() {

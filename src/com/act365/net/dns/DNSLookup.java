@@ -30,6 +30,7 @@ import com.act365.net.* ;
 import com.act365.net.ip.* ;
 import com.act365.net.udp.* ;
 
+import java.io.IOException;
 import java.net.*;
 
 /**
@@ -68,7 +69,7 @@ public class DNSLookup {
 
     String servername = args[ args.length - 2 ] ,
            domainname = args[ args.length - 1 ] ,
-           protocollabel = "",
+           protocollabel = "JDKUDP",
            localhost = null ;
 
     while( ++ i < args.length - 2 ){
@@ -76,12 +77,6 @@ public class DNSLookup {
         recursion_desired = true ;
       } else if( args[ i ].equals("-p") && i < args.length - 3 ){
       	protocollabel = args[ ++ i ];
-      	if( ! protocollabel.equalsIgnoreCase("UDP") && 
-		    ! protocollabel.equalsIgnoreCase("RawUDP") &&
-			! protocollabel.equalsIgnoreCase("RawHdrUDP") ){
-      	    	System.err.println("Unsupported protocol");
-      	    	System.exit( 2 );
-      	    }
       } else if( args[ i ].equals("-l") && i < args.length - 3 ){
       	localhost = args[ ++ i ];
       } else {
@@ -96,13 +91,11 @@ public class DNSLookup {
       System.err.println("Unsupported protocol");
       System.exit( 2 );
     }
-    
-    final boolean israw = protocollabel.equalsIgnoreCase("RawUDP") ||
-                          protocollabel.equalsIgnoreCase("RawHdrUDP");
-    
-    final boolean includeheader = SocketWrenchSession.includeHeader();
-    
-    new SocketWrenchSession();
+
+    if( SocketWrenchSession.getProtocol() != SocketConstants.IPPROTO_UDP ){
+        System.err.println("A UDP protocol should be selected");
+        System.exit( 3 );    
+    }
     
     InetAddress server = null ,
                 source = null ;
@@ -114,71 +107,48 @@ public class DNSLookup {
       }
     } catch( UnknownHostException e ){
       System.err.println("DNS server " + e.getMessage() + " is unknown");
-      System.exit( 2 );
-    }
-
-    DatagramSocket socket = null ;
-
-    try {
-      if( source instanceof InetAddress ){
-        socket = new DatagramSocket( 53 , source );
-      } else {
-        socket = new DatagramSocket( 53 );
-      }
-    } catch ( SocketException e ) {
-      System.err.println( e.getMessage() );
-      System.exit( 3 );
-    }
-
-    final int maxdatagramlength = 512 ;
-
-    byte[] sendbuffer = null ,
-           recvbuffer = new byte[ maxdatagramlength ];
-
-    DatagramPacket packet = null ;
-
-    DNSMessage message = null ;
-
-    // A raw UDP header comprises 20 bytes of IP4 info and 8 bytes of UDP.
-    
-    DNSReader reader = new DNSReader( israw ? 28 : 0 ); 
-
-    try {
-      
-      sendbuffer = DNSWriter.write( (short) socket.hashCode() , recursion_desired , domainname );
-
-      if( israw ){
-	    sendbuffer = UDPWriter.write( source.getAddress() , (short) 53 , server.getAddress() , (short) 53 , sendbuffer , 0 , sendbuffer.length );
-      }
-      
-      if( includeheader ){
-
-		sendbuffer = IP4Writer.write( IP4.TOS_COMMAND ,
-									 (short) 255 ,
-									 (byte) SocketConstants.IPPROTO_UDP ,
-									 source.getAddress() ,
-									 server.getAddress() ,
-									 sendbuffer );
-      }
-
-	  SocketUtils.dump( System.out , sendbuffer , 0 , sendbuffer.length );
-      
-      socket.send( new DatagramPacket( sendbuffer , sendbuffer.length , server , 53 ) );
-
-      packet = new DatagramPacket( recvbuffer , maxdatagramlength );
-
-      socket.receive( packet );
-
-      SocketUtils.dump( System.out , packet.getData() , 0 , packet.getLength() );
-      
-      reader.read( packet.getData() ).dump( System.out );
-
-    } catch ( Exception e ) {
-      System.err.println( e.getMessage() );
-      e.printStackTrace();
       System.exit( 4 );
     }
-  }
 
+    try {
+        new DNSLookup( domainname , server , source , recursion_desired );    
+    } catch ( Exception e ) {
+        System.err.println( e.getMessage() );
+        e.printStackTrace();
+        System.exit( 5 );
+    }
+  }
+  
+  public DNSLookup( String domainname ,
+                    InetAddress server ,
+                    InetAddress source ,
+                    boolean recursion_desired ) throws SocketException , IOException {
+    
+      new SocketWrenchSession();
+  
+      JSWDatagramSocket socket = new JSWDatagramSocket( 1024 );
+
+      if( source instanceof InetAddress ){
+          socket.setSourceAddress( source.getAddress() );
+      }
+
+      socket.setTypeOfService( IP4.TOS_COMMAND );
+    
+      final int maxdatagramlength = 512 ;
+
+      byte[] dnsbuffer = new byte[ maxdatagramlength ];
+
+      UDPMessage udpMessage = new UDPMessage();    
+      DNSMessage dnsMessage = new DNSMessage();
+    
+      int length = DNSWriter.write( (short) hashCode() , recursion_desired , domainname , dnsbuffer , 0 , dnsbuffer.length );
+
+      socket.send( server.getAddress() , 53 , dnsbuffer , 0 , length );            
+      socket.receive( null , udpMessage );
+
+      DNSReader.read( dnsMessage , udpMessage.data , udpMessage.offset , udpMessage.count );
+        
+      dnsMessage.dump( System.out );
+  }
 }
 

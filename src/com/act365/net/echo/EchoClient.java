@@ -84,13 +84,6 @@ class EchoClient {
         outputFile = args[ ++ i ];
       } else if( args[ i ].equals("-p") && i < args.length - 3 ){
         protocollabel = args[ ++ i ];
-        if( ! protocollabel.equalsIgnoreCase("TCP") &&
-            ! protocollabel.equalsIgnoreCase("TCPJ") &&
-            ! protocollabel.equalsIgnoreCase("RawTCP") &&
-            ! protocollabel.equalsIgnoreCase("RawTCPJ") ){
-          System.err.println("Unsupported protocol");
-          System.exit( 2 );
-        }
 	  } else if( args[ i ].equals("-l") && i < args.length - 4 ){
 		localhost = args[ ++ i ];
 		try {
@@ -105,6 +98,8 @@ class EchoClient {
       }
     }
 
+    new SocketWrenchSession();
+    
 	try {
 	  SocketWrenchSession.setProtocol( protocollabel );
 	} catch ( java.io.IOException e ) {
@@ -112,11 +107,11 @@ class EchoClient {
 	  System.exit( 2 );
 	}
     
-	final int protocol = SocketWrenchSession.getProtocol();
-    
-	boolean includeheader = SocketWrenchSession.includeHeader();
-    
-	new SocketWrenchSession();
+	if( SocketWrenchSession.getProtocol() != SocketConstants.IPPROTO_TCP &&
+        SocketWrenchSession.getProtocol() != SocketConstants.IPPROTO_TCPJ ){
+            System.err.println("Unsupported protocol");
+            System.exit( 2 );            
+        }
     
 	InetAddress dstaddr = null ,
 				localaddr = null ;

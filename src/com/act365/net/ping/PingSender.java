@@ -28,7 +28,6 @@ package com.act365.net.ping ;
 
 import com.act365.net.*;
 import com.act365.net.icmp.* ;
-import com.act365.net.ip.* ;
 
 import java.net.*;
 import java.util.*;
@@ -40,13 +39,9 @@ import java.util.*;
 
 public class PingSender extends Thread {
 
-  DatagramSocket socket ;
+  JSWDatagramSocket socket ;
 
-  InetAddress hostaddr ,
-              localaddr ;
-
-  short identifier ,
-        ttl ;
+  InetAddress hostaddr ;
 
   Ping ping ;
 
@@ -66,23 +61,17 @@ public class PingSender extends Thread {
    * @param ttl time-to-live of packets (RawICMP only)
    */
   
-  public PingSender( DatagramSocket socket ,
+  public PingSender( JSWDatagramSocket socket ,
                      InetAddress hostaddr ,
-                     InetAddress localaddr ,
-                     short identifier ,
                      Ping ping ,
                      int count ,
-                     int nbytes ,
-                     short ttl ) {
+                     int nbytes ) {
 
     this.socket = socket ;
     this.hostaddr = hostaddr ;
-    this.localaddr = localaddr ;
-    this.identifier = identifier ; 
     this.ping = ping ;
     this.count = count ;
     this.nbytes = nbytes ;
-    this.ttl = ttl ;
   }
 
   /**
@@ -91,10 +80,7 @@ public class PingSender extends Thread {
   
   public void run() {
 
-    ICMPWriter writer = new ICMPWriter( identifier );
-
-    byte[] buffer ,
-           databuffer = new byte[ nbytes ];
+    byte[] databuffer = new byte[ nbytes ];
 
     int i = -1 ;
 
@@ -103,23 +89,21 @@ public class PingSender extends Thread {
     }
 
     try {
+
       while( count -- != 0 ){
+
         if( nbytes >= 8 ){
             SocketUtils.longToBytes( new Date().getTime() , databuffer , 0 );
         }
-        buffer = writer.write( ICMP.ICMP_ECHO , (byte) 0 , databuffer , 0 , databuffer.length );
-        
-        if( SocketWrenchSession.includeHeader() ){
-		  buffer = IP4Writer.write( IP4.TOS_ICMP , 
-		  						    ttl , 
-								    (byte) SocketConstants.IPPROTO_ICMP , 
-								    localaddr != null ? localaddr.getAddress() : new byte[4], 
-								    hostaddr.getAddress() , 
-								    buffer );
-        }
 
-		socket.send( new DatagramPacket( buffer , buffer.length , hostaddr , 0 ) );
-
+        socket.send( ping.hashCode() , 
+                     ICMP.ICMP_ECHO , 
+                     0 , 
+                     databuffer , 
+                     0 , 
+                     databuffer.length , 
+                     hostaddr.getAddress() );
+                     
         sleep( 1000 );
       }
       ping.interrupt();

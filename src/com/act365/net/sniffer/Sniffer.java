@@ -33,6 +33,7 @@ import com.act365.net.ip.*;
 import com.act365.net.tcp.*;
 import com.act365.net.udp.*;
 
+import java.io.IOException ;
 import java.net.*;
 
 /**
@@ -52,8 +53,9 @@ public class Sniffer {
   
 	public static void main(String[] args) {
 
-		String protocollabel = "RawTCP",
-		       excluded = null ;
+		String protocollabel = "TCP",
+		       excluded = null ,
+               localhost = null ;
 
 		int i = 0;
 
@@ -62,6 +64,8 @@ public class Sniffer {
           	protocollabel = args[ ++ i ];
           } else if( args[ i ].equals("-x") && i < args.length - 1 ) {
           	excluded = args[ ++ i ];
+          } else if( args[ i ].equals("-l") && i < args.length - 1 ) {
+            localhost = args[ ++ i ];
           } else {
           	System.err.println("Syntax: Sniffer -p protocol -x excluded");
           	System.exit( 1 );
@@ -73,7 +77,21 @@ public class Sniffer {
 
 			new SocketWrenchSession();
             
-            SocketWrenchSession.setProtocol( protocollabel );
+            int protocol ;
+            
+            if( protocollabel.equalsIgnoreCase("TCP") ){
+                protocol = SocketConstants.JSWPROTO_RAWTCP ;
+            } else if( protocollabel.equalsIgnoreCase("UDP") ){
+                protocol = SocketConstants.JSWPROTO_RAWUDP ;
+            } else if( protocollabel.equalsIgnoreCase("ICMP") ){
+                protocol = SocketConstants.JSWPROTO_ICMP ;
+            } else if( protocollabel.equalsIgnoreCase("TCPJ") ){
+                protocol = SocketConstants.JSWPROTO_RAWTCPJ ;
+            } else {
+                throw new IOException("Unsupported protocol");
+            }
+            
+            SocketWrenchSession.setProtocol( protocol );
             
             byte[] excludedaddress = new byte[0];
             
@@ -81,50 +99,47 @@ public class Sniffer {
             	excludedaddress = InetAddress.getByName( excluded ).getAddress();
             }
             
-			byte[] buffer = new byte[512];
+			JSWDatagramSocket socket = new JSWDatagramSocket();
 
-			DatagramPacket packet;
-  
-			DatagramSocket socket = new DatagramSocket();
-
-			IP4Message ipmessage;
+            if( localhost instanceof String ){
+                socket.setSourceAddress( InetAddress.getByName( localhost ).getAddress() );
+            } else {
+                socket.testChecksum( false ); 
+            }
+            
+			IP4Message ip4Message = new IP4Message();
+            ICMPMessage icmpMessage = new ICMPMessage();
+            UDPMessage udpMessage = new UDPMessage();
+            TCPMessage tcpMessage = new TCPMessage();
 
 			while (true) {
 
-				packet = new DatagramPacket(buffer, buffer.length);
-
-				socket.receive(packet);
-
-				ipmessage =	IP4Reader.read(packet.getData(), 0 , packet.getLength(), true);
+                protocol = socket.receive( ip4Message ,
+                                           icmpMessage ,
+                                           udpMessage ,
+                                           tcpMessage );
 
                 if( excludedaddress.length == 4 &&
-                    excludedaddress[0] == ipmessage.source[0] &&
-                    excludedaddress[1] == ipmessage.source[1] &&
-                    excludedaddress[2] == ipmessage.source[2] &&
-                    excludedaddress[3] == ipmessage.source[3] ){
+                    excludedaddress[0] == ip4Message.source[0] &&
+                    excludedaddress[1] == ip4Message.source[1] &&
+                    excludedaddress[2] == ip4Message.source[2] &&
+                    excludedaddress[3] == ip4Message.source[3] ){
                     	continue;
                 }
 
-				System.out.println( ipmessage.toString() );
+				System.out.println( ip4Message.toString() );
 
-                int protocol = ipmessage.protocol >= 0 ? ipmessage.protocol : 0xffffff00 ^ ipmessage.protocol ;
-                
 				switch (protocol) {
 					
 					case SocketConstants.IPPROTO_UDP :
 
-						UDPMessage udpmessage = UDPReader.read( ipmessage.data,
-                                                                ipmessage.dataOffset,
-                                                                ipmessage.dataCount,
-                                                                true,
-                                                                ipmessage.source,
-                                                                ipmessage.destination );
-                                                                
-                        if( udpmessage.sourceport == 53 ){
-                        	new DNSReader( 8 ).read( ipmessage.data ).dump(System.out);
+                        if( udpMessage.sourceport == 53 ){
+                            DNSMessage dnsMessage = new DNSMessage();
+                        	DNSReader.read( dnsMessage , udpMessage.data , udpMessage.offset , udpMessage.count );
+                            dnsMessage.dump( System.out );
                         } else {
-                            System.out.println( udpmessage.toString() );
-                            SocketUtils.dump( System.out , udpmessage.data , udpmessage.offset , udpmessage.count );
+                            System.out.println( udpMessage.toString() );
+                            SocketUtils.dump( System.out , udpMessage.data , udpMessage.offset , udpMessage.count );
                         }
                         
 						break;
@@ -132,26 +147,13 @@ public class Sniffer {
 					case SocketConstants.IPPROTO_TCP :
 					case SocketConstants.IPPROTO_TCPJ :
 
-						TCPMessage tcpmessage = TCPReader.read(	ipmessage.data ,
-                                                                ipmessage.dataOffset,
-                                                                ipmessage.dataCount,
-                                                                true,
-                                                                ipmessage.source,
-                                                                ipmessage.destination);
-                                        
-
-                        System.out.println( tcpmessage.toString () );
-                        SocketUtils.dump( System.out , tcpmessage.data , tcpmessage.datastart , tcpmessage.dataLength() ); 
+                        System.out.println( tcpMessage.toString () );
+                        SocketUtils.dump( System.out , tcpMessage.data , tcpMessage.datastart , tcpMessage.dataLength() ); 
                         
 						break;
 
 					case SocketConstants.IPPROTO_ICMP :
                                             
-                        ICMPMessage icmpMessage = ICMPReader.read( ipmessage.data ,
-                                                                   ipmessage.dataOffset ,
-                                                                   ipmessage.dataCount ,
-                                                                   true );
-                        
                         System.out.println( icmpMessage.toString() );
                         SocketUtils.dump( System.out , icmpMessage.data , icmpMessage.offset , icmpMessage.count );
                                                                    
@@ -159,14 +161,14 @@ public class Sniffer {
                           
 					default :
 					
-					    SocketUtils.dump(System.out,packet.getData(),0,packet.getLength());
+                        SocketUtils.dump(System.out,ip4Message.data,ip4Message.dataOffset,ip4Message.dataCount);
 					    
 					    break;
 					}
 			}
 		} catch (Exception e) {
-            e.printStackTrace();
-			System.err.println(e.getMessage());
+			System.err.println(e.getMessage());e.printStackTrace();
+            
 		}
 	}
 }

@@ -48,8 +48,8 @@ public class UDPReader {
    read() constructs a UDPMessage object from a buffer.
   */
 
-  public static void read( UDPMessage message , byte[] buffer , int offset , int length ) throws IOException {
-    read( message , buffer , offset , length , false , new byte[0] , new byte[0] );
+  public static int read( UDPMessage message , byte[] buffer , int offset , int length ) throws IOException {
+    return read( message , buffer , offset , length , false , new byte[0] , new byte[0] );
   }
   
   /**

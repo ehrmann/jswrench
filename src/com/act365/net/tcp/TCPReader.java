@@ -125,8 +125,8 @@ public class TCPReader {
     }
 
     message.data = buffer ;
-    message.datastart = offset + 4 * message.headerlength ;
-    message.dataend = offset + count ;
+    message.datastart = i ;
+    message.dataend = ( offset + count )% buffer.length ;
 
     if( testchecksum ){
 

@@ -46,7 +46,7 @@ public class RawTCPListener extends Thread {
 
   boolean alive ;
 
-  DatagramSocket socket ;
+  JSWDatagramSocket socket ;
 
   static int protocol ;
   
@@ -63,9 +63,9 @@ public class RawTCPListener extends Thread {
     pcs = new PropertyChangeSupport( this );
  
     try {
-      socket = new DatagramSocket();
+      socket = new JSWDatagramSocket();
     } catch( SocketException e ){
-      System.err.println("TCPListener: " + e.getMessage() );
+      System.err.println( getClass() + ": " + e.getMessage() );
     }
   }
 
@@ -85,36 +85,21 @@ public class RawTCPListener extends Thread {
 
     while( socket == null ); // The socket takes a while to start.
 
-    byte[] buffer = new byte[ 2048 ];
-
-    DatagramPacket packet ;
-
-    IP4Message ipmessage ;
-
-    TCPMessage tcpmessage ;
+    IP4Message ip4Message = new IP4Message();
+    TCPMessage tcpMessage = new TCPMessage();
 
     try {
 
       while( alive ){
 
-        packet = new DatagramPacket( buffer , buffer.length );
-
-        socket.receive( packet );
-
-        ipmessage = IP4Reader.read( packet.getData() , 0 , packet.getLength() , false );
-
-        int mprotocol = ipmessage.protocol >= 0 ? ipmessage.protocol : 0xffffff00 ^ ipmessage.protocol ;
-
-        if( mprotocol != protocol ){
-          continue ;
+        if( socket.receive( ip4Message , tcpMessage ) != protocol ){
+            continue ;
         }
 
-        tcpmessage = TCPReader.read( ipmessage.data , ipmessage.dataOffset , ipmessage.dataCount );
-
-        pcs.firePropertyChange( "TCPJ", ipmessage , tcpmessage );
+        pcs.firePropertyChange( "TCPJ", ip4Message , tcpMessage );
       }
     } catch( IOException e ) {
-      System.err.println("TCPJListener: " + e.getMessage() );
+      System.err.println( getClass() + ": " + e.getMessage() );
       return ;
     }
   }

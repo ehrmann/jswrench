@@ -73,9 +73,11 @@ public class UDPWriter {
 
     message.sourceport = sourceport ;
     message.destinationport = destinationport ;
-    message.length = (short)( dataCount + 8 );
+    message.length = (short)( dataCount + 8 ); 
     message.checksum = 0 ;
     message.data = data ;
+    message.offset = dataOffset ;
+    message.count = dataCount ;
 
     int length = 0 ;
     
