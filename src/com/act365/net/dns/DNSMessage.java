@@ -884,6 +884,10 @@ public class DNSMessage implements IServiceMessage {
         }
     }
     
+    if( i < 4 ){
+        return null ;
+    }
+    
     StringBuffer sb = new StringBuffer();
     
     sb.append(ip[3]);
