@@ -77,9 +77,18 @@ public class RawTCPListener extends Thread {
    */
 
   public static RawTCPListener getInstance() {
-    return listener ;
+      return listener ;
   }
-
+  
+  /**
+   * Determines whether the checksum of incoming packets should be tested.
+   * (By default, they are).
+   */
+  
+  public void testChecksum( boolean testchecksum ){
+      socket.testChecksum( testchecksum );   
+  }
+  
   /**
    * Starts the listener.
    */

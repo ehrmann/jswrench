@@ -51,7 +51,8 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
   static boolean debug ,
                  avoidhalfcloseserver ,
                  avoidackdelay ,
-                 modelpacketloss ;
+                 modelpacketloss ,
+                 testchecksum ;
 
   static double packetloss ;
 
@@ -101,6 +102,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 	avoidhalfcloseserver = Boolean.getBoolean("tcpj.avoidhalfcloseserver");
 	avoidackdelay = Boolean.getBoolean("tcpj.avoidackdelay");
 	modelpacketloss = Boolean.getBoolean("tcpj.packetloss.model");
+    testchecksum = Boolean.getBoolean("tcpj.testchecksum");
   	
 	String packetlosslabel = System.getProperty("tcpj.packetloss.rate");
 
@@ -138,6 +140,9 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
     retransmissionTimer = new RetransmissionTimer( firstTimeout );
     
     RawTCPListener.getInstance().addPropertyChangeListener( this );
+    if( ! testchecksum ){
+        RawTCPListener.getInstance().testChecksum( false );        
+    }
 
     if( modelpacketloss ){
       random = new Random();
