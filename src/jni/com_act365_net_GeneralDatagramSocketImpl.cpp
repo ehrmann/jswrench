@@ -315,7 +315,18 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1setOption(JNIEnv* e
     return -1 ;
   }
 
-  return setsockopt( socketDescriptor , level , optid , (char*) & value , sizeof( value ) );
+  int ret ;
+
+  if( ret = setsockopt( socketDescriptor , level , optid , (char*) & value , sizeof( value ) ) ){
+
+    jclass exceptionClass = env -> FindClass("java/net/SocketException");
+
+    SocketUtils::throwError( env , exceptionClass , "setsockopt()" );
+
+    env -> DeleteLocalRef( exceptionClass );
+  }
+
+  return ret ;
 }
 
 JNIEXPORT 
@@ -347,7 +358,8 @@ jobject JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1getOption(JNIEnv
 
     jclass exceptionClass = env -> FindClass("java/net/SocketException");
 
-    env -> ThrowNew( exceptionClass , "Unable to read option in getsockopt" );
+    SocketUtils::throwError( env , exceptionClass , "getsockopt()" );
+
     env -> DeleteLocalRef( exceptionClass );
 
     return value ;
