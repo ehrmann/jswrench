@@ -40,10 +40,6 @@ import java.net.*;
  because no <code>DatagramSocket</code> objects will be instantiated. However, a
  <code>DatagramSocket</code> is always used by TCPJ, so the behaviour of TCPJ
  and RawTCPJ will differ).
- <p><code>-i inputfile</code> (optional) defines the file from which input will
- be read. By default, standard input will be used.
- <p><code>-o outfile</code> (optional) defines the file to which all output will
- be written. By default, standard output will be used.
  <p><code>-l localhost localport</code> (optional) should be specified if the protocol
  has been set to RawTCPJ. The information will be used to construct the IP header.
  <p><code>hostname port</code> define the remote echo server.
@@ -53,7 +49,7 @@ class EchoClient {
 
   public static void main( String[] args ){
 
-    final String errortext = "Usage: EchoClient -p protocol -i inputfile -o outputfile -l localhost localport hostname port";
+    final String errortext = "Usage: EchoClient -p protocol -l localhost localport hostname port";
     
     if( args.length < 2 ){
     	System.err.println( errortext );
@@ -66,9 +62,7 @@ class EchoClient {
 
     String hostname   = args[ args.length - 2 ],
            protocollabel = "" ,
-           localhost = null ,
-           inputFile  = null ,
-           outputFile = null ;
+           localhost = null ;
 
 	try {
 	  port = Integer.parseInt( args[ args.length - 1 ]  );
@@ -78,11 +72,7 @@ class EchoClient {
 	}
 
     while( ++ i < args.length - 2 ){
-      if( args[ i ].equals("-i") && i < args.length - 3 ){
-        inputFile = args[ ++ i ];
-      } else if( args[ i ].equals("-o") && i < args.length - 3 ){
-        outputFile = args[ ++ i ];
-      } else if( args[ i ].equals("-p") && i < args.length - 3 ){
+      if( args[ i ].equals("-p") && i < args.length - 3 ){
         protocollabel = args[ ++ i ];
 	  } else if( args[ i ].equals("-l") && i < args.length - 4 ){
 		localhost = args[ ++ i ];
@@ -144,39 +134,15 @@ class EchoClient {
 
     System.err.println( client.toString() );
     
-    InputStream localIn  = null ,
-                serverIn = null ;
+    InputStream serverIn = null ;
 
-    OutputStream localOut  = null ,
-                 serverOut = null ;
-
-    if( inputFile instanceof String ){
-      try {
-        localIn = new FileInputStream( inputFile );
-      } catch ( FileNotFoundException e ) {
-        System.err.println( e.getMessage() );
-        System.exit( 7 );
-      }
-    } else {
-      localIn = System.in ;
-    }
+    OutputStream serverOut = null ;
 
     try {
       serverIn = client.getInputStream();
     } catch( IOException e ){
       System.err.println( e.getMessage() );
       System.exit( 8 );
-    }
-
-    if( outputFile instanceof String ){
-      try {
-        localOut = new FileOutputStream( outputFile );
-      } catch ( IOException e ) {
-        System.err.println( e.getMessage() );
-        System.exit( 9 );
-      }
-    } else {
-      localOut = System.out ;
     }
 
     try {
@@ -186,10 +152,10 @@ class EchoClient {
       System.exit( 10 );
     }
 
-    new EchoClient( new InputStreamReader( localIn ) , 
+    new EchoClient( new InputStreamReader( System.in ) , 
                     new OutputStreamWriter( serverOut ),
                     serverIn ,
-                    new OutputStreamWriter( localOut ) ); 
+                    new OutputStreamWriter( System.out ) ); 
 
     System.exit( 0 );
   }

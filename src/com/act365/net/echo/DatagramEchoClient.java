@@ -42,10 +42,6 @@ import java.net.*;
  <p><code>-d datagramlength</code> (optional) defines the maximum lenght of
  datagram packet that will be supported by the application. The default is 512
  bytes.
- <p><code>-i inputfile</code> (optional) defines the file from which input will
- be read. By default, standard input will be used.
- <p><code>-o outfile</code> (optional) defines the file to which all output will
- be written. By default, standard output will be used.
  <p><code>-l localhost localport</code> (optional) should be specified if the protocol
  has been set to RawUDP. The information will be used to construct the IP header.
  <p><code>hostname port</code> define the remote echo server.
@@ -59,7 +55,7 @@ class DatagramEchoClient {
 
   public static void main( String[] args ){
 	
-    final String errortext = "DatagramEchoClient -p protocol -d datagramlength -i inputfile -o outputfile -l localhost localport hostname hostport";
+    final String errortext = "DatagramEchoClient -p protocol -d datagramlength -l localhost localport hostname hostport";
     
     if( args.length < 2 ){
     	System.err.println( errortext );
@@ -68,9 +64,7 @@ class DatagramEchoClient {
     
     String hostname   = args[ args.length - 2 ],
            localhost  = null ,
-           protocollabel = "JDKUDP",
-           inputFile  = null ,
-           outputFile = null ;
+           protocollabel = "JDKUDP";
 
 	int i    = -1 ,
 		port = 0 ,
@@ -102,10 +96,6 @@ class DatagramEchoClient {
           System.err.println("Invalid datagram length");
           System.exit( 5 );
         }
-      } else if( args[ i ].equals("-i") && i < args.length - 3 ){
-        inputFile = args[ ++ i ];
-      } else if( args[ i ].equals("-o") && i < args.length - 3 ){
-        outputFile = args[ ++ i ];
       } else {
         System.err.println( errortext );
         System.exit( 1 );
@@ -155,33 +145,7 @@ class DatagramEchoClient {
 	System.err.println("Local address: " + ( localaddr instanceof InetAddress ? localaddr : socket.getLocalAddress() ).toString() );
 	System.err.println("Local port: " + socket.getLocalPort() );
 
-    InputStream localIn  = null ;
-
-    OutputStream localOut  = null ;
-
-    if( inputFile instanceof String ){
-      try {
-        localIn = new FileInputStream( inputFile );
-      } catch ( FileNotFoundException e ) {
-        System.err.println( e.getMessage() );
-        System.exit( 9 );
-      }
-    } else {
-      localIn = System.in ;
-    }
-
-    if( outputFile instanceof String ){
-      try {
-        localOut = new FileOutputStream( outputFile );
-      } catch ( IOException e ) {
-        System.err.println( e.getMessage() );
-        System.exit( 10 );
-      }
-    } else {
-      localOut = System.out ;
-    }
-
-    new DatagramEchoClient( socket , maxDatagramLength , dstaddr , port , localaddr , socket.getLocalPort() , localIn , localOut ); 
+    new DatagramEchoClient( socket , maxDatagramLength , dstaddr , port , localaddr , socket.getLocalPort() ); 
 
     System.exit( 0 );
   }
@@ -191,9 +155,7 @@ class DatagramEchoClient {
                              InetAddress    dest ,
                              int            port ,
                              InetAddress    localaddr ,
-                             int            localport ,
-                             InputStream    localIn , 
-                             OutputStream   localOut ){
+                             int            localport ){
     try {
 
       int bufferlength ;
@@ -203,11 +165,11 @@ class DatagramEchoClient {
       IP4Message ip4Message = new IP4Message();
       UDPMessage udpMessage = new UDPMessage();
       
-      while( ( bufferlength = localIn.read( buffer ) ) > -1 ){
+      while( ( bufferlength = System.in.read( buffer ) ) > -1 ){
         
         socket.send( dest.getAddress() , port , buffer , 0 , bufferlength );
         socket.receive( ip4Message , udpMessage );
-        localOut.write( udpMessage.data , udpMessage.offset , udpMessage.count );
+        System.out.write( udpMessage.data , udpMessage.offset , udpMessage.count );
       }
 
     } catch( IOException e ){
