@@ -37,6 +37,15 @@ import com.act365.net.SocketConstants ;
 
 public class RawHdrUDPDatagramSocketImpl extends GeneralDatagramSocketImpl {
 
+    /**
+     * Creates a new RawHdrUDPDatagramSocketImpl instance. DNS look-ups will
+     * not be performed with receive() calls in order to avoid packet floods.
+     */
+  
+    public RawHdrUDPDatagramSocketImpl(){
+        super( false );
+    }
+  
   /**
    Creates a new unconnected raw socket that use the UDP protocol.
   */

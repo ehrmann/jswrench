@@ -39,6 +39,29 @@ import java.net.*;
 
 public abstract class GeneralDatagramSocketImpl extends DatagramSocketImpl {
 
+  boolean useDNS ;
+  
+  /**
+   * Creates a GeneralDatagramSocketImpl instance which will use a DNS lookup to
+   * resolve the host name of a received datagram. This is the appropriate 
+   * constructor for non-UDP sockets. 
+   */
+  
+  protected GeneralDatagramSocketImpl(){
+      this.useDNS = true ;
+  }
+  
+  /**
+   * Creates a GeneralDatagramSocketImpl instance that will optionally use
+   * a DNS look-up to resolve the host name of a received datagram. In general,
+   * the DNS look-up should be avoided for raw UDP sockets as it will lead
+   * to UDP packet flooding.
+   */
+  
+  protected GeneralDatagramSocketImpl( boolean useDNS ){
+      this.useDNS = useDNS ;
+  }
+  
   /**
    Creates a new unconnected socket. The socket is allowed to be of any type
    and use any protocol supported by the underlying operating system. The method
@@ -107,7 +130,7 @@ public abstract class GeneralDatagramSocketImpl extends DatagramSocketImpl {
     byte[] buffer = new byte[0];
     DatagramPacket dgram = new DatagramPacket( buffer , buffer.length );
 	dgram.setAddress( GeneralSocketImpl.createInetAddress() );
-	_receive( getSocketDescriptor( fd ) , dgram , SocketConstants.MSG_PEEK );
+	_receive( getSocketDescriptor( fd ) , dgram , SocketConstants.MSG_PEEK , useDNS );
 	sender = dgram.getAddress();
 	return dgram.getPort();
   }
@@ -125,7 +148,7 @@ public abstract class GeneralDatagramSocketImpl extends DatagramSocketImpl {
   	byte[] buffer = new byte[ 0 ];
   	p.setData( buffer );
 	p.setAddress( GeneralSocketImpl.createInetAddress() );
-	_receive( getSocketDescriptor( fd ) , p , SocketConstants.MSG_PEEK );
+	_receive( getSocketDescriptor( fd ) , p , SocketConstants.MSG_PEEK , useDNS );
 	return p.getPort();
   }
   
@@ -136,10 +159,10 @@ public abstract class GeneralDatagramSocketImpl extends DatagramSocketImpl {
 
   public void receive( DatagramPacket dgram ) throws IOException {
   	dgram.setAddress( GeneralSocketImpl.createInetAddress() );
-    _receive( getSocketDescriptor( fd ) , dgram , 0 );
+    _receive( getSocketDescriptor( fd ) , dgram , 0 , useDNS );
   }
 
-  native static void _receive( int sd , DatagramPacket dgram , int flags );
+  native static void _receive( int sd , DatagramPacket dgram , int flags , boolean useDNS );
 
   /**
    Sends a datagram packet.

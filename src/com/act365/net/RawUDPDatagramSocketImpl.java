@@ -38,10 +38,20 @@ import com.act365.net.SocketConstants ;
 public class RawUDPDatagramSocketImpl extends GeneralDatagramSocketImpl {
 
   /**
+   * Creates a new RawUDPDatagramSocketImpl instance. DNS look-ups will
+   * not be performed with receive() calls in order to avoid packet floods.
+   */
+  
+  public RawUDPDatagramSocketImpl(){
+      super( false );
+  }
+  
+  /**
    Creates a new unconnected UDP socket.
   */
 
   public void create () throws SocketException {
+      
     create( SocketConstants.SOCK_RAW , SocketConstants.IPPROTO_UDP , false );
   }
 };
