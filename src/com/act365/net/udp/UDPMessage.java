@@ -180,8 +180,8 @@ public class UDPMessage implements IProtocolMessage {
                                                destination ,
                                                (byte) SocketConstants.IPPROTO_UDP ,
                                                buffer ,
-                                               this.offset ,
-                                               this.count );
+                                               offset ,
+                                               count );
 
         if( checksum != 0 ){
           throw new IOException("Checksum error: " + checksum );
@@ -211,8 +211,8 @@ public class UDPMessage implements IProtocolMessage {
       }
     
       checksum = SocketUtils.checksum( source , destination , (byte) SocketConstants.IPPROTO_UDP , buffer , offset , length );
-      SocketUtils.shortToBytes( checksum , buffer , offset + 2 );
-       
+      SocketUtils.shortToBytes( checksum , buffer , offset + 6 );
+      
       return length ;
   }
 
@@ -227,8 +227,8 @@ public class UDPMessage implements IProtocolMessage {
 
     int i = 0 ;
 
-    while( i < length ){
-      buffer[ offset + 8 + i ] = data[ offset + i ];
+    while( i < length - 8 ){
+      buffer[ offset + 8 + i ] = data[ this.offset + i ];
       ++ i ;
     }
 
