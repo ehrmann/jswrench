@@ -26,8 +26,9 @@
 
 package com.act365.net.echo ;
 
-import com.act365.net.ip.*;
 import com.act365.net.* ;
+import com.act365.net.ip.*;
+import com.act365.net.udp.*;
 
 import java.io.*;
 import java.net.*;
@@ -129,8 +130,6 @@ public class DatagramEchoServer {
 
       DatagramSocket server = null ;
 
-      final boolean includeheader = SocketUtils.includeHeader();
-      
 	  try { 
 		if( localaddr instanceof InetAddress ){
 		  server = new DatagramSocket( port , localaddr );   	
@@ -145,27 +144,54 @@ public class DatagramEchoServer {
 	  System.err.println("Local address: " + server.getLocalAddress() );
 	  System.err.println("Local port: " + server.getLocalPort() );
       
-      int bytesRead ,
-          messagelength ;
+      byte[] buffer ;
 
-      byte[] buffer = new byte[ maxDatagramLength ];
-
+      int bufferlength ;
+      
       DatagramPacket received = null ;
 
       while( true ){
 
+        buffer = new byte[ maxDatagramLength ];
+        
         received = new DatagramPacket( buffer , maxDatagramLength );
 
         server.receive( received );
 
-        messagelength = received.getLength();
+        buffer = received.getData();
+        bufferlength = received.getLength();
         
-        if( includeheader ){
-          messagelength -= 4 * IP4Reader.read( received.getData() , messagelength , false ).length ;
+        if( SocketUtils.includeHeader() ){
+
+          buffer = IP4Reader.read( received.getData() , received.getLength() , false ).data ;
+
+          UDPMessage udp = UDPReader.read( buffer , 0 , buffer.length );
+          
+          if( udp.sourceport == port ){
+          	continue;
+          }
+          
+          buffer = udp.data ;
+          
+		  buffer = UDPWriter.write( localaddr != null ? localaddr.getAddress() : new byte[4] ,
+									(short) port ,
+									received.getAddress().getAddress() ,
+									udp.sourceport ,
+									buffer ,
+									buffer.length );
+            
+		  buffer = IP4Writer.write( IP4.TOS_DATA ,
+									(byte) 127 ,
+									(byte) SocketConstants.IPPROTO_UDP ,
+									localaddr != null ? localaddr.getAddress() : new byte[4] ,
+									received.getAddress().getAddress() ,
+									buffer );
+									
+          bufferlength = buffer.length ;
         }
-        
-        server.send( new DatagramPacket( received.getData() , 
-                                         messagelength , 
+                
+        server.send( new DatagramPacket( buffer , 
+                                         buffer.length , 
                                          received.getAddress() ,
                                          received.getPort() ) );
       }

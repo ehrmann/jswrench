@@ -27,6 +27,8 @@
 package com.act365.net.echo ;
 
 import com.act365.net.* ;
+import com.act365.net.ip.*;
+import com.act365.net.udp.*;
 
 import java.io.*;
 import java.net.*;
@@ -125,8 +127,6 @@ class DatagramEchoClient {
     
 	final int protocol = SocketUtils.getProtocol();
     
-	boolean includeheader = SocketUtils.includeHeader();
-    
 	new SocketWrenchSession();
 
 	InetAddress dstaddr = null ,
@@ -142,6 +142,11 @@ class DatagramEchoClient {
 	  System.exit( 6 );
 	}
 
+    if( SocketUtils.includeHeader() && localaddr == null ){
+    	System.err.println("Local address must be specified with the RawUDP protocol");
+    	System.exit( 7 );
+    }
+    
     DatagramSocket socket = null ;
 
     try {
@@ -152,10 +157,10 @@ class DatagramEchoClient {
     	}
     } catch( SocketException se ){
       System.err.println( se.getMessage() );
-      System.exit( 7 );
+      System.exit( 8 );
     }
 
-	System.err.println("Local address: " + socket.getLocalAddress() );
+	System.err.println("Local address: " + ( localaddr instanceof InetAddress ? localaddr : socket.getLocalAddress() ).toString() );
 	System.err.println("Local port: " + socket.getLocalPort() );
 
     InputStream localIn  = null ;
@@ -167,7 +172,7 @@ class DatagramEchoClient {
         localIn = new FileInputStream( inputFile );
       } catch ( FileNotFoundException e ) {
         System.err.println( e.getMessage() );
-        System.exit( 8 );
+        System.exit( 9 );
       }
     } else {
       localIn = System.in ;
@@ -178,13 +183,13 @@ class DatagramEchoClient {
         localOut = new FileOutputStream( outputFile );
       } catch ( IOException e ) {
         System.err.println( e.getMessage() );
-        System.exit( 9 );
+        System.exit( 10 );
       }
     } else {
       localOut = System.out ;
     }
 
-    new DatagramEchoClient( socket , maxDatagramLength , dstaddr , port , localIn , localOut ); 
+    new DatagramEchoClient( socket , maxDatagramLength , dstaddr , port , localaddr , socket.getLocalPort() , localIn , localOut ); 
 
     System.exit( 0 );
   }
@@ -193,23 +198,66 @@ class DatagramEchoClient {
                              int            maxDatagramLength , 
                              InetAddress    dest ,
                              int            port ,
+                             InetAddress    localaddr ,
+                             int            localport ,
                              InputStream    localIn , 
                              OutputStream   localOut ){
     try {
 
-      int bytesRead ;
+      int bufferlength ;
 
       byte[] buffer = new byte[ maxDatagramLength ];
 
-      while( ( bytesRead = localIn.read( buffer ) ) > -1 ){
+      while( ( bufferlength = localIn.read( buffer ) ) > -1 ){
 
-        socket.send( new DatagramPacket( buffer , bytesRead , dest , port ) );
+        if( SocketUtils.includeHeader() ){
+        
+            buffer = UDPWriter.write( localaddr.getAddress() ,
+                                      (short) localport ,
+                                      dest.getAddress() ,
+                                      (short) port ,
+                                      buffer ,
+                                      bufferlength );
+            
+        	buffer = IP4Writer.write( IP4.TOS_DATA ,
+        	                          (byte) 127 ,
+        	                          (byte) SocketConstants.IPPROTO_UDP ,
+        	                          localaddr.getAddress() ,
+        	                          dest.getAddress() ,
+        	                          buffer );
+        	                          
+        	bufferlength = buffer.length ; 
+        }
+        
+        socket.send( new DatagramPacket( buffer , bufferlength , dest , port ) );
 
+        buffer = new byte[ maxDatagramLength ];
+        
         DatagramPacket received = new DatagramPacket( buffer , maxDatagramLength );
 
-        socket.receive( received );
-        
-        localOut.write( received.getData() , 0 , received.getLength() );
+        while( true ){
+        	
+          socket.receive( received );
+
+		  buffer = received.getData();
+		  bufferlength = received.getLength();
+
+		  if( SocketUtils.includeHeader() ){  
+			buffer = IP4Reader.read( buffer , bufferlength , false ).data ;
+			UDPMessage udp = UDPReader.read( buffer , 0 , buffer.length );
+			
+			if( received.getAddress().equals( localaddr ) && udp.sourceport == localport ){
+				continue;
+			}
+			
+			buffer = udp.data ;
+			bufferlength = buffer.length ;	 
+		  }
+		  
+		  break;
+        }
+          
+        localOut.write( buffer , 0 , bufferlength );
       }
 
     } catch( IOException e ){
