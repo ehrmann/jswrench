@@ -35,19 +35,30 @@ import java.io.* ;
 */
 
 public class IP4Reader {
-
+    
   /**
-   read() constructs an IP4 message from a buffer. IP6 is not   
-   supported.
-  */
+   * @deprecated Use the other form of read()
+   */
 
   public static IP4Message read( byte[] buffer , int offset , int count , boolean testchecksum ) throws IOException {
+      
+      IP4Message message = new IP4Message();
+      
+      read( message , buffer , offset , count , testchecksum );
+      
+      return message ;
+  }
+
+  /**
+   read() populates an IP4 message instance from the contents of a buffer. 
+   IP6 is not supported.
+  */
+
+  public static int read( IP4Message message , byte[] buffer , int offset , int count , boolean testchecksum ) throws IOException {
 
     if( count < 20 ) {
       throw new IOException("IP4 messages must be at least twenty bytes long");
     }
-
-    IP4Message message = new IP4Message();
 
     if( ( message.version = (byte)( buffer[ offset ] >>> 4 ) ) != 4 ){
       throw new IOException("Only IP v4 is supported");
@@ -97,7 +108,7 @@ public class IP4Reader {
     message.data = buffer ;
     message.dataOffset = offset + 4 * message.headerlength ;
     message.dataCount = message.length - 4 * message.headerlength ;
-
-    return message ;
+    
+    return message.length();
   }
 }

@@ -36,13 +36,9 @@ import java.io.IOException ;
  
 public class UDPWriter {
 
-  static int write( UDPMessage message , byte[] buffer , int offset , int count ) throws IOException {
+  static int write( UDPMessage message , byte[] buffer , int offset ) {
 
     final int length = message.length();
-    
-    if( count < length ){
-        throw new IOException("UDP Write buffer overflow");
-    }
     
     SocketUtils.shortToBytes( message.sourceport , buffer , offset );
     SocketUtils.shortToBytes( message.destinationport , buffer , offset + 2 );
@@ -71,8 +67,7 @@ public class UDPWriter {
                            int    dataOffset ,
                            int    dataCount ,
                            byte[] buffer ,
-                           int    offset ,
-                           int    count  ) throws IOException {
+                           int    offset ) throws IOException {
 
     UDPMessage message = new UDPMessage();
 
@@ -82,7 +77,13 @@ public class UDPWriter {
     message.checksum = 0 ;
     message.data = data ;
 
-    final int length = write( message , buffer , offset , count );
+    int length = 0 ;
+    
+    try {
+        length = write( message , buffer , offset );
+    } catch ( ArrayIndexOutOfBoundsException e ) {
+        throw new IOException("UDP Write buffer overflow");
+    }
     
     message.checksum = SocketUtils.checksum( sourceaddress ,
                                              destinationaddress ,
@@ -118,8 +119,7 @@ public class UDPWriter {
              dataOffset ,
              dataCount ,
              buffer ,
-             0 ,
-             buffer.length );
+             0 );
              
       return buffer ;                            
   }

@@ -37,13 +37,43 @@ import java.io.IOException ;
 public class TCPReader {
 
   /**
-   * Reads a TCP message from a buffer without a checksum test.
+   * @deprecated Use another form of read()
    */
 
   public static TCPMessage read( byte[] buffer , int offset , int count ) throws IOException {
-    return read( buffer , offset , count , false , new byte[0] , new byte[0] );
+      
+      TCPMessage message = new TCPMessage();
+      
+      read( message , buffer , offset , count );
+      
+      return message ;
+  }
+  
+  /**
+   * Reads a TCP message from a buffer without a checksum test.
+   */
+
+  public static int read( TCPMessage message , byte[] buffer , int offset , int count ) throws IOException {
+    return read( message , buffer , offset , count , false , new byte[0] , new byte[0] );
   }
 
+  /**
+   * @deprecated Use another form of read()
+   */
+
+  public static TCPMessage read( byte[] buffer , 
+                                 int offset , 
+                                 int count ,
+                                 boolean testchecksum ,
+                                 byte[] source ,
+                                 byte[] destination ) throws IOException {
+      TCPMessage message = new TCPMessage();
+      
+      read( message , buffer , offset , count , testchecksum , source , destination );
+      
+      return message ;
+  }
+                                 
   /**
    * Reads a TCP message from a buffer and performs a checksum test
    * @param buffer buffer to be read from
@@ -56,14 +86,13 @@ public class TCPReader {
    * @throws IOException checksum error
    */
   
-  public static TCPMessage read( byte[] buffer , 
-                                 int offset , 
-                                 int count ,
-                                 boolean testchecksum ,
-                                 byte[] source ,
-                                 byte[] destination ) throws IOException {
-
-    TCPMessage message = new TCPMessage();
+  public static int read( TCPMessage message ,
+                          byte[] buffer , 
+                          int offset , 
+                          int count ,
+                          boolean testchecksum ,
+                          byte[] source ,
+                          byte[] destination ) throws IOException {
 
     message.sourceport = SocketUtils.shortFromBytes( buffer , offset );
     message.destinationport = SocketUtils.shortFromBytes( buffer , offset + 2 );
@@ -113,7 +142,7 @@ public class TCPReader {
       }
     }
 
-    return message ;
+    return message.length();
   }
 }
 

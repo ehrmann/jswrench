@@ -36,6 +36,19 @@ import java.io.* ;
 */
 
 public class ICMPReader {
+    
+    /**
+     * @deprecated Use the other form of read().
+     */
+
+    public static ICMPMessage read( byte[] buffer, int offset, int count, boolean testchecksum ) throws IOException {
+        
+        ICMPMessage message = new ICMPMessage();
+        
+        read( message , buffer , offset , count , testchecksum );
+        
+        return message ;
+    }
 
   /**
    read() constructs an ICMP message from a buffer. An exception will
@@ -45,7 +58,7 @@ public class ICMPReader {
    @return The ICMPMessage contained in the packet
   */
 
-  public static ICMPMessage read( byte[] buffer, int offset, int count, boolean testchecksum ) throws IOException {
+  public static int read( ICMPMessage message , byte[] buffer, int offset, int count, boolean testchecksum ) throws IOException {
 
      if( count < 4 ) {
        throw new IOException("ICMP messages must be at least four bytes long");
@@ -56,8 +69,6 @@ public class ICMPReader {
      if( testchecksum && ( checksum = SocketUtils.checksum( buffer , offset , count ) ) != 0 ){
        throw new IOException("Checksum error: " + checksum );
      }
-
-     ICMPMessage message = new ICMPMessage();
 
      message.type = buffer[ offset ];
      message.code = buffer[ offset + 1 ];
@@ -97,9 +108,11 @@ public class ICMPReader {
              }
          }
          
-         message.ip4Message = IP4Reader.read( message.data , message.offset + 4 , message.count , false );
+         message.ip4Message = new IP4Message();
+         
+         IP4Reader.read( message.ip4Message , message.data , message.offset + 4 , message.count , false );
      }
      
-     return message ;
+     return message.length();
   }
 }

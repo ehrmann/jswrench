@@ -37,17 +37,24 @@ import java.io.* ;
 public class UDPReader {
 
   /**
+   * @deprecated Use the other form of read().
+   */
+
+  public static UDPMessage read( byte[] buffer , int offset , int length ) throws IOException {
+      return read( buffer , offset , length , false , new byte[0] , new byte[0] );
+  }
+
+  /**
    read() constructs a UDPMessage object from a buffer.
   */
 
-  public static UDPMessage read( byte[] buffer , int offset , int length ) throws IOException {
-    return read( buffer , offset , length , false , new byte[0] , new byte[0] );
+  public static void read( UDPMessage message , byte[] buffer , int offset , int length ) throws IOException {
+    read( message , buffer , offset , length , false , new byte[0] , new byte[0] );
   }
-        
+  
   /**
-   read() constructs a UDPMessage object from a buffer. When testchecksum is selected,
-   the function assumes the IP header to start at offset=0.
-  */
+   * @deprecated Use the other form of read().
+   */
 
   public static UDPMessage read( byte[]  buffer , 
                                  int     offset , 
@@ -55,12 +62,29 @@ public class UDPReader {
                                  boolean testchecksum ,
                                  byte[]  source ,
                                  byte[]  destination ) throws IOException {
+                                     
+      UDPMessage message = new UDPMessage();
+      
+      read( message , buffer , offset , length , testchecksum , source , destination );
+      
+      return message ;               
+  }
+        
+  /**
+   read() populates a UDPMessage object from a buffer. 
+  */
+
+  public static int read( UDPMessage message ,
+                          byte[]  buffer , 
+                          int     offset , 
+                          int     length , 
+                          boolean testchecksum ,
+                          byte[]  source ,
+                          byte[]  destination ) throws IOException {
 
     if( length < 8 ){
       throw new IOException("UDP messages must be at least eight bytes long");
     }
-
-    UDPMessage message = new UDPMessage();
 
     message.sourceport = SocketUtils.shortFromBytes( buffer , offset );
     message.destinationport = SocketUtils.shortFromBytes( buffer , offset + 2 );
@@ -88,8 +112,8 @@ public class UDPReader {
         throw new IOException("Checksum error: " + checksum );
       }
     }
-
-    return message ;
+    
+    return message.length();
   }
 }
 

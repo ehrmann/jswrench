@@ -52,15 +52,11 @@ public class ICMPWriter {
     this.identifier = identifier ;
     counter = 0 ;
   }
-
-  static int write( ICMPMessage message , byte[] buffer , int offset , int count ) throws IOException {
+  
+  static int write( ICMPMessage message , byte[] buffer , int offset ) throws IOException {
 
     final int length = message.length();
      
-    if( count < length ){
-        throw new IOException("ICMP Write buffer overflow");
-    }
-    
     buffer[ offset ]     = message.type ;
     buffer[ offset + 1 ] = message.code ;    
     SocketUtils.shortToBytes( message.checksum , buffer , offset + 2 );
@@ -85,8 +81,7 @@ public class ICMPWriter {
                     byte code , 
                     byte[] data , 
                     byte[] buffer , 
-                    int offset , 
-                    int count ) throws IOException 
+                    int offset ) throws IOException 
   {
     ICMPMessage message = new ICMPMessage();
 
@@ -97,7 +92,13 @@ public class ICMPWriter {
     message.sequence_number = counter ++ ;
     message.data = data ;
 
-    final int length = write( message , buffer , offset , count );
+    int length = 0 ;
+    
+    try {
+        length = write( message , buffer , offset );
+    } catch( ArrayIndexOutOfBoundsException e ){
+        throw new IOException("ICMP Write buffer overflow");
+    }
     
     message.checksum = SocketUtils.checksum( buffer , offset , length );
     SocketUtils.shortToBytes( message.checksum , buffer , offset + 2 );
@@ -115,7 +116,7 @@ public class ICMPWriter {
   {
       byte[] buffer = new byte[ 8 + data.length ];
       
-      write( type , code , data , buffer , 0 , data.length );
+      write( type , code , data , buffer , 0 );
       
       return buffer ;
   }

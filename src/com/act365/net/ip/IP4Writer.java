@@ -42,13 +42,9 @@ public class IP4Writer {
 
   static short identifier = 0 ;
 
-  static int write( IP4Message message , byte[] buffer , int offset , int count ) throws IOException {
+  static int write( IP4Message message , byte[] buffer , int offset ) {
 
     final int length = message.length();
-    
-    if( count < length ){
-        throw new IOException("IP4 Write buffer overflow");
-    }
     
     buffer[ offset ] = (byte)( message.version << 4 | message.headerlength ); 
     buffer[ offset + 1 ] = message.typeofservice ;
@@ -102,8 +98,7 @@ public class IP4Writer {
                            byte[] destination ,
                            byte[] data ,
                            byte[] buffer ,
-                           int offset ,
-                           int count ) throws IOException
+                           int offset ) throws IOException
   {
     IP4Message message = new IP4Message();
 
@@ -122,7 +117,11 @@ public class IP4Writer {
     message.options = new int[0];
     message.data = data ;
 
-    write( message , buffer , offset , count );
+    try {
+        write( message , buffer , offset );
+    } catch ( ArrayIndexOutOfBoundsException e ){
+        throw new IOException("IP4 Write buffer overflow");
+    }
     
     /*
      * The checksum is calculated from the IP header alone -
@@ -149,7 +148,7 @@ public class IP4Writer {
   {
       byte[] buffer = new byte[ 20 + data.length ];
       
-      write( typeofservice , timetolive , protocol , source , destination , data , buffer , 0 , buffer.length );
+      write( typeofservice , timetolive , protocol , source , destination , data , buffer , 0 );
       
       return buffer ;  
   }
