@@ -39,46 +39,95 @@ public class DatagramEchoServer {
 
   public static void main( String[] args ){
     
+    final String errortext = "DatagramEchoServer -p protocol -d datagramlength -l localhost localport";
+    
+    if( args.length == 0 ){
+    	System.err.println( errortext );
+    	System.exit( 1 );
+    }
+    
     int i    = -1 ,
         port = 0 ,
         maxDatagramLength = 512 ;
 
+    String protocollabel = "",
+           localhost = null ;
+    
     while( ++ i < args.length ){
       if( args[ i ].equals("-p") && i < args.length - 1 ){
+      	protocollabel = args[ ++ i ];
+		if( ! protocollabel.equalsIgnoreCase("UDP") &&
+			! protocollabel.equalsIgnoreCase("RawUDP") &&
+			! protocollabel.equalsIgnoreCase("SystemUDP") ){
+		  System.err.println("Unsupported protocol");
+		  System.exit( 1 );
+		}
+      } else if( args[ i ].equals("-l") && i < args.length - 2 ){
+      	localhost = args[ ++ i ];
         try {
           port = Integer.parseInt( args[ ++ i ] );
         } catch( NumberFormatException e ){
-          System.err.println("Invalid port number");
-          System.exit( 1 );
+          System.err.println("Invalid localport number");
+          System.exit( 2 );
         }
-      } else if( args[ i ].equals("-l") && i < args.length - 1 ){
+      } else if( args[ i ].equals("-d") && i < args.length - 1 ){
         try {
           maxDatagramLength = Integer.parseInt( args[ ++ i ] );
         } catch( NumberFormatException e ){
           System.err.println("Invalid datagram length");
-          System.exit( 2 );
+          System.exit( 3 );
         }
       } else {
-        System.err.println("DatagramEchoServer -p port -l datagramlength");
-        System.err.println("Use java -Dimpl.prefix in order to specify socket type e.g. java -Dimpl.prefix=UDP");
-        System.exit( 2 );
+        System.err.println( errortext );
+        System.exit( 1 );
       }
     }
 
-    new SocketWrenchSession();
+	try {
+	  SocketUtils.setProtocol( protocollabel );
+	} catch ( java.io.IOException e ) {
+	  System.err.println("Unsupported protocol");
+	  System.exit( 1 );
+	}
+    
+	InetAddress localaddr = null ;
+    
+	try {
+	  if( localhost instanceof String ){
+		localaddr = InetAddress.getByName( localhost );
+	  }
+	} catch( UnknownHostException e ){
+	  System.err.println("Address " + e.getMessage() + " is unknown");
+	  System.exit( 5 );
+	}
 
-    new DatagramEchoServer( maxDatagramLength , port );
+	new SocketWrenchSession();
+
+    new DatagramEchoServer( localaddr , port , maxDatagramLength );
   }
 
-  DatagramEchoServer( int maxDatagramLength ,
-                      int port ){
+  DatagramEchoServer( InetAddress localaddr ,
+                      int port ,
+                      int maxDatagramLength ){
 
     try {
 
-      DatagramSocket server = new DatagramSocket( port , InetAddress.getByName( null ) );
-  
-      System.err.println("Local port: " + server.getLocalPort() );
+      DatagramSocket server = null ;
 
+	  try { 
+		if( localaddr instanceof InetAddress ){
+		  server = new DatagramSocket( port , localaddr );   	
+		} else {
+		  server = new DatagramSocket( port );
+		}
+	  } catch( IOException e ){
+		System.err.println( e.getMessage() );
+		System.exit( 6 );
+	  }
+
+	  System.err.println("Local address: " + server.getLocalAddress() );
+	  System.err.println("Local port: " + server.getLocalPort() );
+      
       int bytesRead ;
 
       byte[] buffer = new byte[ maxDatagramLength ];

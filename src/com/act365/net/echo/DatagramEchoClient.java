@@ -38,75 +38,107 @@ import java.net.*;
 class DatagramEchoClient {
 
   public static void main( String[] args ){
-
-    int i    = -1 ,
-        port = 0 ,
-        localport = 0 ,
-        maxDatagramLength = 512 ;
-
-    String hostname   = "localhost",
+	
+    final String errortext = "DatagramEchoClient -p protocol -d datagramlength -i inputfile -o outputfile -l localhost localport hostname hostport";
+    
+    if( args.length < 2 ){
+    	System.err.println( errortext );
+    	System.exit( 1 );
+    }
+    
+    String hostname   = args[ args.length - 2 ],
+           localhost  = null ,
+           protocollabel = "",
            inputFile  = null ,
            outputFile = null ;
 
-    while( ++ i < args.length ){
-      if( args[ i ].equals("-p") && i < args.length - 1 ){
-        try {
-          port = Integer.parseInt( args[ ++ i ]  );
-        } catch( NumberFormatException e ){
-          System.err.println("Invalid port number");
-          System.exit( 1 );
-        }
-      } else if( args[ i ].equals("-lp") && i < args.length - 1 ){
+	int i    = -1 ,
+		port = 0 ,
+		localport = 0 ,
+		maxDatagramLength = 512 ;
+
+	try {
+	  port = Integer.parseInt( args[ args.length - 1 ] );
+	} catch( NumberFormatException e ){
+	  System.err.println("Invalid port number");
+	  System.exit( 2 );
+	}
+    
+    while( ++ i < args.length - 2 ){
+      if( args[ i ].equals("-p") && i < args.length - 3 ){
+      	protocollabel = args[ ++ i ];
+		if( ! protocollabel.equalsIgnoreCase("UDP") &&
+			! protocollabel.equalsIgnoreCase("RawUDP") &&
+			! protocollabel.equalsIgnoreCase("SystemUDP") ){
+		  System.err.println("Unsupported protocol");
+		  System.exit( 3 );
+		}
+      } else if( args[ i ].equals("-l") && i < args.length - 4 ){
+      	localhost = args[ ++ i ];
         try {
           localport = Integer.parseInt( args[ ++ i ]  );
         } catch( NumberFormatException e ){
           System.err.println("Invalid localport number");
-          System.exit( 2 );
+          System.exit( 4 );
         }
-      } else if( args[ i ].equals("-l") && i < args.length - 1 ){
+      } else if( args[ i ].equals("-d") && i < args.length - 3 ){
         try {
           maxDatagramLength = Integer.parseInt( args[ ++ i ]  );
         } catch( NumberFormatException e ){
           System.err.println("Invalid datagram length");
-          System.exit( 3 );
+          System.exit( 5 );
         }
-      } else if( args[ i ].equals("-i") && i < args.length - 1 ){
+      } else if( args[ i ].equals("-i") && i < args.length - 3 ){
         inputFile = args[ ++ i ];
-      } else if( args[ i ].equals("-o") && i < args.length - 1 ){
+      } else if( args[ i ].equals("-o") && i < args.length - 3 ){
         outputFile = args[ ++ i ];
-      } else if( args[ i ].equals("-h") && i < args.length - 1 ){
-        hostname = args[ ++ i ];
       } else {
-        System.err.println("DatagramEchoClient -p port -lp localport -l datagramlength -i inputfile -o outputfile -h hostname");
-        System.err.println("Use java -Dimpl.prefix in order to specify socket type e.g. java -Dimpl.prefix=UDP"); 
-        System.exit( 4 );
+        System.err.println( errortext );
+        System.exit( 1 );
       }
     }
 
-    InetAddress dest = null ;
+	try {
+	  SocketUtils.setProtocol( protocollabel );
+	} catch ( java.io.IOException e ) {
+	  System.err.println("Unsupported protocol");
+	  System.exit( 3 );
+	}
+    
+	final int protocol = SocketUtils.getProtocol();
+    
+	boolean includeheader = SocketUtils.includeHeader();
+    
+	new SocketWrenchSession();
 
-    try {
-      dest = InetAddress.getByName( hostname );
-    } catch ( UnknownHostException e ) {
-      System.err.println( e.getMessage() );
-      System.exit( 5 );
-    }
+	InetAddress dstaddr = null ,
+				localaddr = null ;
 
-    new SocketWrenchSession();
+	try {
+	  dstaddr = InetAddress.getByName( hostname );
+	  if( localhost instanceof String ){
+		localaddr = InetAddress.getByName( localhost );
+	  }
+	} catch( UnknownHostException e ){
+	  System.err.println("Address " + e.getMessage() + " is unknown");
+	  System.exit( 6 );
+	}
 
     DatagramSocket socket = null ;
 
     try {
-      socket = new DatagramSocket( localport , InetAddress.getByName( null ) );
+    	if( localaddr instanceof InetAddress ){
+			socket = new DatagramSocket( localport , localaddr );
+    	} else {
+    		socket = new DatagramSocket( localport );
+    	}
     } catch( SocketException se ){
       System.err.println( se.getMessage() );
-      System.exit( 6 );
-    } catch( UnknownHostException uhe ){
-      System.err.println( uhe.getMessage() );
       System.exit( 7 );
     }
 
-    System.err.println("Local port: " + socket.getLocalPort() );
+	System.err.println("Local address: " + socket.getLocalAddress() );
+	System.err.println("Local port: " + socket.getLocalPort() );
 
     InputStream localIn  = null ;
 
@@ -134,7 +166,7 @@ class DatagramEchoClient {
       localOut = System.out ;
     }
 
-    new DatagramEchoClient( socket , maxDatagramLength , dest , port , localIn , localOut ); 
+    new DatagramEchoClient( socket , maxDatagramLength , dstaddr , port , localIn , localOut ); 
 
     System.exit( 0 );
   }
