@@ -165,9 +165,9 @@ public class TCPWriter {
     message.checksum = SocketUtils.checksum( sourceaddress ,
                                              destinationaddress ,
                                              (byte) SocketConstants.IPPROTO_TCP ,
-                                             length ,
                                              write( message ) ,
-                                             0 );
+                                             0 ,
+                                             length );
 
     return write( message );
   }

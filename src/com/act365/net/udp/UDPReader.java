@@ -83,11 +83,11 @@ public class UDPReader {
     if( testchecksum ){
 
       short checksum = SocketUtils.checksum( source ,
-                                                   destination ,
-                                                   (byte) SocketConstants.IPPROTO_UDP ,
-                                                   message.length ,
-                                                   buffer ,
-                                                   offset );
+                                             destination ,
+                                             (byte) SocketConstants.IPPROTO_UDP ,
+                                             buffer ,
+                                             offset ,
+                                             message.length );
 
       if( checksum != 0 ){
         throw new IOException("Checksum error: " + checksum );

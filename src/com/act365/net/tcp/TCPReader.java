@@ -107,9 +107,9 @@ public class TCPReader {
       short checksum = SocketUtils.checksum( source ,
                                                    destination ,
                                                    (byte) SocketConstants.IPPROTO_TCP ,
-                                                   (short) count ,
                                                    buffer ,
-                                                   offset ); 
+                                                   offset ,
+                                                   count ); 
 
       if( checksum != 0 ){
         throw new IOException("Checksum error: " + checksum );

@@ -72,11 +72,11 @@ public class UDPWriter {
     message.data = data ;
 
     message.checksum = SocketUtils.checksum( sourceaddress ,
-                                                   destinationaddress ,
-                                                   (byte) SocketConstants.IPPROTO_UDP ,
-                                                   message.length ,
-                                                   write( message ) ,
-                                                   (int) 0 );
+                                             destinationaddress ,
+                                             (byte) SocketConstants.IPPROTO_UDP ,
+                                             write( message ) ,
+                                             (int) 0 ,
+                                             message.length );
 
     return write( message );
   }
