@@ -91,7 +91,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
   	
   	// Reads system property list
   	
-	msltimeout = Integer.getInteger("tcpj.msltimeout", 10000 ).longValue();
+	msltimeout = Integer.getInteger("tcpj.msltimeout", 5000 ).longValue();
     firstTimeout = Integer.getInteger("tcpj.firsttimeout", 3 ).intValue();
 	maxwindowsize = Integer.getInteger("tcpj.maxwindowsize", 32767 ).intValue();
 	minEphemeralPort = Integer.getInteger("tcpj.minephemeralport", 1024 ).intValue();
@@ -557,7 +557,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
     state = TCP.LISTEN ;
   }
 
-  synchronized void tcpjClose() throws IOException {
+  synchronized void activeClose() throws IOException {
 
     switch( state ){
 
@@ -613,7 +613,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 
   public synchronized void write( byte[] buffer , int offset , int count ) throws IOException {
 
-    if( state != TCP.ESTABLISHED ){
+    if( state != TCP.ESTABLISHED && state != TCP.CLOSE_WAIT ){
       throw new IOException("Write not possible from current state");
     }
 
@@ -636,7 +636,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
   
   public synchronized int read( byte[] buffer , int offset , int count ) throws IOException {
 
-    if( state != TCP.ESTABLISHED ){
+    if( state != TCP.ESTABLISHED && state != TCP.FIN_WAIT_1 && state != TCP.FIN_WAIT_2 ){
       return 0 ;
     }
 
@@ -858,8 +858,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
    */
   
   public void close() throws IOException {
-
-    tcpjClose();
+    activeClose();
   }
 
   /**
