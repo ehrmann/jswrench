@@ -28,7 +28,6 @@ package com.act365.net.dns ;
 
 import com.act365.net.* ;
 import com.act365.net.ip.* ;
-import com.act365.net.udp.* ;
 
 import java.io.IOException;
 import java.net.*;
@@ -131,22 +130,13 @@ public class DNSLookup {
       if( source instanceof InetAddress ){
           socket.setSourceAddress( source.getAddress() );
       }
-
       socket.setTypeOfService( IP4.TOS_COMMAND );
     
-      final int maxdatagramlength = 512 ;
+      DNSMessage dnsMessage = new DNSMessage( (short) hashCode() , recursion_desired , domainname );
 
-      byte[] dnsbuffer = new byte[ maxdatagramlength ];
+      socket.send( dnsMessage , 1024 , server.getAddress() );            
+      socket.receive( null , dnsMessage );
 
-      UDPMessage udpMessage = new UDPMessage();    
-      DNSMessage dnsMessage = new DNSMessage();
-    
-      int length = new DNSMessage( (short) hashCode() , recursion_desired , domainname ).write( dnsbuffer , 0 );
-
-      socket.send( new UDPMessage( (short) 1024 , (short) 53 , dnsbuffer , 0 , length ) , server.getAddress() );            
-      socket.receive( null , udpMessage );
-
-      dnsMessage.read( udpMessage.getData() , udpMessage.getOffset() , udpMessage.getCount() );
       dnsMessage.dump( System.out );
   }
 }

@@ -27,6 +27,7 @@
 package com.act365.net;
 
 import com.act365.net.ip.* ;
+import com.act365.net.udp.* ;
 
 import java.io.* ;
 import java.net.* ;
@@ -40,8 +41,7 @@ import java.net.* ;
 public class JSWDatagramSocket extends DatagramSocket {
 
     final static int ip4HeaderLength = 20 ,
-                     udpHeaderLength = 8 ,
-                     icmpHeaderLength = 8 ; 
+                     udpHeaderLength = 8 ;
     
     int sendBufferSize ,
         receiveBufferSize ,
@@ -110,6 +110,11 @@ public class JSWDatagramSocket extends DatagramSocket {
         testChecksum = true ;        
     }
     
+    /**
+     * Sends an IProtocolMessage to the given destination IP address.
+     * @see com.act365.net.IProtocolMessage
+     */
+
     public void send( IProtocolMessage message ,
                       byte[] destAddress ) throws IOException {
     
@@ -151,6 +156,30 @@ public class JSWDatagramSocket extends DatagramSocket {
         send( new DatagramPacket( sendBuffer , cursor , GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , destAddress ) , message.getDestinationPort() ) );
     }
 
+    /**
+     * Sends an IServiceMessage instance to the given destination address
+     * wrapped inside a UDP datagram.
+     * @see com.act365.net.IServiceMessage
+     */
+    
+    public void send( IServiceMessage message ,
+                      int sourcePort ,
+                      byte[] destAddress ) throws IOException {
+        final int length = message.write( sendBuffer , ip4HeaderLength + udpHeaderLength );
+        send( new UDPMessage( (short) sourcePort , (short) message.getWellKnownPort() , sendBuffer , ip4HeaderLength + udpHeaderLength , length ), destAddress );
+        if( debug instanceof PrintStream ){
+            message.dump( debug );        
+        }
+    }
+    
+    /**
+     * Reads an incoming IProtocolMessage
+     * @param ip4Message (optional) will be populated with IP header contents if a raw protocol is in use
+     * @param message IProtocolMessage to be populated
+     * @return number of bytes read
+     * @see com.act365.net.IProtocolMessage
+     */                  
+    
     public int receive( IP4Message ip4Message ,
                         IProtocolMessage message ) throws IOException {
     
@@ -233,12 +262,33 @@ public class JSWDatagramSocket extends DatagramSocket {
                 debug.println( ip4Message.toString() );
             }
             debug.println( message.toString() );
-            SocketUtils.dump( debug , message.getData() , message.getCount() , message.getOffset() );
+            SocketUtils.dump( debug , message.getData() , message.getOffset() , message.getCount() );
         }
         
         return protocol ;
     }
 
+    /**
+     * Reads an IServiceMessage instance that has been encoded inside 
+     * a UDP datagram.
+     * @param ip4Message (optional) will be populated with the IP header contents if a raw protocol is in use
+     * @param message IServiceMessage to be populated
+     * @return number of bytes read
+     * @see com.act365.net.IServiceMessage
+     */
+    
+    public int receive( IP4Message ip4Message ,
+                        IServiceMessage message ) throws IOException {
+        
+        UDPMessage udpMessage = new UDPMessage();        
+        receive( null , udpMessage );
+        final int length = message.read( udpMessage.getData() , udpMessage.getOffset() , udpMessage.getCount() );
+        if( debug instanceof PrintStream ){
+            message.dump( debug );
+        }
+        return length ;
+    }
+    
     public void close(){
         if( debug instanceof PrintStream ){
             debug.println("Connection closed");
