@@ -127,12 +127,12 @@ public class Sniffer {
 					
 					case SocketConstants.IPPROTO_UDP :
 
+                        System.out.println( message.toString() );
                         if( message.getSourcePort() == 53 ){
                             DNSMessage dnsMessage = new DNSMessage();
                             dnsMessage.read( message.getData() , message.getOffset() , message.getCount() );
                             dnsMessage.dump( System.out );
                         } else {
-                            System.out.println( message.toString() );
                             SocketUtils.dump( System.out , message.getData() , message.getOffset() , message.getCount() );
                         }
                         
