@@ -233,7 +233,7 @@ public class JSWDatagramSocket extends DatagramSocket {
                 if( ip4Message instanceof IP4Message ){
                     ip4Message.source = source ;
                     ip4Message.destination = destination ;
-                    ip4Message.length = (short) size ;
+                    ip4Message.length = (short)( ip4HeaderLength + message.headerLength() + dgram.getLength() );
                 }                
             }
     
@@ -242,8 +242,15 @@ public class JSWDatagramSocket extends DatagramSocket {
         
             size = message.read( receiveBuffer , cursor , length , testChecksum , source , destination );
         
-            if( message.usesPortNumbers() && sourcePort != 0 && message.getDestinationPort() != 0 && sourcePort != message.getDestinationPort() ){
-                continue ;
+            if( message.usesPortNumbers() ){
+                if( SocketWrenchSession.isRaw() ){
+                    if( sourcePort != message.getDestinationPort() ){
+                        continue ;
+                    }
+                } else {
+                    message.setSourcePort( dgram.getPort() );
+                    message.setDestinationPort( sourcePort );
+                }                    
             }
             
             cursor += size ;

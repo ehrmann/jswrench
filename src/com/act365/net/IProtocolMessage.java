@@ -75,6 +75,13 @@ public interface IProtocolMessage {
     public int getSourcePort();
     
     /**
+     * Sets the source port.
+     * @param sourcePort
+     */
+    
+    public void setSourcePort( int sourcePort );
+    
+    /**
      * Returns the port number to which the message will be sent.
      * Protocols that don't use port numbers should return 0.
      */
@@ -82,11 +89,18 @@ public interface IProtocolMessage {
     public int getDestinationPort();
     
     /**
-     * Calculates the message length in bytes, excluding the IP header.
-     * @return message length in bytes
+     * Sets the destination port.
+     * @param destinationPort
      */
     
-    public int length();
+    public void setDestinationPort( int destinationPort );
+    
+    /**
+     * Calculates the length of the message header.
+     * @return header length in bytes
+     */
+    
+    public int headerLength();
     
     /**
      * Writes a textual description of the message. 

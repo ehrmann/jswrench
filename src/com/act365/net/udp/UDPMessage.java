@@ -113,13 +113,29 @@ public class UDPMessage implements IProtocolMessage {
   public int getSourcePort(){
       return sourceport >= 0 ? sourceport : 0xffffff00 ^ sourceport ;
   }
-    
+  
+  /**
+   * Sets the source port.
+   */
+  
+  public void setSourcePort( int sourcePort ){
+      sourceport = (short) sourcePort ;  
+  }
+  
   /**
    * Returns the destination port.
    */
   
   public int getDestinationPort(){
       return destinationport >= 0 ? destinationport : destinationport ^ 0xffffff00 ;
+  }
+  
+  /**
+   * Sets the destination port.
+   */
+  
+  public void setDestinationPort( int destinationPort ){
+      destinationport = (short) destinationPort ;
   }
   
   /**
@@ -142,11 +158,11 @@ public class UDPMessage implements IProtocolMessage {
   }  
   
   /**
-   * Calculates the message length in bytes.
+   * Calculates the header length in bytes.
    */
   
-  public int length() {
-      return 8 + count ;  
+  public int headerLength() {
+      return 8 ;
   }
   
   /**
@@ -219,7 +235,7 @@ public class UDPMessage implements IProtocolMessage {
                   throw new IOException("Checksum error: " + checksum );
               }
           }
-          return length();
+          return count + 8 ;
       } else {
           data = buffer ;
           this.offset = offset ;
@@ -257,7 +273,7 @@ public class UDPMessage implements IProtocolMessage {
 
   int simpleWrite( byte[] buffer , int offset ) {
 
-    final short length = (short) length();
+    final short length = (short)( count + 8 );
     
     if( SocketWrenchSession.isRaw() ){
         SocketUtils.shortToBytes( sourceport , buffer , offset );

@@ -134,7 +134,14 @@ public class IP4Message implements IProtocolMessage {
   public int getSourcePort(){
       return 0 ;
   }
-    
+  
+  /**
+   * IP4 has no destination port so the method does nothing.
+   */
+  
+  public void setSourcePort( int port ){  
+  }
+  
   /**
    * Returns the port number to which the message will be sent.
    * Protocols that don't use port numbers should return 0.
@@ -143,13 +150,20 @@ public class IP4Message implements IProtocolMessage {
   public int getDestinationPort(){
       return 0 ;
   }
-    
+  
   /**
-   * Calculates the message-length in bytes.
+   * IP4 has no destination port so the method does nothing.
+   */  
+  
+  public void setDestinationPort( int port ){  
+  }
+  
+  /**
+   * Calculates the header length in bytes.
    */
   
-  public int length(){
-      return 4 * headerlength + dataCount ;
+  public int headerLength(){
+      return 4 * headerlength ;
   }
   
   /**
@@ -327,7 +341,7 @@ public class IP4Message implements IProtocolMessage {
                     
   int simpleWrite( byte[] buffer , int offset ){
                              
-      final int count = length();
+      final int count = 4 * headerlength + dataCount ;
     
       buffer[ offset ] = (byte)( version << 4 | headerlength ); 
       buffer[ offset + 1 ] = typeofservice ;

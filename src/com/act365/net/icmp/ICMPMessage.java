@@ -119,12 +119,18 @@ public class ICMPMessage implements IProtocolMessage {
       return 0 ;
   }
   
+  public void setSourcePort( int port ){
+  }
+  
   public int getDestinationPort(){
       return 0 ;
   }
   
-  public int length(){
-      return icmpCount + ( isQuery() ? 8 : 4 );
+  public void setDestinationPort( int port ){
+  }
+  
+  public int headerLength(){
+      return isQuery() ? 8 : 4 ;
   }
   
   public String toString() {
@@ -290,7 +296,7 @@ public class ICMPMessage implements IProtocolMessage {
           ip4Message.read( icmpData , icmpOffset + 4 , icmpCount , false , null , null );
       }
      
-      return length();
+      return headerLength() + icmpCount ;
   }
     
   /**
@@ -322,7 +328,7 @@ public class ICMPMessage implements IProtocolMessage {
     
   int simpleWrite( byte[] buffer , int offset ) {
       
-      final int length = length();
+      final int length = headerLength() + icmpCount ;
      
       buffer[ offset ]     = type ;
       buffer[ offset + 1 ] = code ;    

@@ -1,3 +1,4 @@
+
 /*
   * JSocket Wrench
   * 
@@ -140,6 +141,8 @@ public class DatagramEchoServer {
 		System.exit( 6 );
 	  }
 
+      server.setDebug( System.err );
+      
 	  System.err.println("Local address: " + server.getLocalAddress() );
 	  System.err.println("Local port: " + server.getLocalPort() );
       

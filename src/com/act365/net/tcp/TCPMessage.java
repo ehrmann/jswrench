@@ -181,7 +181,15 @@ public class TCPMessage implements IProtocolMessage {
   public int getSourcePort(){
       return sourceport >= 0 ? sourceport : 0xffffff00 ^ sourceport ;
   }
-    
+  
+  /**
+   * Sets the source port.
+   */
+  
+  public void setSourcePort( int port ){
+      sourceport = (short) port ;  
+  }
+  
   /**
    * Returns the port number to which the message will be sent.
    * Protocols that don't use port numbers should return 0.
@@ -190,14 +198,21 @@ public class TCPMessage implements IProtocolMessage {
   public int getDestinationPort(){
       return destinationport >= 0 ? destinationport : 0xffffff00 ^ destinationport ;
   }
-    
+  
   /**
-   * Calculates the message length in bytes, excluding the IP header.
-   * @return message length in bytes
+   * Sets the destination port.
    */
-    
-  public int length() {
-      return 4 * headerlength + getCount();
+  
+  public void setDestinationPort( int port ){
+      destinationport = (short) port ;  
+  }
+  
+  /**
+   * Calculates the header length in bytes.
+   */
+  
+  public int headerLength() {
+      return 4 * headerlength ;
   }
   
   /**
@@ -390,7 +405,7 @@ public class TCPMessage implements IProtocolMessage {
               }
           }
 
-          return length();
+          return 4 * headerlength + getCount();
       } else {
           data = buffer ;
           datastart = offset ;
@@ -430,7 +445,7 @@ public class TCPMessage implements IProtocolMessage {
   
   int simpleWrite( byte[] buffer , int offset ){
 
-      final int length = SocketWrenchSession.isRaw() ? length() : getCount() ;
+      final int length = SocketWrenchSession.isRaw() ? 4 * headerlength + getCount() : getCount() ;
 
       int i = 0 ,
           dataoffset = datastart ;
