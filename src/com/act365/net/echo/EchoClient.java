@@ -147,6 +147,8 @@ class EchoClient {
       System.exit( 6 );
     }
 
+    System.err.println( client.toString() );
+    
     InputStream localIn  = null ,
                 serverIn = null ;
 

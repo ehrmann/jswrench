@@ -133,7 +133,6 @@ public class EchoServer extends Thread {
 	}
 
     System.err.println("Server Socket: " + server.toString() );
-    System.err.println("Socket is connected to: " + server.getInetAddress() );
     System.err.println("Local port: " + server.getLocalPort() );
 
     start();
@@ -144,6 +143,7 @@ public class EchoServer extends Thread {
     while( true ){
       try {
         socket = server.accept();
+		System.err.println("Socket is connected to: " + socket.getInetAddress() );
         ( new EchoWorker( socket.getInputStream() , socket.getOutputStream() ) ).start();
       } catch( IOException e ) {
         System.err.println( e.getMessage() );
