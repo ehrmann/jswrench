@@ -70,6 +70,9 @@ public class SocketUtils {
 		protocol = SocketConstants.IPPROTO_ICMP ;
 		includeheader = true ;
 		DatagramSocket.setDatagramSocketImplFactory( new HdrICMPDatagramSocketImplFactory() );
+      } else if( protocollabel.equalsIgnoreCase("JDKTCP") ){
+        protocol = SocketConstants.IPPROTO_TCP ;
+        includeheader = false ;
 	  } else if( protocollabel.equalsIgnoreCase("TCP") ){
 		protocol = SocketConstants.IPPROTO_TCP ;
 		includeheader = false ;
@@ -99,6 +102,9 @@ public class SocketUtils {
 		DatagramSocket.setDatagramSocketImplFactory( new RawHdrTCPJDatagramSocketImplFactory() );
 		Socket.setSocketImplFactory( new RawTCPSocketImplFactory() );
 		ServerSocket.setSocketFactory( new RawTCPSocketImplFactory() );      	
+      } else if( protocollabel.equalsIgnoreCase("JDKUDP") ){
+        protocol = SocketConstants.IPPROTO_UDP ;
+        includeheader = false ;
 	  } else if( protocollabel.equalsIgnoreCase("UDP") ){
 		protocol = SocketConstants.IPPROTO_UDP ;
 		includeheader = false ;
