@@ -91,9 +91,9 @@ public class TCPWriter {
                               boolean psh ,
                               short windowsize ,
                               TCPOptions options ,
-                              byte[] data ,
-                              int offset ,
-                              int count ){
+                              byte[] writebuffer ,
+                              int writestart ,
+                              int writeend ){
   
     TCPMessage message = new TCPMessage();
 
@@ -150,22 +150,24 @@ public class TCPWriter {
       message.options[ i ] = optionsbuffer[ i ];
     }
 
+    int count = ( writeend - writestart )% writebuffer.length ;
+    
     message.data = new byte[ count ];
 
     i = -1 ;
 
     while( ++ i < count ){
-      message.data[ i ] = data[ i + offset ];
+      message.data[ i ] = writebuffer[( i + writestart )% writebuffer.length ];
     }
       
     short length = (short)( 4 * message.headerlength + count );
 
     message.checksum = SocketUtils.checksum( sourceaddress ,
-                                                   destinationaddress ,
-                                                   (byte) SocketConstants.IPPROTO_TCP ,
-                                                   length ,
-                                                   write( message ) ,
-                                                   0 );
+                                             destinationaddress ,
+                                             (byte) SocketConstants.IPPROTO_TCP ,
+                                             length ,
+                                             write( message ) ,
+                                             0 );
 
     return write( message );
   }
