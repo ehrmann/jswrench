@@ -41,7 +41,9 @@
 #include <netdb.h>
 #endif
    
-#ifndef LINUX
+#ifdef LINUX
+#include <signal.h>
+#else
 #define socklen_t int
 #endif
 
@@ -79,6 +81,10 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1socket( JNIEnv* env
             env -> DeleteLocalRef( exceptionClass );
         }
     }
+
+#ifdef LINUX
+    setReceiveTimeout( ret , 0 );
+#endif
 
     return ret ;
 }
@@ -140,6 +146,11 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1close(JNIEnv* env ,
       env -> DeleteLocalRef( exceptionClass );
     }
 
+#ifdef LINUX
+    int eraseCount = eraseReceiveTimeout( socketDescriptor );
+    assert( eraseCount == 1 );
+#endif
+
     return ret ;
 }
 
@@ -173,9 +184,37 @@ void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1receive( JNIEnv* en
 
   socklen_t addressLength = sizeof( sourceAddress );
 
+#ifdef LINUX
+  siginterrupt(SIGALRM,1);
+  int receiveTimeout = getReceiveTimeout( socketDescriptor );
+  if( receiveTimeout > 0 ){
+    resetTimeoutFlag();
+    signal( SIGALRM , setTimeoutFlag );
+    alarm( receiveTimeout );
+  }
+#endif
+
   int nRead = recvfrom( socketDescriptor , (char*) pBuffer , length , flags , & sourceAddress , & addressLength );
 
   if( nRead < 0 ){
+
+#ifdef LINUX
+
+    if( getTimeoutFlag() ){
+
+      assert( errno == EINTR );
+
+      jclass interruptedIOClass = env -> FindClass("java/io/InterruptedIOException");
+
+      SocketUtils::throwError( env , interruptedIOClass , "recvfrom()" );
+
+      env -> DeleteLocalRef( interruptedIOClass );
+
+      delete [] pBuffer ;
+
+      return ;
+    }
+#endif
 
     jclass exceptionClass = env -> FindClass("java/io/IOException");
 
@@ -185,9 +224,15 @@ void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1receive( JNIEnv* en
 
     delete [] pBuffer ;
 
-    return;
+    return;  
+  } 
+
+#ifdef LINUX
+  alarm( 0 );
+  resetTimeoutFlag();
+#endif
   
-  } else if( nRead == 0 ){
+  if( nRead == 0 ){
 
     delete [] pBuffer ;
 
@@ -303,6 +348,18 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1setOption(JNIEnv* e
 
   int value = env -> GetIntField( newValue  , valueID );
 
+#ifdef LINUX
+
+  if( name == 4102 ){
+
+    // SO_RCVTIMEO
+    
+    setReceiveTimeout( socketDescriptor , (int)( value / 1000. + 0.5 ) );
+
+    return 0 ;
+  }
+#endif
+
   int optid , level ;
 
   if( ! SocketUtils::socketOptions( name , optid , level ) ){
@@ -340,7 +397,19 @@ jobject JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1getOption(JNIEnv
   int intValue , 
       length = sizeof( intValue );
 
-  int optid , level ;
+  int optid , level , ret ;
+
+#ifdef LINUX
+  if( name == 4102 ){
+
+    // SO_RCVTIMEO
+
+    intValue = getReceiveTimeout( socketDescriptor );
+
+    assert( intValue != -1 );
+
+  } else {
+#endif
 
   if( ! SocketUtils::socketOptions( name , optid , level ) ){
     
@@ -352,7 +421,7 @@ jobject JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1getOption(JNIEnv
     return jobject();
   }
 
-  int ret = getsockopt( socketDescriptor , level , optid , (char*) & intValue , (socklen_t*) & length );
+  ret = getsockopt( socketDescriptor , level , optid , (char*) & intValue , (socklen_t*) & length );
 
   if( ret < 0 ){
 
@@ -365,6 +434,10 @@ jobject JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1getOption(JNIEnv
     return value ;
   }
   
+#ifdef LINUX
+  }
+#endif
+
   jclass integerClass = env -> FindClass("java/lang/Integer");
 
   jmethodID mid = env -> GetMethodID( integerClass , "<init>" , "(I)V" );

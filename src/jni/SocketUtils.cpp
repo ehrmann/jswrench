@@ -39,6 +39,41 @@
 
 #include <strstream>
 
+#ifdef LINUX
+
+/*
+ * Linux doesn't support the SO_RCVTIMEO socket option, so the behaviour has to be
+ * mimicked using alarm() and socket(). Since it's illegal to store the receive
+ * timeout values within the sockets, they're stored here.
+ */
+
+#include <map>
+
+std::map<int,int> receiveTimeouts ;
+
+void setReceiveTimeout(int sd, int timeout){ receiveTimeouts[sd] = timeout ;}
+
+int getReceiveTimeout(int sd)
+{
+  std::map<int,int>::const_iterator it = receiveTimeouts.find(sd);
+
+  if( it != receiveTimeouts.end() ){
+    return (*it).second ;
+  } else {
+    return -1 ;
+  }
+}
+
+int eraseReceiveTimeout(int sd){ return receiveTimeouts.erase(sd);}
+
+int timeoutFlag ;
+
+void setTimeoutFlag(int) { timeoutFlag = TRUE ;}
+void resetTimeoutFlag() { timeoutFlag = FALSE ;}
+int getTimeoutFlag() { return timeoutFlag ;}
+
+#endif
+
 int SocketUtils::jbyteArrayToInAddr( JNIEnv*    env ,
                                      jbyteArray javaAddress ,
                                      in_addr*   pAddress )

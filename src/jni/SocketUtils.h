@@ -38,6 +38,16 @@
 #include <sys/socket.h>
 #endif
 
+#ifdef LINUX
+int getReceiveTimeout(int sd);
+void setReceiveTimeout(int sd,int timeout);
+int eraseReceiveTimeout(int sd);
+
+void setTimeoutFlag(int);
+void resetTimeoutFlag();
+int getTimeoutFlag();
+#endif
+
 #include <jni.h>
 
 class SocketUtils
