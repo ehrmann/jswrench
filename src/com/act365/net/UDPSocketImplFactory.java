@@ -28,22 +28,18 @@ package com.act365.net;
 
 import java.net.*;
 
-import com.act365.net.SocketConstants ;
-
 /**
- * A socket class for the transmission of UDP packets.
- * The operating system will write the necessary IP headers. 
+ * Factory to create <code>UDPSocketImpl</code> objects.
+ * @see UDPSocketImpl
  */
 
-public class UDPDatagramSocketImpl extends GeneralDatagramSocketImpl {
+public class UDPSocketImplFactory implements DatagramSocketImplFactory {
 
   /**
-   Creates a new unconnected UDP socket.
-  */
-
-  public void create () throws SocketException {
-    create( SocketConstants.SOCK_RAW , SocketConstants.IPPROTO_UDP , false );
+   * Creates a <code>UDPSocketImpl</code> object.
+   */
+  
+  public DatagramSocketImpl createDatagramSocketImpl() {
+    return new UDPSocketImpl();
   }
-};
-
-
+} 
