@@ -285,7 +285,7 @@ public class ICMPMessage implements IProtocolMessage {
          
           ip4Message = new IP4Message();
          
-          IP4Reader.read( ip4Message , icmpData , icmpOffset + 4 , icmpCount , false );
+          ip4Message.read( icmpData , icmpOffset + 4 , icmpCount , false , null , null );
       }
      
       return length();

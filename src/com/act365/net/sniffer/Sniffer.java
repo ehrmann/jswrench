@@ -101,6 +101,7 @@ public class Sniffer {
             if( localhost instanceof String ){
                 socket.setSourceAddress( InetAddress.getByName( localhost ).getAddress() );
             } else {
+                socket.setSourceAddress( new byte[] {0,0,0,0} );
                 socket.testChecksum( false ); 
             }
             
@@ -148,7 +149,7 @@ public class Sniffer {
                           
 					default :
 					
-                        SocketUtils.dump(System.out,ip4Message.data,ip4Message.dataOffset,ip4Message.dataCount);
+                        SocketUtils.dump(System.out,ip4Message.getData(),ip4Message.getOffset(),ip4Message.getCount());
 					    
 					    break;
 					}

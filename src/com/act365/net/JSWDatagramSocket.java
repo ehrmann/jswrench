@@ -129,14 +129,16 @@ public class JSWDatagramSocket extends DatagramSocket {
         
         if( SocketWrenchSession.includeHeader() ){
 
-            cursor += IP4Writer.write( (byte) typeOfService ,
-                                       (short) timeToLive ,
-                                       (byte) message.getProtocol() ,
-                                       sourceAddress ,
-                                       destAddress ,
-                                       new byte[0] ,
-                                       sendBuffer ,
-                                       cursor );                                                   
+            IP4Message ip4Message = new IP4Message( (byte) typeOfService ,
+                                                    (short) timeToLive ,
+                                                    (byte) message.getProtocol() ,
+                                                    sourceAddress ,
+                                                    destAddress ,
+                                                    new byte[0] ,
+                                                    sendBuffer ,
+                                                    cursor );
+                                                    
+            cursor += ip4Message.write( sendBuffer , cursor , null , null );                                                   
         }
 
         cursor += message.write( sendBuffer , cursor , sourceAddress , destAddress );
@@ -171,7 +173,7 @@ public class JSWDatagramSocket extends DatagramSocket {
                    
             if( SocketWrenchSession.isRaw() ){
                 if( ip4Message instanceof IP4Message ){
-                    size = IP4Reader.read( ip4Message , receiveBuffer , cursor , length , testChecksum );
+                    size = ip4Message.read( receiveBuffer , cursor , length , testChecksum , null , null );
                     protocol = ( ip4Message.protocol >= 0 ? ip4Message.protocol : ip4Message.protocol ^ 0xffffff00 );
                     source = ip4Message.source ;
                     destination = ip4Message.destination ;
