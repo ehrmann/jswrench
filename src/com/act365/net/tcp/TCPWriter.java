@@ -35,14 +35,10 @@ import java.io.IOException ;
 
 public class TCPWriter {
 
-  static int write( TCPMessage message , byte[] buffer , int offset , int count ) throws IOException {
+  static int write( TCPMessage message , byte[] buffer , int offset ) throws IOException {
 
     final int length = message.length();
 
-    if( count < length ){
-        throw new IOException("TCP Write buffer overflow");
-    }
-    
     SocketUtils.shortToBytes( message.sourceport , buffer , offset );
     SocketUtils.shortToBytes( message.destinationport , buffer , offset + 2 );
     SocketUtils.intToBytes( message.sequencenumber , buffer , offset + 4 );
@@ -98,8 +94,7 @@ public class TCPWriter {
                            int writestart ,
                            int writeend ,
                            byte[] buffer ,
-                           int offset ,
-                           int count ) throws IOException {
+                           int offset ) throws IOException {
   
     TCPMessage message = new TCPMessage();
 
@@ -160,7 +155,13 @@ public class TCPWriter {
     message.datastart = writestart ;
     message.dataend = writeend ;
 
-    final int length = write( message , buffer , offset , count );
+    int length = 0 ;
+    
+    try {
+        write( message , buffer , offset );
+    } catch ( ArrayIndexOutOfBoundsException e ) {
+        throw new IOException("TCP Write buffer overflow");
+    }
         
     message.checksum = SocketUtils.checksum( sourceaddress ,
                                              destinationaddress ,
@@ -214,8 +215,7 @@ public class TCPWriter {
            writestart ,
            writeend ,
            bytestream ,
-           0 ,
-           bytestream.length );
+           0 );
 
     return bytestream ;    
   }      
