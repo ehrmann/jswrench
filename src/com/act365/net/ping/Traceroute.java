@@ -171,7 +171,7 @@ public class Traceroute {
         switch( protocol ){
     
         case SocketConstants.IPPROTO_ICMP:
-          messagebuffer = writer.write( ICMP.ICMP_ECHO , (byte) 0 , timebuffer );
+          messagebuffer = writer.write( ICMP.ICMP_ECHO , (byte) 0 , timebuffer , 0 , timebuffer.length );
           break;
 
         case SocketConstants.IPPROTO_UDP:

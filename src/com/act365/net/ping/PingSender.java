@@ -107,7 +107,7 @@ public class PingSender extends Thread {
         if( nbytes >= 8 ){
             SocketUtils.longToBytes( new Date().getTime() , databuffer , 0 );
         }
-        buffer = writer.write( ICMP.ICMP_ECHO , (byte) 0 , databuffer );
+        buffer = writer.write( ICMP.ICMP_ECHO , (byte) 0 , databuffer , 0 , databuffer.length );
         
         if( SocketWrenchSession.includeHeader() ){
 		  buffer = IP4Writer.write( IP4.TOS_ICMP , 
