@@ -205,21 +205,20 @@ public class UDPMessage implements IProtocolMessage {
    * @param offset position at which the message will be written
    * @param source source IP address
    * @param destination destination IP address
-   * @param isRaw whether the UDP header should be written
    * @return number of bytes written
    */
     
-  public int write( byte[] buffer , int offset , byte[] source , byte[] destination , boolean isRaw ) throws IOException {
+  public int write( byte[] buffer , int offset , byte[] source , byte[] destination ) throws IOException {
   
       int length ;
       
       try {
-          length = simpleWrite( buffer , offset , isRaw );
+          length = simpleWrite( buffer , offset );
       } catch( ArrayIndexOutOfBoundsException e ){
           throw new IOException("UDP Write buffer overflow");
       }
     
-      if( isRaw ){
+      if( SocketWrenchSession.isRaw() ){
           checksum = SocketUtils.checksum( source , destination , (byte) SocketConstants.IPPROTO_UDP , buffer , offset , length );
           SocketUtils.shortToBytes( checksum , buffer , offset + 6 );
       }
@@ -227,11 +226,11 @@ public class UDPMessage implements IProtocolMessage {
       return length ;
   }
 
-  int simpleWrite( byte[] buffer , int offset , boolean isRaw ) {
+  int simpleWrite( byte[] buffer , int offset ) {
 
     final short length = (short) length();
     
-    if( isRaw ){
+    if( SocketWrenchSession.isRaw() ){
         SocketUtils.shortToBytes( sourceport , buffer , offset );
         SocketUtils.shortToBytes( destinationport , buffer , offset + 2 );
         SocketUtils.shortToBytes( length , buffer , offset + 4 );

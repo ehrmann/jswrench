@@ -142,7 +142,7 @@ public class JSWDatagramSocket extends DatagramSocket {
                                        cursor );                                                   
         }
 
-        cursor += message.write( sendBuffer , cursor , sourceAddress , destAddress , SocketWrenchSession.isRaw() );
+        cursor += message.write( sendBuffer , cursor , sourceAddress , destAddress );
                         
         if( debug instanceof PrintStream ){
             debug.println("SEND:");
