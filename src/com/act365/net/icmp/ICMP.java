@@ -56,7 +56,7 @@ public interface ICMP {
    Labels associated with ICMP types
   */
 
-  public static String[] typelabels = { "Echo Reply" ,
+  public static String[] typeLabels = { "Echo Reply" ,
                                         "" ,
                                         "" ,
                                         "Destination Unreachable" ,
@@ -101,7 +101,7 @@ public interface ICMP {
    Labels associated with the ICMP_DEST_UNREACH type
   */
 
-  public static String[] unreachlabels = { "Network Unreachable" ,
+  public static String[] unreachLabels = { "Network Unreachable" ,
                                            "Host Unreachable" ,
                                            "Protocol Unreachable" ,
                                            "Port Unreachable" ,
@@ -131,7 +131,7 @@ public interface ICMP {
    Labels associated with the ICMP_REDIRECT type
   */
 
-  public static String[] redirectlabels = { "Redirect for Network" ,
+  public static String[] redirectLabels = { "Redirect for Network" ,
                                             "Redirect for Host" ,
                                             "Redirect for Type-of-Service and Network" ,
                                             "Redirect for Type-of-Service and Host" };
@@ -147,8 +147,7 @@ public interface ICMP {
    Labels associated with the ICMP_TIME_EXCEEDED type
   */
 
-  public static String[] timeexceededlabels = { "TTL count exceeded during transit" ,
+  public static String[] timeExceededLabels = { "TTL count exceeded during transit" ,
                                                 "TTL count exceeded during reassembly" };
-
 }
 
