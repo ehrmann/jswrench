@@ -57,5 +57,37 @@ public interface SocketConstants {
   public final static int MSG_OOB       = 1 ,
                           MSG_PEEK      = 2 ,
                           MSG_DONTROUTE = 4 ;
+
+  /*
+   * JSocketWrench protocols
+   */                       
+   
+   public final static int JSWPROTO_NULL       = 0 ,
+                           JSWPROTO_ICMP       = 1 ,
+                           JSWPROTO_HDRICMP    = 2 ,
+                           JSWPROTO_JDKTCP     = 3 ,
+                           JSWPROTO_TCP        = 4 ,
+                           JSWPROTO_RAWTCP     = 5 ,
+                           JSWPROTO_RAWHDRTCP  = 6 ,
+                           JSWPROTO_RAWTCPJ    = 7 ,
+                           JSWPROTO_RAWHDRTCPJ = 8 ,
+                           JSWPROTO_JDKUDP     = 9 ,
+                           JSWPROTO_UDP        = 10 ,
+                           JSWPROTO_RAWUDP     = 11 ,
+                           JSWPROTO_RAWHDRUDP  = 12 ;
+                           
+  public final static String[] jswProtocolLabels = { "",
+                                                     "ICMP",
+                                                     "HdrICMP",
+                                                     "JDKTCP",
+                                                     "TCP",
+                                                     "RawTCP",
+                                                     "RawHdrTCP",
+                                                     "RawTCPJ",
+                                                     "RawHdrTCPJ",
+                                                     "JDKUDP",
+                                                     "UDP",
+                                                     "RawUDP",
+                                                     "RawHdrUDP" };
 };
 
