@@ -32,7 +32,21 @@ import java.io.*;
 import java.net.*;
 
 /**
- DatagramEchoClient acts as the client for the UDP/IP echo service.
+ DatagramEchoClient acts as the client for the UDP echo service.
+ Usage: <code>DatagramEchoClient -p protocol -d datagramlength -i inputfile -o outputfile -l localhost localport hostname hostport</code>.
+ <p><code>-p protocol</code> (optional) defines the socket protocol to be used.
+ By default, the JDK UDP implementation will be used. The alternatives are
+ UDP, RawUDP or SystemUDP.
+ <p><code>-d datagramlength</code> (optional) defines the maximum lenght of
+ datagram packet that will be supported by the application. The default is 512
+ bytes.
+ <p><code>-i inputfile</code> (optional) defines the file from which input will
+ be read. By default, standard input will be used.
+ <p><code>-o outfile</code> (optional) defines the file to which all output will
+ be written. By default, standard output will be used.
+ <p><code>-l localhost localport</code> (optional) should be specified if the protocol
+ has been set to RawUDP. The information will be used to construct the IP header.
+ <p><code>hostname port</code> define the remote echo server.
 */
 
 class DatagramEchoClient {

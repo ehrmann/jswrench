@@ -32,7 +32,17 @@ import java.io.*;
 import java.net.*;
 
 /**
- DatagramEchoServer acts as the server for the UDP/IP echo service.
+ DatagramEchoServer acts as the server for the UDP echo service.
+ Usage: <code>DatagramEchoServer -p protocol -d datagramlength -l localhost localport</code>.
+ <p><code>-p protocol</code> (optional) defines the socket protocol to be used.
+ By default, the JDK UDP implementation will be used. The alternatives are
+ UDP, RawUDP or SystemUDP. 
+ <p><code>-d datagramlength</code> (optional) defines the maximum lenght of
+ datagram packet that will be supported by the application. The default is 512
+ bytes.
+ <p><code>-l localhost</code> (optional) should be specified if the protocol
+ has been set to RawUDP. The information will be used to construct the IP header.
+ <p><code>localport</code> is the port to be used by the echo server.
 */
 
 public class DatagramEchoServer {
