@@ -643,29 +643,18 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     
     IP4Message ipmessage = (IP4Message) evt.getOldValue();
 
-//    System.err.print("Destination check: ");
-    
     if( ! address.equals( ip0 ) ){
 
-//        System.err.print("[" + address.getHostName() + "]");
-        
         byte[] destinationaddress = address.getAddress();
 
         if( destinationaddress[ 0 ] != ipmessage.source[ 0 ] || 
             destinationaddress[ 1 ] != ipmessage.source[ 1 ] ||
             destinationaddress[ 2 ] != ipmessage.source[ 2 ] ||
             destinationaddress[ 3 ] != ipmessage.source[ 3 ] ){
-//            System.err.println("FAILED");
             return ;
-        } else {
-//        	System.err.println("PASSED");
         }
-    } else {
-//    	System.err.println("SKIPPED");
     }
 
-//    System.err.print("Source check: ");
-    
     if( ! localhost.equals( ip0 ) ){
  
         byte[] localaddress = localhost.getAddress();
@@ -674,24 +663,14 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
             localaddress[ 1 ] != ipmessage.destination[ 1 ] ||
             localaddress[ 2 ] != ipmessage.destination[ 2 ] ||
             localaddress[ 3 ] != ipmessage.destination[ 3 ] ){
-//            System.err.println("FAILED");
             return ;
-        } else {
-//        	System.err.println("PASSED");
         }
-    } else {
-//    	System.err.println("SKIPPED");
     }
 
     TCPMessage tcpmessage = (TCPMessage) evt.getNewValue();
 
-//    System.err.print("Port check: ");
-    
     if( port != 0 && port != tcpmessage.sourceport || localport != tcpmessage.destinationport ){
-//      System.err.println("FAILED");
       return ;
-    } else {
-//      System.err.println("PASSED");
     }
 
     if( debug ){
@@ -702,19 +681,14 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     try {
       if( address.equals( ip0 ) ){
       	address = GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , ipmessage.source );
-//        System.err.println("New address " + address.toString() );
       }
       if( port == 0 ){
         port = tcpmessage.sourceport ;
       }
-//      System.err.println("About to receive");
       receive( tcpmessage );
-//      System.err.println("Received");
     } catch( Exception e ) {
       System.err.println("propertyChange: " + e.getMessage() );
     }
-    
-//    System.err.println("Exit from propertyChange");
   }
 
   /**
@@ -799,8 +773,6 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   
   public synchronized void accept( SocketImpl newSocket ) {
 
-//    System.err.println("Before acceptance: " + toString() );
-    
     while( state != TCP.ESTABLISHED ){
       try {
         wait();
@@ -809,8 +781,6 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
       }
     }
 
-//	System.err.println("After acceptance: " + toString() );
-    
     TCPJSocketImpl tcpjsocket = (TCPJSocketImpl) newSocket ;
 
     tcpjsocket.resetSocket();
