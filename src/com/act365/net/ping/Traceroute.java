@@ -78,7 +78,7 @@ public class Traceroute {
       if( args[ i ].equals("-p") && i < args.length - 2 ){
         protocollabel = args[ ++ i ];
         if( ! protocollabel.equalsIgnoreCase("HdrICMP") && 
-            ! protocollabel.equalsIgnoreCase("HdrUDP") ){
+            ! protocollabel.equalsIgnoreCase("RawHdrUDP") ){
           System.err.println("Unsupported protocol");
           System.exit( 2 );
         }
@@ -107,7 +107,7 @@ public class Traceroute {
     	System.exit( 4 );
     }
 
-    int protocol = protocollabel instanceof String && protocollabel.equalsIgnoreCase("UDP") 
+    int protocol = protocollabel instanceof String && protocollabel.equalsIgnoreCase("RawHdrUDP") 
                                ? SocketConstants.IPPROTO_UDP : SocketConstants.IPPROTO_ICMP ;
     
     new SocketWrenchSession();
@@ -126,7 +126,7 @@ public class Traceroute {
     }
 
     if( protocol == SocketConstants.IPPROTO_UDP && localaddr == null ){
-      System.err.println("localhost must be defined if HdrUDP is to be used");
+      System.err.println("localhost must be defined if RawHdrUDP is to be used");
       System.exit( 6 );
     }
 
@@ -151,8 +151,6 @@ public class Traceroute {
       DatagramPacket packet ;
 
       ICMPWriter writer = new ICMPWriter( (short) socket.hashCode() );
-
-      ICMPReader reader = new ICMPReader( (short) socket.hashCode() );
 
       ICMPMessage message = null ;
 
@@ -188,7 +186,7 @@ public class Traceroute {
 
 
         sendbuffer = IP4Writer.write( IP4.TOS_ICMP , 
-                                      ttl ++ , 
+                                      ttl , 
                                       (byte) protocol , 
                                       localaddr != null ? localaddr.getAddress() : new byte[ 4 ] , 
                                       hostaddr.getAddress() , 
@@ -205,20 +203,28 @@ public class Traceroute {
 
         socket.receive( packet );
 
-        if( ( message = reader.read( packet.getData() , packet.getLength() , 20 , false ) ) != null ){ 
+        if( ( message = ICMPReader.read( packet.getData() , 20 , packet.getLength() - 20 , false ) ) != null ){ 
 
+          if( message.isQuery() && ( message.identifier != socket.hashCode() ) ){
+              continue ;
+          }
+          
           if( debug ){
             System.err.println("RECEIVE:");
             SocketUtils.dump( System.err , packet.getData() , 0 , packet.getLength() );
           }  
 
+          System.out.print( ttl + ". ");
+          
           if( message.type == ICMP.ICMP_TIME_EXCEEDED ||
               message.type == ICMP.ICMP_ECHOREPLY || 
               message.type == ICMP.ICMP_DEST_UNREACH ){
             System.out.println( packet.getAddress() );
           } else {
-            System.out.println( ICMP.typelabels[ message.type ] );
+            System.out.println( message.toString() );
           }
+          
+          ++ ttl ;
         }
       }
 
