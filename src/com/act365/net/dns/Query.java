@@ -82,7 +82,13 @@ public class Query {
   */
 
   public String toString() {
-    return domain_name ;
+      StringBuffer sb = new StringBuffer();
+      if( query_type < DNSMessage.dnsTypes.length ){
+          sb.append( DNSMessage.dnsTypes[query_type] );
+          sb.append(':');
+      }
+      sb.append( domain_name );
+      return sb.toString();
   }
 
   /**

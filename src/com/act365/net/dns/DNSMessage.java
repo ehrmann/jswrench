@@ -32,34 +32,168 @@ import java.io.* ;
 
 /**
  * Represents a DNS message.
+ * @see www.iana.org/assignments/dns-parameters
  */
 
 public class DNSMessage implements IServiceMessage {
 
   // Type and Query Type values
 
-    public final static int A     = 1 ,
-                            NS    = 2 ,
-                            CNAME = 5 ,
-                            PTR   = 12 ,
-                            HINFO = 13 ,
-                            MX    = 15 ,
-                            AXFR  = 252 ,
-                            ANY   = 255 ;
+    public final static int A        = 1 ,    // Host address
+                            NS       = 2 ,    // Authoritative name server
+                            MD       = 3 ,    // Mail destination (obsolete)
+                            MF       = 4 ,    // Mail forwarder (obsolete)
+                            CNAME    = 5 ,    // Canonical name for alias
+                            SOA      = 6 ,    // Start of zone of authority
+                            MB       = 7 ,    // Mailbox name (experimental)
+                            MG       = 8 ,    // Mailgroup member (experimental)
+                            MR       = 9 ,    // Mail rename domain name (experimental)
+                            NULL     = 10 ,   // Null RR (experimental)
+                            WKS      = 11 ,   // Well-known service descriptor
+                            PTR      = 12 ,   // Domain name pointer
+                            HINFO    = 13 ,   // Host information
+                            MINFO    = 14 ,   // Mail box or mail list information
+                            MX       = 15 ,   // Mail exchange
+                            TXT      = 16 ,   // Text strings
+                            RP       = 17 ,   // Responsible person
+                            AFSDB    = 18 ,   // AFS database location
+                            X25      = 19 ,   // X.25 PSDN address
+                            ISDN     = 20 ,   // ISDN address
+                            RT       = 21 ,   // Route through
+                            NSAP     = 22 ,   // NSAP-style A address
+                            NSAP_PTR = 23 ,   // NSAP-style PTR address
+                            SIG      = 24 ,   // Security signature
+                            KEY      = 25 ,   // Security key
+                            PX       = 26 ,   // X.400 mail-mapping information
+                            GPOS     = 27 ,   // Geographical position
+                            AAAA     = 28 ,   // IP6 address
+                            LOC      = 29 ,   // Location information
+                            NXT      = 30 ,   // Next domain (obsolete)
+                            EID      = 31 ,   // Endpoint identifier
+                            NIMLOC   = 32 ,   // Nimrod locator
+                            SRV      = 33 ,   // Server selection
+                            ATMA     = 34 ,   // ATM address
+                            NAPTR    = 35 ,   // Naming authority pointer
+                            KX       = 36 ,   // Key exchanger
+                            CERT     = 37 ,
+                            A6       = 38 ,
+                            DNAME    = 39 ,
+                            SINK     = 40 ,
+                            OPT      = 41 ,
+                            APL      = 42 ,
+                            DS       = 43 ,   // Delegation signer
+                            SSHFP    = 44 ,   // SSH key fingerprint
+                            RRSIG    = 46 ,   
+                            NSEC     = 47 ,
+                            DNSKEY   = 48 ,
+                            UINFO    = 100 ,
+                            UID      = 101 ,
+                            GID      = 102 ,
+                            UNSPEC   = 103 ,
+                            TKEY     = 249 ,  // Transaction key
+                            TSIG     = 250 ,  // Transaction signature
+                            IXFR     = 251 ,  // Incremental transfer
+                            AXFR     = 252 ,  // Transfer of an entire zone
+                            MAILB    = 253 ,  // Mailbox-related RRs
+                            MAILA    = 254 ,  // Mail agent RRs
+                            ANY      = 255 ;  // Request for all records
 
+    public final static String dnsTypes[] = { "" ,
+                                              "A",
+                                              "NS",
+                                              "MD",
+                                              "MF",
+                                              "CNAME",
+                                              "SOA",
+                                              "MB",
+                                              "MG",
+                                              "MR",
+                                              "NULL",
+                                              "WKS",
+                                              "PTR",
+                                              "HINFO",
+                                              "MINFO",
+                                              "MX",
+                                              "TXT",
+                                              "RP",
+                                              "AFSDB",
+                                              "X25",
+                                              "ISDN",
+                                              "RT",
+                                              "NSAP",
+                                              "NSAP_PTR",
+                                              "SIG",
+                                              "KEY",
+                                              "PX",
+                                              "GPOS",
+                                              "AAAA",
+                                              "LOC",
+                                              "NXT",
+                                              "EID",
+                                              "NIMLOC",
+                                              "SRV",
+                                              "ATMA",
+                                              "NAPTR",
+                                              "KX",
+                                              "CERT",
+                                              "A6",
+                                              "DNAME",
+                                              "SINK",
+                                              "OPT",
+                                              "APL",
+                                              "DS",
+                                              "SSHFP",
+                                              "RRSIG",
+                                              "NSEC",
+                                              "DNSKEY"
+                                            };
+
+    // Opcode values
+    
+    public final static int STANDARD_QUERY = 0 ,
+                            INVERSE_QUERY = 1 , // Retired 
+                            SERVER_STATUS_REQUEST = 2 ;
+
+    public final static String dnsOpcodes[] = { "Standard query",
+                                                "Inverse query",
+                                                "Server status query" };
+                                                
+    // Error codes
+    
+    public final static int NOERROR = 0 ,
+                            FORMERROR = 1 ,
+                            SERVFAIL = 2 ,
+                            NXDOMAIN = 3 ,
+                            NOTIMP = 4 ,
+                            REFUSED = 5 ,
+                            YXDOMAIN = 6 ,
+                            YXRRSET = 7 ,
+                            NXRRSET = 8 ,
+                            NOTAUTH = 9 ,
+                            NOTZONE = 10 ;
+            
+    public final static String errorCodes[] = { "No error" ,
+                                                "Format error" ,
+                                                "Server failure" ,
+                                                "Non-existent domain" ,
+                                                "Not implemented" ,
+                                                "Query refused" ,
+                                                "Name exists when it should not" ,
+                                                "RR Set exists when it should not" ,
+                                                "RR Set that should exist does not" ,
+                                                "Server not authoratative for zone" ,
+                                                "Name not contained in zone" };                        
+    
+    // Various other constants
+                            
     public final static int QUERY = 0 ,
                             RESPONSE = 1 ,
-                            STANDARD_QUERY = 0 ,
-                            INVERSE_QUERY = 1 ,
-                            SERVER_STATUS_REQUEST = 2 ,
                             AUTHORITATIVE_ANSWER = 1 ,
                             TRUNCATED = 1 ,
                             RECURSION_DESIRED = 1 ,
                             ITERATIVE_QUERY = 0 ,
                             RECURSIVE_QUERY = 1 ,
-                            RECURSION_AVAILABLE = 1 ,
-                            NO_ERROR = 0 ,
-                            NAME_ERROR = 3 ;
+                            RECURSION_AVAILABLE = 1 ;
 
   // Members
    
@@ -129,6 +263,46 @@ public class DNSMessage implements IServiceMessage {
   
   public void dump( PrintStream printer ) {  
   
+    StringBuffer sb = new StringBuffer();
+    
+    if( ( flags & 0x8000 ) == 1 ){
+        sb.append("Query");
+    } else {
+        sb.append("Response");
+    }
+    
+    int opcode = flags & 0x7800 ;
+    
+    if( opcode < dnsOpcodes.length ){
+        sb.append(':');
+        sb.append( dnsOpcodes[opcode] );
+    }
+    
+    if( ( flags & 0x0400 ) == 1 ){
+        sb.append(":Authoratative answer");
+    }
+    
+    if( ( flags & 0x0200 ) == 1 ){
+        sb.append(":Truncated");
+    }
+    
+    if( ( flags & 0x0100 ) == 1 ){
+        sb.append(":Recursion desired");
+    }
+    
+    if( ( flags & 0x0080 ) == 1 ){
+        sb.append(":Recursion available");
+    }
+    
+    int rcode = flags & 0x000f ;
+    
+    if( rcode > 0 ){
+        sb.append(':');
+        sb.append( errorCodes[ rcode ] );
+    }
+    
+    printer.println( sb.toString() );
+    
     int i = -1 ;
 
     while( ++ i < questions.length ){
@@ -140,21 +314,21 @@ public class DNSMessage implements IServiceMessage {
 
     while( ++ i < answers.length ){
 	  printer.println( "ANSWER " + (int)( i + 1 ) );
-	  printer.println( new String( answers[ i ].domain_name ) + ": " + answers[ i ].toString() );
+	  printer.println( new String( answers[ i ].domain_name ) + ':' + answers[ i ].toString() );
     }
 
     i = -1 ;
 
     while( ++ i < authority_records.length ){
 	  printer.println( "AUTHORITY RECORD " + (int)( i + 1 ) );
-	  printer.println( new String( authority_records[ i ].domain_name ) + ": " + authority_records[ i ].toString() );
+	  printer.println( new String( authority_records[ i ].domain_name ) + ':' + authority_records[ i ].toString() );
     }
 
     i = -1 ;
 
     while( ++ i < additional_records.length ){
 	  printer.println( "ADDITIONAL RECORD " + (int)( i + 1 ) );
-	  printer.println( new String( additional_records[ i ].domain_name ) + ": " + additional_records[ i ].toString() );
+	  printer.println( new String( additional_records[ i ].domain_name ) + ':' + additional_records[ i ].toString() );
     }
   }
   
@@ -264,6 +438,15 @@ public class DNSMessage implements IServiceMessage {
 
         break;
 
+      case DNSMessage.SOA :
+      
+        name.append("source-");
+        offset += domainName( initialOffset , buffer , offset , name );
+        name.append(":email-");
+        offset += domainName( initialOffset , buffer , offset , name );
+        
+        break;
+        
       default:
 
     }
