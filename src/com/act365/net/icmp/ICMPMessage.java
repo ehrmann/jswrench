@@ -26,6 +26,8 @@
 
 package com.act365.net.icmp ;
 
+import com.act365.net.ip.*;
+
 /**
  Stores the contents of an ICMP message.
 */
@@ -40,7 +42,7 @@ public class ICMPMessage {
   public byte[] data ;
   public int offset ;
   public int count ;
-  
+  public IP4Message ip4Message ;  
 
   public String getTypeLabel(){
       return ICMP.typeLabels[ type ];
@@ -107,9 +109,9 @@ public class ICMPMessage {
       
       if( isQuery() ){      
           sb.append(" identifier-");
-          sb.append( identifier );
+          sb.append( identifier >= 0 ? identifier : identifier ^ 0xffffff00 );
           sb.append(" seq-");
-          sb.append( sequence_number );
+          sb.append( sequence_number >= 0 ? sequence_number : sequence_number ^ 0xffffff00 );
       }
 
       sb.append(" length-");
