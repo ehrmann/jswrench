@@ -106,7 +106,9 @@ public class Sniffer {
 
 				System.out.println( ipmessage.toString() );
 
-				switch (ipmessage.protocol) {
+                int protocol = ipmessage.protocol >= 0 ? ipmessage.protocol : 0xffffff00 ^ ipmessage.protocol ;
+                
+				switch (protocol) {
 					
 					case SocketConstants.IPPROTO_UDP :
 
@@ -119,31 +121,33 @@ public class Sniffer {
                                                                 
                         if( udpmessage.sourceport == 53 ){
                         	new DNSReader( 8 ).read( ipmessage.data ).dump(System.out);
-                        	continue;
                         }
                         
 						break;
 
 					case SocketConstants.IPPROTO_TCP :
+					case SocketConstants.IPPROTO_TCPJ :
 
-						TCPReader.read(
-							ipmessage.data,
-							0,
-							ipmessage.data.length,
-							true,
-							ipmessage.source,
-							ipmessage.destination);
+						TCPMessage tcpmessage = TCPReader.read(	ipmessage.data ,
+                                                                0,
+                                                                ipmessage.data.length,
+                                                                true,
+                                                                ipmessage.source,
+                                                                ipmessage.destination);
+                                        
+
+                        System.out.println( tcpmessage.toString () );
+                        SocketUtils.dump( System.out , tcpmessage.data , 0 , tcpmessage.data.length );
+                        
 						break;
 
 					case SocketConstants.IPPROTO_ICMP :
 					default :
-						}
-
-				SocketUtils.dump(
-					System.out,
-					packet.getData(),
-					0,
-					packet.getLength());
+					
+					    SocketUtils.dump(System.out,packet.getData(),0,packet.getLength());
+					    
+					    break;
+					}
 			}
 		} catch (Exception e) {
 			System.err.println(e.getMessage());
