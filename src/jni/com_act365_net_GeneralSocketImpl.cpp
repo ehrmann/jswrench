@@ -60,6 +60,10 @@ jint JNICALL Java_com_act365_net_GeneralSocketImpl__1socket( JNIEnv* env ,
       env -> DeleteLocalRef( exceptionClass );
     }
 
+#ifdef LINUX
+    setReceiveTimeout( ret , 0 );
+#endif
+
     return ret ;
 }
 
@@ -201,6 +205,11 @@ jint JNICALL Java_com_act365_net_GeneralSocketImpl__1close(JNIEnv* env ,
       env -> DeleteLocalRef( exceptionClass );
     }
 
+#ifdef LINUX
+    int eraseCount = eraseReceiveTimeout( socketDescriptor );
+    assert( eraseCount == 1 );
+#endif
+
     return ret ;
 }
 
@@ -274,6 +283,18 @@ jint JNICALL Java_com_act365_net_GeneralSocketImpl__1setOption(JNIEnv* env ,
 
   int value = env -> GetIntField( newValue  , valueID );
 
+#ifdef LINUX
+
+  if( name == 4102 ){
+
+    // SO_RCVTIMEO
+    
+    setReceiveTimeout( socketDescriptor , (int)( value / 1000. + 0.5 ) );
+
+    return 0 ;
+  }
+#endif
+
   int optid , level ;
 
   if( ! SocketUtils::socketOptions( name , optid , level ) ){
@@ -302,6 +323,18 @@ jobject JNICALL Java_com_act365_net_GeneralSocketImpl__1getOption(JNIEnv* env ,
 
   int optid , level ;
 
+#ifdef LINUX
+  if( name == 4102 ){
+
+    // SO_RCVTIMEO
+
+    intValue = getReceiveTimeout( socketDescriptor );
+
+    assert( intValue != -1 );
+
+  } else {
+#endif
+
   if( ! SocketUtils::socketOptions( name , optid , level ) ){
     
     jclass exceptionClass = env -> FindClass("java/net/SocketException");
@@ -323,6 +356,10 @@ jobject JNICALL Java_com_act365_net_GeneralSocketImpl__1getOption(JNIEnv* env ,
 
     return value ;
   }
+
+#ifdef LINUX
+  }
+#endif
   
   jclass integerClass = env -> FindClass("java/lang/Integer");
 

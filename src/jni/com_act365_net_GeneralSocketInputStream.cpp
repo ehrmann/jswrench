@@ -36,6 +36,10 @@
 #include <sys/socket.h>
 #endif
 
+#ifdef LINUX
+#include <signal.h>
+#endif
+
 JNIEXPORT 
 jint JNICALL Java_com_act365_net_GeneralSocketInputStream__1read( JNIEnv *   env , 
                                                                   jclass, 
@@ -51,21 +55,51 @@ jint JNICALL Java_com_act365_net_GeneralSocketInputStream__1read( JNIEnv *   env
 
   int ret = 0 , nLeft = count , nRead ;
 
+#ifdef LINUX
+    siginterrupt(SIGALRM,1);
+    int receiveTimeout = getReceiveTimeout( socketDescriptor );
+    if( receiveTimeout > 0 ){
+      resetTimeoutFlag();
+      signal( SIGALRM , setTimeoutFlag );
+      alarm( receiveTimeout );
+    }
+#endif
+
   while( nLeft > 0 ){
     
     nRead = recv( socketDescriptor , pStream , nLeft , 0 );
 
     if( nRead < 0 ){
 
-      jclass exceptionClass = env -> FindClass("java/io/IOException");
+      int isTimeout ;
 
-      SocketUtils::throwError( env , exceptionClass , "recv()" );
+#ifdef WIN32
+      isTimeout = WSAGetLastError() == WSAETIMEDOUT ;
+#else
+      isTimeout = errno == EINTR ;
+#endif
 
-      env -> DeleteLocalRef( exceptionClass );
+      if( isTimeout ) {
+
+        jclass interruptedIOClass = env -> FindClass("java/io/InterruptedIOException");
+
+        SocketUtils::throwError( env , interruptedIOClass , "recvfrom()" );
+
+        env -> DeleteLocalRef( interruptedIOClass );
+
+      } else {
+
+        jclass exceptionClass = env -> FindClass("java/io/IOException");
+
+        SocketUtils::throwError( env , exceptionClass , "recv()" );
+
+        env -> DeleteLocalRef( exceptionClass );
+      }
 
       ret = nRead ;
 
       break;
+
     } else if( nRead == 0 ){
       break;
     }

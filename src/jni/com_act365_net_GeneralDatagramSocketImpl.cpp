@@ -198,11 +198,15 @@ void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1receive( JNIEnv* en
 
   if( nRead < 0 ){
 
-#ifdef LINUX
+    int isTimeout ;
 
-    if( getTimeoutFlag() ){
+#ifdef WIN32
+    isTimeout = WSAGetLastError() == WSAETIMEDOUT ;
+#else
+    isTimeout = errno == EINTR ;
+#endif
 
-      assert( errno == EINTR );
+    if( isTimeout ) {
 
       jclass interruptedIOClass = env -> FindClass("java/io/InterruptedIOException");
 
@@ -210,17 +214,14 @@ void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1receive( JNIEnv* en
 
       env -> DeleteLocalRef( interruptedIOClass );
 
-      delete [] pBuffer ;
+    } else {
 
-      return ;
+      jclass exceptionClass = env -> FindClass("java/io/IOException");
+
+      SocketUtils::throwError( env , exceptionClass , "recvfrom()" );
+
+      env -> DeleteLocalRef( exceptionClass );
     }
-#endif
-
-    jclass exceptionClass = env -> FindClass("java/io/IOException");
-
-    SocketUtils::throwError( env , exceptionClass , "recvfrom()" );
-
-    env -> DeleteLocalRef( exceptionClass );
 
     delete [] pBuffer ;
 
