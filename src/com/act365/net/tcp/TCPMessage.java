@@ -221,10 +221,10 @@ public class TCPMessage implements IProtocolMessage {
    */
     
   public String toString() {
-  	
   	StringBuffer sb = new StringBuffer();
   	
-  	sb.append("TCP: ");
+    sb.append( getProtocolName() );
+  	sb.append(": ");
   	
   	sb.append( sourceport >= 0 ? sourceport : sourceport ^ 0xffffff00 );
   	sb.append("-");
@@ -296,7 +296,7 @@ public class TCPMessage implements IProtocolMessage {
 	sb.append( Integer.toHexString( unsigned ) );
   	
 	sb.append(" window-");
-	sb.append( windowsize );
+	sb.append( windowsize >= 0 ? windowsize : 0xffff0000 ^ windowsize );
       	
     sb.append(" length-");
     sb.append( getCount() );
