@@ -90,7 +90,7 @@ public class IP4Reader {
 
     short checksum ;
 
-    if( testchecksum && ( checksum = SocketUtils.checksum( buffer , 4 * message.headerlength , 0 ) ) != 0 ){
+    if( testchecksum && ( checksum = SocketUtils.checksum( buffer , 0 , 4 * message.headerlength ) ) != 0 ){
       throw new IOException("Checksum error: " + checksum );
     }
 
