@@ -129,6 +129,9 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 
     socket.setTypeOfService( IP4.TOS_COMMAND );
     socket.setTimeToLive( 255 );
+    if( debug ){
+        socket.setDebug( System.out );    
+    }
     
     msltimer = new TCPMSLTimer( this , msltimeout );
 
@@ -300,11 +303,6 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
     socket.setSourceAddress( localhost.getAddress() );
     socket.setSourcePort( localport );
     socket.send( message , address.getAddress() );
-                 
-    if( debug ){
-        System.err.println("SEND:");
-        SocketUtils.dump( System.err , writebuffer , writestart , ( writeend - writestart )% writebuffer.length );
-    }
   }
 
   /**
@@ -586,10 +584,6 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 
     msltimer.interrupt();
 
-    if( debug ){
-      System.err.println("Connection closed");
-    }
-
     resetSocket();
     
     socket.close();
@@ -722,13 +716,6 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
       updateState( tcpmessage );
     } catch( Exception e ) {
       System.err.println("propertyChange: " + e.getMessage() );
-    }
-    
-    if( debug ){
-        System.err.println("RECEIVE:");
-        System.err.println( ipmessage.toString() );
-        System.err.println( tcpmessage.toString() );
-        SocketUtils.dump( System.err , tcpmessage.data , tcpmessage.datastart , ( tcpmessage.dataend - tcpmessage.datastart )% tcpmessage.data.length );
     }
   }
 

@@ -239,6 +239,13 @@ public class JSWDatagramSocket extends DatagramSocket {
         return protocol ;
     }
 
+    public void close(){
+        if( debug instanceof PrintStream ){
+            debug.println("Connection closed");
+        }
+        super.close();
+    }
+    
     public void setReceiveBufferSize( int receiveBufferSize ){
         this.receiveBufferSize = receiveBufferSize ;       
         receiveBuffer = new byte[ receiveBufferSize ]; // Ought to preserve contents
