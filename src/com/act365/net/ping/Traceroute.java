@@ -211,7 +211,7 @@ public class Traceroute {
             break;
         }
                                          
-        socket.send( message , hostaddr.getAddress() );
+        socket.send( message , hostaddr );
 
         while(true){
         

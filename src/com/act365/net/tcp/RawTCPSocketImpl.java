@@ -302,7 +302,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
     
     socket.setSourceAddress( localhost.getAddress() );
     socket.setSourcePort( localport );
-    socket.send( message , address.getAddress() );
+    socket.send( message , address );
   }
 
   /**

@@ -152,7 +152,7 @@ public class DNSLookup {
     
       DNSMessage dnsMessage = new DNSMessage( (short) hashCode() , dnstype , recursion_desired , domainname );
 
-      socket.send( dnsMessage , 1024 , server.getAddress() );            
+      socket.send( dnsMessage , 1024 , server );            
       socket.receive( null , dnsMessage );
 
       dnsMessage.dump( System.out );

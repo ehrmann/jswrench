@@ -116,7 +116,7 @@ public class JSWDatagramSocket extends DatagramSocket {
      */
 
     public void send( IProtocolMessage message ,
-                      byte[] destAddress ) throws IOException {
+                      InetAddress dest ) throws IOException {
     
         if( SocketWrenchSession.isRaw() ){
             if( message.usesPortNumbers() && sourcePort == 0 ){
@@ -138,7 +138,7 @@ public class JSWDatagramSocket extends DatagramSocket {
                                                     (short) timeToLive ,
                                                     (byte) message.getProtocol() ,
                                                     sourceAddress ,
-                                                    destAddress ,
+                                                    dest.getAddress() ,
                                                     new byte[0] ,
                                                     sendBuffer ,
                                                     cursor );
@@ -146,14 +146,14 @@ public class JSWDatagramSocket extends DatagramSocket {
             cursor += ip4Message.write( sendBuffer , cursor , null , null );                                                   
         }
 
-        cursor += message.write( sendBuffer , cursor , sourceAddress , destAddress );
+        cursor += message.write( sendBuffer , cursor , sourceAddress , dest.getAddress() );
                         
         if( debug instanceof PrintStream ){
             debug.println("SEND:");
             SocketUtils.dump( debug , sendBuffer , 0 , cursor );
         }
         
-        send( new DatagramPacket( sendBuffer , cursor , GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , destAddress ) , message.getDestinationPort() ) );
+        send( new DatagramPacket( sendBuffer , cursor , dest , message.getDestinationPort() ) );
     }
 
     /**
@@ -164,9 +164,9 @@ public class JSWDatagramSocket extends DatagramSocket {
     
     public void send( IServiceMessage message ,
                       int sourcePort ,
-                      byte[] destAddress ) throws IOException {
+                      InetAddress dest ) throws IOException {
         final int length = message.write( sendBuffer , ip4HeaderLength + udpHeaderLength );
-        send( new UDPMessage( (short) sourcePort , (short) message.getWellKnownPort() , sendBuffer , ip4HeaderLength + udpHeaderLength , length ), destAddress );
+        send( new UDPMessage( (short) sourcePort , (short) message.getWellKnownPort() , sendBuffer , ip4HeaderLength + udpHeaderLength , length ), dest );
         if( debug instanceof PrintStream ){
             message.dump( debug );        
         }

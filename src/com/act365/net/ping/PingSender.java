@@ -98,7 +98,7 @@ public class PingSender extends Thread {
             SocketUtils.longToBytes( new Date().getTime() , databuffer , 0 );
         }
 
-        socket.send( new ICMPMessage( ICMP.ICMP_ECHO , (byte) 0 , databuffer , 0 , databuffer.length ) , hostaddr.getAddress() );        
+        socket.send( new ICMPMessage( ICMP.ICMP_ECHO , (byte) 0 , databuffer , 0 , databuffer.length ) , hostaddr );        
         sleep( 1000 );
       }
       ping.interrupt();

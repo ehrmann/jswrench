@@ -141,8 +141,6 @@ public class DatagramEchoServer {
 		System.exit( 6 );
 	  }
 
-      server.setDebug( System.err );
-      
 	  System.err.println("Local address: " + server.getLocalAddress() );
 	  System.err.println("Local port: " + server.getLocalPort() );
       
@@ -160,7 +158,7 @@ public class DatagramEchoServer {
                                      udpMessage.getOffset() ,
                                      udpMessage.getCount() );
         
-        server.send( udpMessage , ip4Message.source );
+        server.send( udpMessage , GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , ip4Message.source ) );
       }
 
     } catch ( SocketException se ) {
