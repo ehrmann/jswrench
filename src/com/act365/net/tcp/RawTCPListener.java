@@ -64,7 +64,7 @@ public class RawTCPListener extends Thread {
  
     try {
       socket = new JSWDatagramSocket();
-      // Unwanted packets will be filtered out by TCPJSocketImpl
+      // Unwanted packets will be filtered out by RawTCPSocketImpl
       socket.setSourceAddress( new byte[]{ 0 , 0 , 0 , 0 } );
       socket.setSourcePort( 0 );
     } catch( SocketException e ){
@@ -89,7 +89,7 @@ public class RawTCPListener extends Thread {
     while( socket == null ); // The socket takes a while to start.
 
     IP4Message ip4Message = new IP4Message();
-    TCPMessage tcpMessage = new TCPMessage();
+    TCPMessage tcpMessage = TCP.createMessage();
 
     try {
 

@@ -26,6 +26,8 @@
 
 package com.act365.net.tcp ;
 
+import com.act365.net.* ;
+
 /**
  * Class <code>TCP</code> defines constants associated with the TCP protocol.
  */
@@ -67,5 +69,82 @@ public class TCP {
                                                "LAST_ACK" ,
                                                "FIN_WAIT_2" ,
                                                "TIME_WAIT" };
+               
+  /**
+   * Creates a blank TCPMessage or TCPJMessage object, depending upon
+   * the global protocol that has been chosen.
+   */
+               
+  public static TCPMessage createMessage() {
+      switch( SocketWrenchSession.getProtocol() ){
+          case SocketConstants.IPPROTO_TCP:
+              return new TCPMessage();
+          case SocketConstants.IPPROTO_TCPJ:
+              return new TCPJMessage();
+          default:
+              return null ;                                    
+      }
+  }
+  
+  /**
+   * Creates a populated TCPMessage or TCPJMessage object, depending upon
+   * the global protocol that has been chosen.
+   */         
+
+  public static TCPMessage createMessage( short sourceport ,
+                                          short destinationport ,
+                                          int sequencenumber ,
+                                          int acknowledgementnumber ,
+                                          boolean ack ,
+                                          boolean rst ,
+                                          boolean syn ,
+                                          boolean fin ,
+                                          boolean psh ,
+                                          short windowsize ,
+                                          TCPOptions options ,
+                                          byte[] writebuffer ,
+                                          int writestart ,
+                                          int writeend ){
+                         
+      switch( SocketWrenchSession.getProtocol() ){
+          
+          case SocketConstants.IPPROTO_TCP:
+          
+              return new TCPMessage( sourceport ,
+                                     destinationport ,
+                                     sequencenumber ,
+                                     acknowledgementnumber ,
+                                     ack ,
+                                     rst ,
+                                     syn ,
+                                     fin ,
+                                     psh ,
+                                     windowsize ,
+                                     options ,
+                                     writebuffer ,
+                                     writestart ,
+                                     writeend );
+          
+          case SocketConstants.IPPROTO_TCPJ:
+          
+              return new TCPJMessage( sourceport ,
+                                      destinationport ,
+                                      sequencenumber ,
+                                      acknowledgementnumber ,
+                                      ack ,
+                                      rst ,
+                                      syn ,
+                                      fin ,
+                                      psh ,
+                                      windowsize ,
+                                      options ,
+                                      writebuffer ,
+                                      writestart ,
+                                      writeend );
+          
+          default:
+              return null ;
+      }
+  }
 }
 

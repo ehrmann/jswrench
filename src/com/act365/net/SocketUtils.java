@@ -333,4 +333,25 @@ public class SocketUtils {
 		++ i ;
 	  }
 	}
+    
+    /**
+     * Creates a blank message of the type appropriate for the 
+     * globally-selected protocol.
+     */
+
+    public static IProtocolMessage createMessage(){
+    
+        switch( SocketWrenchSession.getProtocol() ){
+            case SocketConstants.IPPROTO_UDP:
+                return new com.act365.net.udp.UDPMessage();
+            case SocketConstants.IPPROTO_ICMP:
+                return new com.act365.net.icmp.ICMPMessage();
+            case SocketConstants.IPPROTO_TCP:
+                return new com.act365.net.tcp.TCPMessage();
+            case SocketConstants.IPPROTO_TCPJ:
+                return new com.act365.net.tcp.TCPJMessage();
+            default:
+                return null ;
+        }
+    }   
 }

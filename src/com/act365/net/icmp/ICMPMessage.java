@@ -113,16 +113,16 @@ public class ICMPMessage implements IProtocolMessage {
       return false ;
   }
   
+  public int getSourcePort(){
+      return 0 ;
+  }
+  
   public int getDestinationPort(){
       return 0 ;
   }
   
   public int length(){
       return icmpCount + ( isQuery() ? 8 : 4 );
-  }
-  
-  public int headerLength(){
-      return isQuery() ? 8 : 4 ;
   }
   
   public String toString() {

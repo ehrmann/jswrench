@@ -282,23 +282,24 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
       flags |= TCP.ACK ;
     }
 
+    TCPMessage message = TCP.createMessage( (short) localport ,
+                                            (short) port ,
+                                            seqnum ,
+                                            destseqnum ,
+                                            ( flags & TCP.ACK ) > 0 ,
+                                            ( flags & TCP.RST ) > 0 ,
+                                            ( flags & TCP.SYN ) > 0 ,
+                                            ( flags & TCP.FIN ) > 0 ,
+                                            ( flags & TCP.PSH ) > 0 ,
+                                            (short) windowsize ,
+                                            options ,
+                                            writebuffer ,  
+                                            writestart ,
+                                            writeend );
+    
     socket.setSourceAddress( localhost.getAddress() );
     socket.setSourcePort( localport );
-
-    socket.send( address.getAddress() ,
-                 port ,
-                 seqnum ,
-                 destseqnum ,
-                 ( flags & TCP.ACK ) > 0 ,
-                 ( flags & TCP.RST ) > 0 ,
-                 ( flags & TCP.SYN ) > 0 ,
-                 ( flags & TCP.FIN ) > 0 ,
-                 ( flags & TCP.PSH ) > 0 ,
-                 windowsize ,
-                 options ,
-                 writebuffer ,  
-                 writestart ,
-                 writeend );
+    socket.send( message , address.getAddress() );
                  
     if( debug ){
         System.err.println("SEND:");
@@ -444,8 +445,8 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
             readbuffer[( readoffset + readcount + i ) % maxwindowsize ] = message.data[( message.datastart + i )% message.data.length ];
           }
         }
-        readcount += message.dataLength();
-        windowsize -= message.dataLength();
+        readcount += message.getCount();
+        windowsize -= message.getCount();
         acknowledge();
         notifyAll();
         return ;

@@ -106,6 +106,15 @@ public class UDPMessage implements IProtocolMessage {
   }
   
   /**
+   * Returns the port number from which the message has been sent.
+   * Protocols that don't use port numbers should return 0.
+   */
+    
+  public int getSourcePort(){
+      return sourceport >= 0 ? sourceport : 0xffffff00 ^ sourceport ;
+  }
+    
+  /**
    * Returns the destination port.
    */
   
@@ -138,14 +147,6 @@ public class UDPMessage implements IProtocolMessage {
   
   public int length() {
       return 8 + count ;  
-  }
-  
-  /**
-   * Calculates the header length in bytes.
-   */
-  
-  public int headerLength() {
-      return 8 ;
   }
   
   /**
@@ -274,8 +275,7 @@ public class UDPMessage implements IProtocolMessage {
       ++ i ;
     }
 
-    return length ;
+    return SocketWrenchSession.isRaw() ? length : length - 8 ;
   }
-
 }
 

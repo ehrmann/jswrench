@@ -28,10 +28,7 @@ package com.act365.net.sniffer;
 
 import com.act365.net.*;
 import com.act365.net.dns.*;
-import com.act365.net.icmp.*;
 import com.act365.net.ip.*;
-import com.act365.net.tcp.*;
-import com.act365.net.udp.*;
 
 import java.io.IOException ;
 import java.net.*;
@@ -108,16 +105,12 @@ public class Sniffer {
             }
             
 			IP4Message ip4Message = new IP4Message();
-            ICMPMessage icmpMessage = new ICMPMessage();
-            UDPMessage udpMessage = new UDPMessage();
-            TCPMessage tcpMessage = new TCPMessage();
-
+            
+            IProtocolMessage message = SocketUtils.createMessage();
+            
 			while (true) {
 
-                protocol = socket.receive( ip4Message ,
-                                           icmpMessage ,
-                                           udpMessage ,
-                                           tcpMessage );
+                socket.receive( ip4Message , message );
 
                 if( excludedaddress.length == 4 &&
                     excludedaddress[0] == ip4Message.source[0] &&
@@ -129,33 +122,27 @@ public class Sniffer {
 
 				System.out.println( ip4Message.toString() );
 
-				switch (protocol) {
+				switch ( message.getProtocol() ) {
 					
 					case SocketConstants.IPPROTO_UDP :
 
-                        if( udpMessage.sourceport == 53 ){
+                        if( message.getSourcePort() == 53 ){
                             DNSMessage dnsMessage = new DNSMessage();
-                        	DNSReader.read( dnsMessage , udpMessage.getData() , udpMessage.getOffset() , udpMessage.getCount() );
+                        	DNSReader.read( dnsMessage , message.getData() , message.getOffset() , message.getCount() );
                             dnsMessage.dump( System.out );
                         } else {
-                            System.out.println( udpMessage.toString() );
-                            SocketUtils.dump( System.out , udpMessage.getData() , udpMessage.getOffset() , udpMessage.getCount() );
+                            System.out.println( message.toString() );
+                            SocketUtils.dump( System.out , message.getData() , message.getOffset() , message.getCount() );
                         }
                         
 						break;
 
 					case SocketConstants.IPPROTO_TCP :
 					case SocketConstants.IPPROTO_TCPJ :
-
-                        System.out.println( tcpMessage.toString () );
-                        SocketUtils.dump( System.out , tcpMessage.data , tcpMessage.datastart , tcpMessage.dataLength() ); 
-                        
-						break;
-
 					case SocketConstants.IPPROTO_ICMP :
                                             
-                        System.out.println( icmpMessage.toString() );
-                        SocketUtils.dump( System.out , icmpMessage.getData() , icmpMessage.getOffset() , icmpMessage.getCount() );
+                        System.out.println( message.toString() );
+                        SocketUtils.dump( System.out , message.getData() , message.getOffset() , message.getCount() );
                                                                    
                         break;
                           
