@@ -45,6 +45,7 @@ public class TCPAcknowledger extends Thread {
   public void run() {
     try {
       sleep( delay );
+      socket.flush();
       socket.send( TCP.ACK );
     } catch( Exception e ) {
     } 
