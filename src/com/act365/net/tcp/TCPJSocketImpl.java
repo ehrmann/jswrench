@@ -168,7 +168,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   /** 
    Sends a TCP message to the destination and awaits acknowledgement where
    appropriate. Data is broadcast in chunks consistent with the window size
-   that has been advertised by the destination. 
+   advertised by the destination. 
   */ 
 
   synchronized void send( int flags , TCPOptions options , boolean awaitACK ) throws IOException {
@@ -216,8 +216,6 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   	
   	sendtime = new Date().getTime();
 
-//    System.err.println("sendtime: " + sendtime );
-      	
 	int seqnum = localseqnum ;
 	
 	send( flags , options , start , end , seqnum );
@@ -248,7 +246,6 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
 		  }
 		  
 		  while( ( acknowledgedseqnum == 0 || sendsize > 0 ) && counter ++ < transmissionlimit ){
-//		  	sendtime = 0 ;
 			send( flags , options , start , end , seqnum );
 			wait( delay );
 			delay *= 2 ;
@@ -340,7 +337,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
    Updates the Retransmission Timeout Value (RTO).
   */
 
-  void updateRTO(){
+  synchronized void updateRTO(){
   
 	if( sendtime > 0 && receivetime > 0 ){
 	  rtt = (long)( alpha * rtt + ( 1 - alpha )*( receivetime - sendtime ) );
@@ -358,7 +355,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
    * Acknowledges a received TCP message.
    */
   
-  public void acknowledge() throws IOException {
+  public synchronized void acknowledge() throws IOException {
 
     if( avoidackdelay ){
       send( TCP.ACK );
@@ -368,6 +365,8 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     } else {
       acknowledger = new TCPAcknowledger( this , 200 );
       acknowledger.start();
+      
+      while( ! acknowledger.isAlive() );
     }
   }
 
@@ -375,7 +374,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
    * Resets a socket to its default values.
    */
   
-  void resetSocket(){
+  synchronized void resetSocket(){
 
 	address = localhost = ip0 ;
 	port = localport = 0 ;
@@ -404,15 +403,11 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   }
 
   /**
-   * Handles an received TCPMessage
-   * @throws IOException message is illegal
+   * Updates the state variables associated with acknowledgement
+   * in order to release waiting send() calls.
    */
 
-  synchronized void receive( TCPMessage message ) throws IOException {
-
-    if( modelpacketloss && random.nextFloat() < packetloss ){
-      return ;
-    }
+  synchronized void updateACK( TCPMessage message ) {
 
     receivetime = new Date().getTime();
 
@@ -427,11 +422,18 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     }
       
     destwindowsize = message.windowsize ;
-    	
+ 
     notifyAll();
+  }
+  
+  /**
+   * Updates the TCP state in light of a received message.
+   */
 
-    flush();    
-    
+  synchronized void updateState( TCPMessage message ) throws IOException {
+
+    flush();
+        
     switch( state ){
 
     case TCP.CLOSED:
@@ -441,19 +443,19 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
         send( TCP.SYN | TCP.ACK );
         previousstate = state ;
         state = TCP.SYN_RCVD ;
-//        notifyAll();
+        notifyAll();
       } 
       return ;
     case TCP.SYN_RCVD:
       if( message.ack ){
         previousstate = state ;
         state = TCP.ESTABLISHED ;
-//        notifyAll();
+        notifyAll();
         return;
       } else if( message.rst && previousstate == TCP.LISTEN ) {
         previousstate = state ;
         state = TCP.LISTEN ;
-//        notifyAll();
+        notifyAll();
         return ;
       }
       break;
@@ -462,13 +464,13 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
         send( TCP.ACK );
         previousstate = state ;
         state = TCP.ESTABLISHED ;
-//        notifyAll();
+        notifyAll();
         return ;
       } else if( message.syn ){
         send( TCP.SYN | TCP.ACK );
         previousstate = state ;
         state = TCP.SYN_RCVD ;
-//        notifyAll();
+        notifyAll();
         return;
       }
       break;
@@ -478,13 +480,13 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
 			send( TCP.ACK );
 			previousstate = state ;
 			state = TCP.CLOSE_WAIT ;
-//			notifyAll();
+			notifyAll();
 			return ;
         } else {
 		  send( TCP.FIN | TCP.ACK );
 		  previousstate = state ;
 		  state = TCP.LAST_ACK ;
-//		  notifyAll();
+		  notifyAll();
 		  return;
         }
       } else if( message.psh ){
@@ -497,10 +499,10 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
         readcount += message.data.length ;
         windowsize -= message.data.length ;
         acknowledge();
-//        notifyAll();
+        notifyAll();
         return ;
       } else if( message.ack ){
-//        notifyAll();
+        notifyAll();
         return ;
       }
       break;
@@ -515,12 +517,12 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
         send( TCP.ACK );
         previousstate = state ;
         state = TCP.CLOSING ;
-//        notifyAll();
+        notifyAll();
         return ;
       } else if( message.ack ){
         previousstate = state ;
         state = TCP.FIN_WAIT_2 ;
-//        notifyAll();
+        notifyAll();
         return ;
       }
       break;
@@ -533,7 +535,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     case TCP.LAST_ACK :
       if( message.ack ){
         resetSocket();
-//        notifyAll();
+        notifyAll();
         return;
       }
       break;
@@ -547,7 +549,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     case TCP.TIME_WAIT :
       if( message.fin ){
         send( TCP.ACK );
-//        notifyAll();
+        notifyAll();
         return ;
       }
       break;
@@ -574,6 +576,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   			wait();
   		}
   	} catch ( InterruptedException e ) {
+  	  System.err.println("flush() " + e.getMessage() );
   	}
   }
   
@@ -766,7 +769,13 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
       if( port == 0 ){
         port = tcpmessage.sourceport ;
       }
-      receive( tcpmessage );
+
+	  if( modelpacketloss && random.nextFloat() < packetloss ){
+		return ;
+	  }
+
+      updateACK( tcpmessage );
+      updateState( tcpmessage );
     } catch( Exception e ) {
       System.err.println("propertyChange: " + e.getMessage() );
     }
