@@ -141,7 +141,7 @@ public class DatagramEchoServer {
 		System.exit( 6 );
 	  }
 
-	  System.err.println("Local address: " + server.getLocalAddress() );
+	  System.err.println("Local address: " + ( localaddr instanceof InetAddress ? localaddr : server.getLocalAddress() ).toString() );
 	  System.err.println("Local port: " + server.getLocalPort() );
       
       IP4Message ip4Message = new IP4Message();
