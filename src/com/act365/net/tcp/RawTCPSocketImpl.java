@@ -43,23 +43,17 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
   
   static long msltimeout ;
 
-  static int transmissionlimit ,
-             maxwindowsize ,
+  static int maxwindowsize ,
              minEphemeralPort ,
-             maxEphemeralPort ;
+             maxEphemeralPort ,
+             firstTimeout ;
                    
-  final static int protocol = SocketWrenchSession.getProtocol();
-
   static boolean debug ,
                  avoidhalfcloseserver ,
                  avoidackdelay ,
                  modelpacketloss ;
 
-  final static boolean includeipheader = SocketWrenchSession.includeHeader();
-
-  static double alpha ,
-                beta ,
-                packetloss ;
+  static double packetloss ;
 
   final static InetAddress ip0 = GeneralSocketImpl.createInetAddress() ,
                            iplocalhost = GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , new byte[] {127,0,0,1} );
@@ -81,11 +75,6 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
       readcount ,
       writestart ,
       writeend ;
-  
-  long rto ,
-       rtt ,
-       sendtime ,
-       receivetime ;
 
   byte[] readbuffer ,
          writebuffer ;
@@ -94,6 +83,8 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 
   TCPMSLTimer msltimer ;
 
+  RetransmissionTimer retransmissionTimer ;
+  
   Random random ;
 
   static {
@@ -101,7 +92,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
   	// Reads system property list
   	
 	msltimeout = Integer.getInteger("tcpj.msltimeout", 10000 ).longValue();
-	transmissionlimit = Integer.getInteger("tcpj.retransmissionlimit", 3 ).intValue();
+    firstTimeout = Integer.getInteger("tcpj.firsttimeout", 3 ).intValue();
 	maxwindowsize = Integer.getInteger("tcpj.maxwindowsize", 32767 ).intValue();
 	minEphemeralPort = Integer.getInteger("tcpj.minephemeralport", 1024 ).intValue();
 	maxEphemeralPort = Integer.getInteger("tcpj.maxephemeralport", 5000 ).intValue();
@@ -111,27 +102,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 	avoidackdelay = Boolean.getBoolean("tcpj.avoidackdelay");
 	modelpacketloss = Boolean.getBoolean("tcpj.packetloss.model");
   	
-	String alphalabel = System.getProperty("tcpj.rto.alpha"),
-		   betalabel = System.getProperty("tcpj.rto.beta"),
-		   packetlosslabel = System.getProperty("tcpj.packetloss.rate");
-  	
-  	alpha = 0.9 ;
-  	
-	if( alphalabel instanceof String ){    
-		try {
-			alpha = Double.valueOf( alphalabel ).doubleValue();
-		} catch ( NumberFormatException e ) {
-		}
-	}
-	
-	beta = 2.0 ;
-	
-	if( betalabel instanceof String ){    
-		try {
-			beta = Double.valueOf( betalabel ).doubleValue();
-		} catch ( NumberFormatException e ) {
-		}
-	}
+	String packetlosslabel = System.getProperty("tcpj.packetloss.rate");
 
     packetloss = 0.1 ;
     	
@@ -161,6 +132,8 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
     
     msltimer = new TCPMSLTimer( this , msltimeout );
 
+    retransmissionTimer = new RetransmissionTimer( firstTimeout );
+    
     RawTCPListener.getInstance().addPropertyChangeListener( this );
 
     if( modelpacketloss ){
@@ -217,8 +190,6 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
    
   synchronized void send( int flags , TCPOptions options , int start , int end , boolean awaitACK ) throws IOException {
   	
-  	sendtime = new Date().getTime();
-
 	int seqnum = localseqnum ;
 	
 	send( flags , options , start , end , seqnum );
@@ -231,45 +202,55 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 
     if( awaitACK ){
 
-        int sendsize = 1 ,
-            counter = 1 ;
+        int sendsize = 1 ;
         
-        long delay = rto ;
+        retransmissionTimer.newPacket();
           	
 		try {
-		  wait( delay );
-		  delay *= 2 ;
+		  wait( retransmissionTimer.start() * 1000 );
 		  
 		  if( acknowledgedseqnum == 0 ){
 		  	sendsize = 1 ;
 		  } else {
 		  	start = ( end - ( localseqnum - acknowledgedseqnum ) )% writebuffer.length ;
 		  	sendsize = ( end - start )% writebuffer.length ;
-		  	seqnum = acknowledgedseqnum ;
+		  	seqnum = acknowledgedseqnum ; 
 		  }
 		  
-		  while( ( acknowledgedseqnum == 0 || sendsize > 0 ) && counter ++ < transmissionlimit ){
-			send( flags , options , start , end , seqnum );
-			wait( delay );
-			delay *= 2 ;
+          if( acknowledgedseqnum > 0 && sendsize == 0 ){
+              retransmissionTimer.stop();
+          }
 
-			if( acknowledgedseqnum == 0 ){
-			  sendsize = 1 ;
-			} else {
-			  start = ( end - ( localseqnum - acknowledgedseqnum ) )% writebuffer.length ;
-			  sendsize = ( end - start )% writebuffer.length ;
-			}	
-		  } 
+          while( acknowledgedseqnum == 0 || sendsize > 0 ){
+              if( retransmissionTimer.timeout() ){
+                  break;
+              }
+              send( flags , options , start , end , seqnum );
+              wait( retransmissionTimer.start() * 1000 );
+
+              if( acknowledgedseqnum == 0 ){
+                  sendsize = 1 ;
+              } else {
+                  start = ( end - ( localseqnum - acknowledgedseqnum ) )% writebuffer.length ;
+                  sendsize = ( end - start )% writebuffer.length ;
+              }	
+              
+              if( acknowledgedseqnum > 0 && sendsize == 0 ){
+                  retransmissionTimer.stop();
+              }
+          } 
 		  
 		} catch ( Exception e ) {
 		  System.err.println("Exception: " + e.getMessage() );
-		}
+		}      
   
-		if( sendsize > 0 ){
-		  throw new IOException("Connection reset");
-		}
+        if( sendsize > 0 ){
+          throw new IOException("Connection reset");
+        }
 
-		updateRTO();
+        if( debug ){
+            System.err.println( retransmissionTimer.toString() );
+        }
     }
   }
   
@@ -326,24 +307,6 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
   }
 
   /**
-   Updates the Retransmission Timeout Value (RTO).
-  */
-
-  synchronized void updateRTO(){
-  
-	if( sendtime > 0 && receivetime > 0 ){
-	  rtt = (long)( alpha * rtt + ( 1 - alpha )*( receivetime - sendtime ) );
-	  rto = (long)( beta * rtt );
-	  sendtime = 0 ;
-	  receivetime = 0 ;
-
-      if( debug ){
-		System.err.println("Updated rto: " + rto );
-      }
-	}
-  }
-
-  /**
    * Acknowledges a received TCP message.
    */
   
@@ -385,12 +348,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
     writebuffer = new byte[ maxwindowsize ];
     writestart = 0 ;
     writeend = 0 ;
- 
-    rtt = 5000 ;
-    rto = (long)( beta * rtt );
-    sendtime = 0 ;
-    receivetime = 0 ;
-    
+
     acknowledger = null ;
   }
 
@@ -400,8 +358,6 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
    */
 
   synchronized void updateACK( TCPMessage message ) {
-
-    receivetime = new Date().getTime();
 
     if( message.ack ){
       acknowledgedseqnum = message.acknowledgementnumber ;
