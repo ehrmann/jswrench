@@ -47,6 +47,10 @@ import java.net.*;
  <p><code>-l localhost localport</code> (optional) should be specified if the protocol
  has been set to RawUDP. The information will be used to construct the IP header.
  <p><code>hostname port</code> define the remote echo server.
+ <p>The UDP protocol should be used on XP while the RawUDP protocol should be 
+ used on Linux. The issue is that for a raw socket, <code>recvfrom()</code> 
+ includes the IP header in its calculation of the number of bytes read on Linux 
+ but excludes it on XP. 
 */
 
 class DatagramEchoClient {

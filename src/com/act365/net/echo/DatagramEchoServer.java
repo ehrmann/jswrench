@@ -26,6 +26,7 @@
 
 package com.act365.net.echo ;
 
+import com.act365.net.ip.*;
 import com.act365.net.* ;
 
 import java.io.*;
@@ -43,6 +44,10 @@ import java.net.*;
  <p><code>-l localhost</code> (optional) should be specified if the protocol
  has been set to RawUDP. The information will be used to construct the IP header.
  <p><code>localport</code> is the port to be used by the echo server.
+ <p>The UDP protocol should be used on XP while the RawUDP protocol should be 
+ used on Linux. The issue is that for a raw socket, <code>recvfrom()</code> 
+ includes the IP header in its calculation of the number of bytes read on Linux 
+ but excludes it on XP. 
 */
 
 public class DatagramEchoServer {
@@ -124,6 +129,8 @@ public class DatagramEchoServer {
 
       DatagramSocket server = null ;
 
+      final boolean includeheader = SocketUtils.includeHeader();
+      
 	  try { 
 		if( localaddr instanceof InetAddress ){
 		  server = new DatagramSocket( port , localaddr );   	
@@ -138,7 +145,8 @@ public class DatagramEchoServer {
 	  System.err.println("Local address: " + server.getLocalAddress() );
 	  System.err.println("Local port: " + server.getLocalPort() );
       
-      int bytesRead ;
+      int bytesRead ,
+          messagelength ;
 
       byte[] buffer = new byte[ maxDatagramLength ];
 
@@ -150,8 +158,14 @@ public class DatagramEchoServer {
 
         server.receive( received );
 
+        messagelength = received.getLength();
+        
+        if( includeheader ){
+          messagelength -= 4 * IP4Reader.read( received.getData() , messagelength , false ).length ;
+        }
+        
         server.send( new DatagramPacket( received.getData() , 
-                                         received.getLength() , 
+                                         messagelength , 
                                          received.getAddress() ,
                                          received.getPort() ) );
       }
