@@ -41,29 +41,31 @@ import java.util.*;
 
 class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   
-  final static long msltimeout = 10000 ;
+  static long msltimeout ;
 
-  final static int transmissionlimit = 3 ,
-                   maxwindowsize = 32767 ,
-                   minEphemeralPort = 1024 ,
-                   maxEphemeralPort = 5000 ,
-                   protocol = SocketUtils.getProtocol();
+  static int transmissionlimit ,
+             maxwindowsize ,
+             minEphemeralPort ,
+             maxEphemeralPort ;
+                   
+  final static int protocol = SocketUtils.getProtocol();
 
-  final static boolean debug = false ,
-                       closeserver = true ,
-                       includeipheader = SocketUtils.includeHeader() ,
-                       implementackdelay = true ,
-                       modelpacketloss = false ;
+  static boolean debug ,
+                 avoidhalfcloseserver ,
+                 avoidackdelay ,
+                 modelpacketloss ;
 
-  final static double alpha = 0.9 ,
-                      beta = 2.0 ,
-                      packetloss = 0.1 ;
+  final static boolean includeipheader = SocketUtils.includeHeader();
+
+  static double alpha = 0.9 ,
+                beta = 2.0 ,
+                packetloss = 0.1 ;
 
   final static InetAddress ip0 = GeneralSocketImpl.createInetAddress() ,
                            iplocalhost = GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , new byte[] {127,0,0,1} );
   
   static int nextEphemeralPort = 1024 ;
- 
+   
   DatagramSocket socket ;
 
   InetAddress localhost ;
@@ -90,6 +92,47 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   TCPMSLTimer msltimer ;
 
   Random random ;
+
+  static {
+  	
+  	// Reads system property list
+  	
+	msltimeout = Integer.getInteger("tcpj.msltimeout", 10000 ).longValue();
+	transmissionlimit = Integer.getInteger("tcpj.retransmissionlimit", 3 ).intValue();
+	maxwindowsize = Integer.getInteger("tcpj.maxwindowsize", 32767 ).intValue();
+	minEphemeralPort = Integer.getInteger("tcpj.minephemeralport", 1024 ).intValue();
+	maxEphemeralPort = Integer.getInteger("tcpj.maxephemeralport", 5000 ).intValue();
+  	
+	debug = Boolean.getBoolean("tcpj.debug");
+	avoidhalfcloseserver = Boolean.getBoolean("tcpj.avoidhalfcloseserver");
+	avoidackdelay = Boolean.getBoolean("tcpj.avoidackdelay");
+	modelpacketloss = Boolean.getBoolean("tcpj.packetloss.model");
+  	
+	String alphalabel = System.getProperty("tcpj.rto.alpha"),
+		   betalabel = System.getProperty("tcpj.rto.beta"),
+		   packetlosslabel = System.getProperty("tcpj.packetloss.rate");
+  	
+	if( alphalabel instanceof String ){    
+		try {
+			alpha = Double.valueOf( alphalabel ).doubleValue();
+		} catch ( NumberFormatException e ) {
+		}
+	}
+	
+	if( betalabel instanceof String ){    
+		try {
+			beta = Double.valueOf( betalabel ).doubleValue();
+		} catch ( NumberFormatException e ) {
+		}
+	}
+	
+	if( packetlosslabel instanceof String ){    
+		try {
+			packetloss = Double.valueOf( packetlosslabel ).doubleValue();
+		} catch ( NumberFormatException e ) {
+		}
+	}  	
+  }
 
   /**
    * Default constructor
@@ -307,7 +350,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   
   public void acknowledge() throws IOException {
 
-    if( ! implementackdelay ){
+    if( avoidackdelay ){
       send( TCP.ACK );
     } else if( acknowledger.isAlive() ) {
       acknowledger.interrupt();
@@ -418,18 +461,18 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
       break;
     case TCP.ESTABLISHED:
       if( message.fin ){
-        if( closeserver ){
-          send( TCP.FIN | TCP.ACK );
-          previousstate = state ;
-          state = TCP.LAST_ACK ;
-          notifyAll();
-          return;
+        if( avoidhalfcloseserver ){
+			send( TCP.ACK );
+			previousstate = state ;
+			state = TCP.CLOSE_WAIT ;
+			notifyAll();
+			return ;
         } else {
-          send( TCP.ACK );
-          previousstate = state ;
-          state = TCP.CLOSE_WAIT ;
-          notifyAll();
-          return ;
+		  send( TCP.FIN | TCP.ACK );
+		  previousstate = state ;
+		  state = TCP.LAST_ACK ;
+		  notifyAll();
+		  return;
         }
       } else if( message.psh ){
         {
