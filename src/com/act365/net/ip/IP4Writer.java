@@ -134,24 +134,5 @@ public class IP4Writer {
 
     return message.length();       
   }
-  
-  /**
-   * @deprecated Use the other form of write() - it avoids buffer copy
-   */
-
-  public static byte[] write( byte typeofservice ,
-                              short timetolive ,
-                              byte protocol ,
-                              byte[] source ,
-                              byte[] destination ,
-                              byte[] data ) throws IOException
-  {
-      byte[] buffer = new byte[ 20 + data.length ];
-      
-      write( typeofservice , timetolive , protocol , source , destination , data , buffer , 0 );
-      
-      return buffer ;  
-  }
-  
 }
 

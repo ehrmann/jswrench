@@ -98,32 +98,5 @@ public class UDPWriter {
 
     return length ;
   }
-
-  /**
-   * @deprecated Use the other form of write(), which avoids a buffer copy
-   */
-
-  public static byte[] write( byte[] sourceaddress ,
-                              short  sourceport ,
-                              byte[] destinationaddress ,
-                              short  destinationport ,
-                              byte[] data ,
-                              int    dataOffset ,
-                              int    dataCount ) throws IOException {
-  
-      byte[] buffer = new byte[ 8 + dataCount ];
-      
-      write( sourceaddress ,
-             sourceport ,
-             destinationaddress ,
-             destinationport ,
-             data ,
-             dataOffset ,
-             dataCount ,
-             buffer ,
-             0 );
-             
-      return buffer ;                            
-  }
 }
 

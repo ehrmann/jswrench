@@ -29,6 +29,7 @@ package com.act365.net.tcp ;
 import com.act365.net.* ;
 
 import java.io.IOException ;
+
 /**
  * Writes TCP messages to a bytestream.
  */
@@ -174,49 +175,4 @@ public class TCPWriter {
 
     return length ;
   }
-  
-  /**
-   * @deprecated Use the other form of write(), which avoids a buffer copy
-   */
-
-  public static byte[] write( byte[] sourceaddress ,
-                              short sourceport ,
-                              byte[] destinationaddress ,
-                              short destinationport ,
-                              int sequencenumber ,
-                              int acknowledgementnumber ,
-                              boolean ack ,
-                              boolean rst ,
-                              boolean syn ,
-                              boolean fin ,
-                              boolean psh ,
-                              short windowsize ,
-                              TCPOptions options ,
-                              byte[] writebuffer ,
-                              int writestart ,
-                              int writeend ) throws IOException {
-                                
-    byte[] bytestream = new byte[ 20 + options.length() + ( writeend - writestart )% writebuffer.length ];
-    
-    write( sourceaddress ,
-           sourceport ,
-           destinationaddress ,
-           destinationport ,
-           sequencenumber ,
-           acknowledgementnumber ,
-           ack ,
-           rst ,
-           syn ,
-           fin ,
-           psh ,
-           windowsize ,
-           options ,
-           writebuffer ,
-           writestart ,
-           writeend ,
-           bytestream ,
-           0 );
-
-    return bytestream ;    
-  }      
 }    

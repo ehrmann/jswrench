@@ -109,22 +109,5 @@ public class ICMPWriter {
        
     return length ;
   }
-
-  /**
-   * @deprecated Use the other form of write(), which avoids a buffer copy
-   */
-  
-  public byte[] write( byte type ,
-                       byte code ,
-                       byte[] data ,
-                       int dataOffset ,
-                       int dataCount ) throws IOException  
-  {
-      byte[] buffer = new byte[ 8 + data.length ];
-      
-      write( type , code , data , dataOffset , dataCount , buffer , 0 );
-      
-      return buffer ;
-  }
 }
 

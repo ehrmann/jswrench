@@ -37,19 +37,6 @@ import java.io.IOException ;
 public class TCPReader {
 
   /**
-   * @deprecated Use another form of read()
-   */
-
-  public static TCPMessage read( byte[] buffer , int offset , int count ) throws IOException {
-      
-      TCPMessage message = new TCPMessage();
-      
-      read( message , buffer , offset , count );
-      
-      return message ;
-  }
-  
-  /**
    * Reads a TCP message from a buffer without a checksum test.
    */
 
@@ -57,23 +44,6 @@ public class TCPReader {
     return read( message , buffer , offset , count , false , new byte[0] , new byte[0] );
   }
 
-  /**
-   * @deprecated Use another form of read()
-   */
-
-  public static TCPMessage read( byte[] buffer , 
-                                 int offset , 
-                                 int count ,
-                                 boolean testchecksum ,
-                                 byte[] source ,
-                                 byte[] destination ) throws IOException {
-      TCPMessage message = new TCPMessage();
-      
-      read( message , buffer , offset , count , testchecksum , source , destination );
-      
-      return message ;
-  }
-                                 
   /**
    * Reads a TCP message from a buffer and performs a checksum test
    * @param buffer buffer to be read from

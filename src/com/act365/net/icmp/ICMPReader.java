@@ -37,19 +37,6 @@ import java.io.* ;
 
 public class ICMPReader {
     
-    /**
-     * @deprecated Use the other form of read().
-     */
-
-    public static ICMPMessage read( byte[] buffer, int offset, int count, boolean testchecksum ) throws IOException {
-        
-        ICMPMessage message = new ICMPMessage();
-        
-        read( message , buffer , offset , count , testchecksum );
-        
-        return message ;
-    }
-
   /**
    read() constructs an ICMP message from a buffer. An exception will
    be thrown if the message is not in the ICMP format or if there is a

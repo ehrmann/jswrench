@@ -37,14 +37,6 @@ import java.io.* ;
 public class UDPReader {
 
   /**
-   * @deprecated Use the other form of read().
-   */
-
-  public static UDPMessage read( byte[] buffer , int offset , int length ) throws IOException {
-      return read( buffer , offset , length , false , new byte[0] , new byte[0] );
-  }
-
-  /**
    read() constructs a UDPMessage object from a buffer.
   */
 
@@ -52,24 +44,6 @@ public class UDPReader {
     return read( message , buffer , offset , length , false , new byte[0] , new byte[0] );
   }
   
-  /**
-   * @deprecated Use the other form of read().
-   */
-
-  public static UDPMessage read( byte[]  buffer , 
-                                 int     offset , 
-                                 int     length , 
-                                 boolean testchecksum ,
-                                 byte[]  source ,
-                                 byte[]  destination ) throws IOException {
-                                     
-      UDPMessage message = new UDPMessage();
-      
-      read( message , buffer , offset , length , testchecksum , source , destination );
-      
-      return message ;               
-  }
-        
   /**
    read() populates a UDPMessage object from a buffer. 
   */

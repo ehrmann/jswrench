@@ -169,20 +169,5 @@ public class DNSWriter {
  
     return write( message , buffer , offset , count );
   }
-  
-  /**
-   * @deprecated Use the other form of write(), which avoids a buffer copy.
-   */
-
-  public static byte[] write( short identification ,
-                              boolean recursion_desired ,
-                              String domain ) throws IOException {
-      
-      byte[] buffer = new byte[ domain.length() + 6 ];
-      
-      write( identification , recursion_desired , domain , buffer , 0 , buffer.length );
-      
-      return buffer ;
-  }
 }
 

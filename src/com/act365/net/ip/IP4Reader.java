@@ -37,19 +37,6 @@ import java.io.* ;
 public class IP4Reader {
     
   /**
-   * @deprecated Use the other form of read()
-   */
-
-  public static IP4Message read( byte[] buffer , int offset , int count , boolean testchecksum ) throws IOException {
-      
-      IP4Message message = new IP4Message();
-      
-      read( message , buffer , offset , count , testchecksum );
-      
-      return message ;
-  }
-
-  /**
    read() populates an IP4 message instance from the contents of a buffer. 
    IP6 is not supported.
   */
