@@ -66,6 +66,8 @@ public class ICMPMessage implements IProtocolMessage {
    */
   
   public ICMPMessage(){
+      type = -1 ;
+      code = -1 ;    
   }
 
   /**

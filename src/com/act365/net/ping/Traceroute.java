@@ -156,17 +156,15 @@ public class Traceroute {
       System.exit( 7 );
     }
 
-    final int identifier = hashCode();
+    final short identifier = ICMPMessage.icmpIdentifier = (short) hashCode();
 
-    ICMPMessage.icmpIdentifier = (short) identifier ;
-    
     try {
 
       byte[] timebuffer = new byte[ 8 ];
 
       IP4Message ip4Message = new IP4Message();
       
-      int recIdentifier = 0 ;
+      short recIdentifier = 0 ;
       
       ICMPMessage icmpMessage = new ICMPMessage();
       
@@ -181,7 +179,8 @@ public class Traceroute {
 
       socket.setSoTimeout( 3000 );
       
-      while( identifier != recIdentifier || icmpMessage.type != ICMP.ICMP_ECHOREPLY && icmpMessage.code != ICMP.ICMP_PORT_UNREACH ){
+      while( protocol == SocketConstants.IPPROTO_ICMP && icmpMessage.isQuery() && identifier != recIdentifier || 
+             icmpMessage.type != ICMP.ICMP_ECHOREPLY && icmpMessage.code != ICMP.ICMP_PORT_UNREACH ){
 
         socket.setTimeToLive( ttl );
 
@@ -216,24 +215,24 @@ public class Traceroute {
 
         try {
           socket.receive( ip4Message , icmpMessage );
-          recIdentifier = icmpMessage.identifier >= 0 ? icmpMessage.identifier : icmpMessage.identifier ^ 0xffffff00 ;          
+          recIdentifier = icmpMessage.identifier ;           
         } catch( InterruptedIOException e ){
           recIdentifier = 0 ;
           System.out.println( ttl ++ + ". *.*.*.*/*.*.*.*");            
           continue ;
-        }
+        }          
         
-        if( icmpMessage.isQuery() && ( recIdentifier != identifier ) ){
+        if( protocol == SocketConstants.IPPROTO_ICMP && icmpMessage.isQuery() && ( recIdentifier != identifier ) ){
             continue ;
         }
 
-        System.out.println( ttl ++ + ". " + GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , ip4Message.source ) );
-          
         if( icmpMessage.type != ICMP.ICMP_TIME_EXCEEDED &&
             icmpMessage.type != ICMP.ICMP_ECHOREPLY && 
             icmpMessage.code != ICMP.ICMP_PORT_UNREACH ){
-          System.out.println( icmpMessage.toString() );
+            continue ;
         } 
+                
+        System.out.println( ttl ++ + ". " + GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , ip4Message.source ) );
       }
 
     } catch ( Exception e ) {
