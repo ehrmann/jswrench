@@ -29,6 +29,7 @@ JSUBDIRS = \
 	com/act365/net/sniffer \
 	com/act365/net/dns \
 	com/act365/net/udp \
+	com/act365/net/tftp \
 	com/act365/net/tcp
 
 dummy:
