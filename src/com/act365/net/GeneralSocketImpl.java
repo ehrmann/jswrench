@@ -171,13 +171,21 @@ public abstract class GeneralSocketImpl extends SocketImpl {
   native static void _setSocketDescriptor( FileDescriptor fd , int sd );
 
   /**
-   Creates a <code>java.net.InetAddress</code> object with a given IP address.
+   Creates a <code>java.net.Inet4Address</code> object with a given IP address.
    @param family the socket family - normally SocketConstants.AF_INET
    @param ipAddress the IP address e.g. new byte[] { 127, 0, 0, 1 }
   */
 
   public static InetAddress createInetAddress( int family , byte[] ipAddress ){
-    return _createInetAddress( family , ipAddress );
+	return _createInetAddress( family , ipAddress );
+  }
+
+  /**
+   Creates a <code>java.net.Inet4Address</code> object with the IP address 0.0.0.0..
+  */
+
+  public static InetAddress createInetAddress(){
+	return _createInetAddress( SocketConstants.AF_INET , new byte[] {0,0,0,0} );
   }
 
   native static InetAddress _createInetAddress( int family , byte[] ipAddress );
