@@ -1,0 +1,633 @@
+/*
+  * JSocket Wrench
+  * 
+  * Copyright (C) act365.com October 2003
+  * 
+  * Web site: http://www.act365.com/wrench
+  * E-mail: developers@act365.com
+  * 
+  * The JSocket Wrench library adds support for low-level Internet protocols
+  * to the Java programming language.
+  * 
+  * This program is free software; you can redistribute it and/or modify it 
+  * under the terms of the GNU General Public License as published by the Free 
+  * Software Foundation; either version 2 of the License, or (at your option) 
+  * any later version.
+  *  
+  * This program is distributed in the hope that it will be useful, 
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General 
+  * Public License for more details.
+  * 
+  * You should have received a copy of the GNU General Public License along with 
+  * this program; if not, write to the Free Software Foundation, Inc., 
+  * 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+  */
+
+package com.act365.net.tftp;
+
+import com.act365.net.SocketWrenchSession ;
+
+import java.io.*;
+import java.util.*;
+
+/**
+ * The class TFTP implements a TFTP client.
+ */
+
+public class TFTP extends TFTPBase {
+
+     String hostname = null ;
+     
+     boolean verbose = false ,
+             interactive = false ,
+             connected = false ;
+             
+     int port     = 0 ,
+         lastsend = 0 ;
+         
+     // Finite State Machine function objects for the client.
+          
+     final static IFSMFunction[][] fsmFunctions = new IFSMFunction[][] { 
+             
+             { new FSMInvalid() ,        // [ sent = 0 ]        [ received = 0 ]
+               new FSMInvalid() ,        // [ sent = 0 ]        [ received = OP_RRQ ]
+               new FSMInvalid() ,        // [ sent = 0 ]        [ received = OP_WRQ ]
+               new FSMInvalid() ,        // [ sent = 0 ]        [ received = OP_DATA ]
+               new FSMInvalid() ,        // [ sent = 0 ]        [ received = OP_ACK ]
+               new FSMInvalid() } ,      // [ sent = 0 ]        [ received = OP_ERROR ]
+             
+             { new FSMInvalid() ,        // [ sent = OP_RRQ ]   [ received = 0 ]
+               new FSMInvalid() ,        // [ sent = OP_RRQ ]   [ received = OP_RRQ ]
+               new FSMInvalid() ,        // [ sent = OP_RRQ ]   [ received = OP_WRQ ]
+               new FSMReceiveDATA() ,    // [ sent = OP_RRQ ]   [ received = OP_DATA ]
+               new FSMInvalid() ,        // [ sent = OP_RRQ ]   [ received = OP_ACK ]
+               new FSMReceiveRQERR() } , // [ sent = OP_RRQ ]   [ received = OP_ERROR ]
+             
+             { new FSMInvalid() ,        // [ sent = OP_WRQ ]   [ received = 0 ]
+               new FSMInvalid() ,        // [ sent = OP_WRQ ]   [ received = OP_RRQ ]
+               new FSMInvalid() ,        // [ sent = OP_WRQ ]   [ received = OP_WRQ ]
+               new FSMInvalid() ,        // [ sent = OP_WRQ ]   [ received = OP_DATA ]
+               new FSMReceiveACK() ,     // [ sent = OP_WRQ ]   [ received = OP_ACK ]
+               new FSMReceiveRQERR() } , // [ sent = OP_WRQ ]   [ received = OP_ERROR ]
+             
+             { new FSMInvalid() ,        // [ sent = OP_DATA ]  [ received = 0 ]
+               new FSMInvalid() ,        // [ sent = OP_DATA ]  [ received = OP_RRQ ]
+               new FSMInvalid() ,        // [ sent = OP_DATA ]  [ received = OP_WRQ ]
+               new FSMInvalid() ,        // [ sent = OP_DATA ]  [ received = OP_DATA ]
+               new FSMReceiveACK() ,     // [ sent = OP_DATA ]  [ received = OP_ACK ]
+               new FSMError() } ,        // [ sent = OP_DATA ]  [ received = OP_ERROR ]
+             
+             { new FSMInvalid() ,        // [ sent = OP_ACK ]   [ received = 0 ]
+               new FSMInvalid() ,        // [ sent = OP_ACK ]   [ received = OP_RRQ ]
+               new FSMInvalid() ,        // [ sent = OP_ACK ]   [ received = OP_WRQ ]
+               new FSMReceiveDATA() ,    // [ sent = OP_ACK ]   [ received = OP_DATA ]
+               new FSMInvalid() ,        // [ sent = OP_ACK ]   [ received = OP_ACK ]
+               new FSMError() } ,        // [ sent = OP_ACK ]   [ received = OP_ERROR ]
+             
+             { new FSMInvalid() ,        // [ sent = OP_ERROR ] [ received = 0 ]
+               new FSMInvalid() ,        // [ sent = OP_ERROR ] [ received = OP_RRQ ]
+               new FSMInvalid() ,        // [ sent = OP_ERROR ] [ received = OP_WRQ ]
+               new FSMInvalid() ,        // [ sent = OP_ERROR ] [ received = OP_DATA ]
+               new FSMInvalid() ,        // [ sent = OP_ERROR ] [ received = OP_ACK ]
+               new FSMError() }          // [ sent = OP_ERROR ] [ received = OP_ERROR ]             
+     };
+    
+     /**
+      * Trivial File Transfer Protocol client
+      * 
+      * @param args - command line arguments
+      */
+     
+     public static void main( String[] args ) {
+     	
+     	String hostname = null ;
+     	
+     	boolean trace = false , 
+     	        verbose = false ;
+     	
+     	// Parse the command line options.
+     	
+     	int arg = 0 ;
+     	
+     	while( arg < args.length && args[ arg ].charAt( 0 ) == '-' ){
+     		
+     		switch( args[ arg ].charAt( 1 ) ){
+     			
+     			case 'h':
+     			
+     			  if( arg < args.length - 1 ){
+     			    hostname = args[ ++ arg ];
+     			  } else {
+     			  	quit("-h requires another argument");
+     			  }
+     			  
+     			  break;
+     			  
+     			case 't':
+     			
+     			  trace = true ;
+     			  break;
+     			  
+     			case 'v':
+     			
+     			  verbose = true ;
+     			  break;
+     			  
+     			default:
+     			
+     			  quit("Unknown command line option: " + args[ arg ] );
+     		}
+     		
+     		++ arg ;
+     	}
+
+        UDPNetworkImpl network = new UDPNetworkImpl( trace );
+         
+        new SocketWrenchSession();
+            
+        try {	
+     	    new TFTP( args , arg , hostname , trace , verbose , network );
+        } catch ( TFTPException e ) {
+            e.printStackTrace();
+            System.exit( 1 );
+        }
+     }
+     
+     /**
+      * Executes a TFTP session for each filename specified or, when no
+      * filenames have been provided, for standard input.
+      *  
+      * @param args - list of command-line arguments
+      * @param arg - position of first filename within command-line arguments
+      * @param hostname - remote hostname
+      * @param trace - whether debug is required
+      * @param verbose - whether verbosity is required
+      * @param network - network implementation to use
+      * @throws TFTPException - can't read from input or can't execute it
+      */
+     
+     public TFTP( String[] args ,
+                  int arg ,
+                  String hostname ,
+                  boolean trace ,
+                  boolean verbose ,
+                  INetworkImpl network ) throws TFTPException {
+     	
+        super( network , trace );
+        	
+        this.hostname = hostname ;
+        this.verbose = verbose ;
+        
+     	// Execute tftp on each filename specified or, in the case that no filenames
+     	// have been provided, use standard input.
+     	
+        try {
+     	    if( arg < args.length ){
+     		    while( arg < args.length ){
+                    tftp( new FileInputStream( args[ arg ++ ] ) );
+     		    }
+     	    } else {
+                interactive = true ;
+     		    tftp( System.in );
+     	    }
+        } catch ( IOException e ) {
+            dump( e );
+        }
+     }
+   
+     /**
+      * Reads TFTP commands from the input stream and executes them
+      * until a 'quit' command is issued or end-of-file is encountered.
+      * 
+      * @param input - input stream from which to read commands
+      */
+     
+     void tftp( InputStream input ) throws TFTPException , IOException {
+     	
+     	StreamTokenizer st = new StreamTokenizer( new InputStreamReader( input , "UTF8" ) );
+
+        st.eolIsSignificant( true );
+        st.wordChars( 47 , 47 ); // Forward slash 
+        st.wordChars( 58 , 58 ); // Colon
+        st.commentChar('#');
+             	     	
+     	if( interactive ){
+     		System.out.print( TFTPConstants.prompt );
+     	}
+
+        out:
+     
+     	  while( true ){
+            
+            try {
+            
+              switch( st.nextToken() ){
+     		  
+                case StreamTokenizer.TT_EOF:
+                  break out;
+     		    
+     		    case StreamTokenizer.TT_WORD:
+     		      execute( st );
+     		      break;
+     		  
+     		    case StreamTokenizer.TT_EOL:
+     		      break;
+     		    
+     		    case StreamTokenizer.TT_NUMBER:
+     		      command("Numerical input not expected: " + st.nval );
+     		  }
+     		  
+            } catch ( TFTPCommandException e ) {
+              
+              System.out.println( "Syntax Error: " + e.getMessage() );	
+              continue ;	 
+            }
+            
+			if( interactive ){
+				System.out.print( TFTPConstants.prompt );
+			}     		
+     	  }
+     }
+     
+     /**
+      * Executes a single TFTP command.
+      * 
+      * @param st - StreamTokenizer with command to be executed as next token
+      * 
+      * @return whether the TFTP session is to terminate
+      */     
+     
+     void execute( StreamTokenizer st ) throws TFTPException , IOException {
+     	
+     	int command = 0 ;
+     	
+     	while( command < TFTPConstants.commands.length ){
+     		if( st.sval.equals( TFTPConstants.commands[ command ] ) ){
+     			break ;
+     		}
+            ++ command ;
+     	}
+     	
+     	if( command == TFTPConstants.commands.length ){
+     		command( st.sval );
+     	}
+     	
+     	boolean exit = false ;
+     	
+     	switch ( command ){
+     		
+     		/*
+     		 * ascii
+     		 * 
+     		 * Equivalent to 'mode ascii'
+     		 */
+     		 
+     		case TFTPConstants.CMD_ASCII:
+     		  modetype = TFTPConstants.MODE_ASCII ;
+     		  break;
+     		 
+     		/*
+     		 * binary
+     		 * 
+     		 * Equivalent to 'mode binary'
+     		 */ 
+     		 
+     		case TFTPConstants.CMD_BINARY:
+     		  modetype = TFTPConstants.MODE_BINARY ;
+     		  break;
+     		
+     		/*
+     		 * connect <hostname> [<port>]
+     		 * 
+     		 * Sets the hostname and optional port number for future transfers.
+     		 * The port is the well-known port number of the TFTP server on
+     		 * the other system, which will normally default to the value
+     		 * specified in /etc/services (69).
+     		 */ 
+     		 
+            case TFTPConstants.CMD_CONNECT:
+            
+              if( st.nextToken() == StreamTokenizer.TT_WORD ){
+              	hostname = st.sval ;
+              } else {
+              	command("Hostname must be specified");
+              }
+              
+              if( st.nextToken() == StreamTokenizer.TT_NUMBER ){
+              	port = (int) st.nval ;
+              }
+              
+              connected = true ;
+              
+              break;
+            
+            /*
+             * exit or quit
+             */  
+             
+            case TFTPConstants.CMD_EXIT:
+            case TFTPConstants.CMD_QUIT:
+             
+              System.exit( 0 );
+              break;
+     		 
+     	    /*
+     	     * get <remotefilename> <localfilename>
+     	     * 
+     	     * NB <remotefilename> may be of the form <host>:<filename> in
+     	     * order to specify the host.
+     	     */ 
+     	     
+     	    case TFTPConstants.CMD_GET:
+     	    
+     	      {
+     	      	String remotefilename = null ,
+     	      	       localfilename = null ;
+     	      	 
+     	      	if( st.nextToken() == StreamTokenizer.TT_WORD ){
+     	      	  remotefilename = st.sval ;
+     	      	} else {
+     	      	  command("Remote filename must be specified");	 
+     	      	}
+     	      	
+                int colonPos = remotefilename.indexOf(':');
+                
+                if( colonPos >= 0 ){
+                    hostname = remotefilename.substring( 0 , colonPos );
+                    remotefilename = remotefilename.substring( colonPos + 1 , remotefilename.length() );
+                }
+                                
+				if( st.nextToken() == StreamTokenizer.TT_WORD ){
+				  localfilename = st.sval ;
+				} else {
+				  command("Local filename must be specified");	 
+				}
+				
+				if( localfilename.indexOf(':') != -1 ){
+				  command("Cannot specify hostname for local file");
+				}
+				
+				get( remotefilename , localfilename );
+     	      }
+     	      
+     	      break;
+     		
+     		/*
+     		 * help
+     		 */  
+     		
+     		case TFTPConstants.CMD_HELP_I:
+     		case TFTPConstants.CMD_HELP_II:
+     		
+     		  {
+     		  	int i = 0 ;
+     		  	
+     		  	while( i < TFTPConstants.commands.length ){
+     		  	  System.out.println( TFTPConstants.commands[ i ] );
+     		  	}
+     		  }
+     		  
+     		  break;
+     		  
+     		/*
+     		 * mode ascii
+     		 * mode binary
+     		 * 
+     		 * Sets the mode for file transfers.
+     		 */
+     		
+     		case TFTPConstants.CMD_MODE:
+     		
+     		  {
+     		    String mode = null ;
+     			
+			    if( st.nextToken() == StreamTokenizer.TT_WORD ){
+				  mode = st.sval ;
+			    } else {
+				  command("Mode type must be specified");	 
+			    }
+			  
+			    if( mode.equals("ascii") ){
+			  	  modetype = TFTPConstants.MODE_ASCII ;
+			    } else if( mode.equals("binary") ){
+			  	  modetype = TFTPConstants.MODE_BINARY ;
+			    } else {
+			  	  command("Mode must be 'ascii' or 'binary'");
+			    }
+              }
+
+              break;
+              
+			/*
+			 * put <localfilename> <remotefilename>
+			 * 
+			 * NB <remotefilename> may be of the form <host>:<filename> in
+			 * order to specify the host.
+			 */ 
+     	     
+			case TFTPConstants.CMD_PUT:
+     	    
+			  {
+				String remotefilename = null ,
+					   localfilename = null ;
+     	      	       
+				if( st.nextToken() == StreamTokenizer.TT_WORD ){
+				  localfilename = st.sval ;
+				} else {
+				  command("Local filename must be specified");	 
+				}
+								
+				if( localfilename.indexOf(':') != -1 ){
+				  command("Cannot specify hostname for local file");
+				}
+
+				if( st.nextToken() == StreamTokenizer.TT_WORD ){
+				  remotefilename = st.sval ;
+				} else {
+				  command("Remote filename must be specified");	 
+				}
+     	      	
+                int colonPos = remotefilename.indexOf(':');
+                
+                if( colonPos >= 0 ){
+                    hostname = remotefilename.substring( 0 , colonPos );
+                    remotefilename = remotefilename.substring( colonPos + 1 , remotefilename.length() );
+                }
+                
+				if( hostname == null ){
+				  command("Hostname must be specified");	      	
+				}
+     	      	    				
+				put( localfilename , remotefilename );
+			  }
+     	      
+			  break;
+			  
+			/*
+			 * status
+			 * 
+			 * Shows current status.
+			 */
+			 
+			case TFTPConstants.CMD_STATUS:
+			
+			  System.out.println( toString() );
+			  break;
+			 
+			/*
+			 * trace
+			 * 
+			 * Toggles debug mode.
+			 */ 
+			 
+			case TFTPConstants.CMD_TRACE:
+			
+			  trace = ! trace ;
+			  break;
+			 
+			/*
+			 * verbose
+			 * 
+			 * Toggles verbose mode.
+			 */  
+			 
+			case TFTPConstants.CMD_VERBOSE:
+			
+			  verbose = ! verbose ;
+			  break;
+     	}
+
+        if( st.nextToken() != StreamTokenizer.TT_EOL ){
+        	throw new TFTPCommandException("Trailing garbage: " + st.toString() );     	
+        }
+     }
+     
+     /**
+      * Provides a string representation of current status.
+      */
+     
+     public String toString() {
+     	
+     	StringBuffer sb = new StringBuffer();
+     	
+     	if( connected ){
+     	  sb.append("Connected");
+     	} else {
+     	  sb.append("Not connected");
+     	}
+     	
+     	sb.append(", mode=");
+     	
+     	switch( modetype ){
+     	  case TFTPConstants.MODE_ASCII:
+     	    sb.append("netascii");
+     	    break;
+     	  case TFTPConstants.MODE_BINARY:
+     	    sb.append("octet (binary)");
+     	    break;
+     	  default:
+     	    sb.append("unknown");
+     	}
+     	
+		sb.append(", verbose=");
+     	
+		if( verbose ){
+		  sb.append("on");
+		} else {
+		  sb.append("off");
+		}
+     	
+		sb.append(", trace=");
+     	
+		if( trace ){
+		  sb.append("on");
+		} else {
+		  sb.append("off");
+		}
+     	
+     	return sb.toString(); 
+     }
+     
+     /**
+      * Executes a get command - reads a remote file and stores it on the local system
+      */
+
+     void get( String remotefilename , String localfilename ) throws TFTPException {
+
+         System.err.println("get " + remotefilename + " " + localfilename );
+             	
+        try {
+            openOutputFile( new File( localfilename ) , 1 );
+        } catch ( FileNotFoundException e ){
+            dump( e );
+        }
+        
+        ((INetworkImpl) network ).open( hostname , port );
+
+        totalbytes = 0 ;
+		
+		long starttime = new Date().getTime();
+
+        sendRQ( TFTPConstants.OP_RRQ , remotefilename , modetype );     	
+     	
+     	fsmLoop( TFTPConstants.OP_RRQ );
+     	
+     	long endtime = new Date().getTime();
+     	
+     	network.close();
+     	
+     	close();
+     	
+     	double t = ( endtime - starttime )/ 1000. ;
+     	
+     	System.out.println("Received " + totalbytes + " bytes in " + t + "s");
+     }
+     
+	/**
+	 * Executes a put command - reads a local file and stores it on the remote system
+	 */
+
+     void put( String localfilename , String remotefilename ) throws TFTPException {
+     	
+        System.err.println("put " + localfilename + " " + hostname + ":" + remotefilename );
+        
+        try {
+     	    openInputFile( new File( localfilename ) , 0 );
+        } catch ( FileNotFoundException e ) {
+            dump( e );
+        }
+        
+     	((INetworkImpl) network ).open( hostname , port );
+     	
+     	totalbytes = 0 ;
+     	
+     	long starttime = new Date().getTime();
+
+        sendRQ( TFTPConstants.OP_WRQ , remotefilename , modetype );
+        
+        fsmLoop( TFTPConstants.OP_WRQ );
+        
+		long endtime = new Date().getTime();
+     	
+		network.close();
+     	
+		close();
+     	
+		double t = ( endtime - starttime )/ 1000. ;
+     	
+		System.out.println("Sent " + totalbytes + " bytes in " + t + "s");     	
+     }
+     
+     /**
+      * serverClose() is called from receiveDATA() but does nothing on the client-side.
+      */
+     
+     void serverClose( TFTPMessage message ) throws TFTPException {}
+     
+     /**
+      * Returns the Finite State Machine functions for the TFTP client.
+      */
+     
+     IFSMFunction[][] getFSMFunctions() { return fsmFunctions ;}
+}
