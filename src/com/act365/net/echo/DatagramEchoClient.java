@@ -115,8 +115,6 @@ class DatagramEchoClient {
       System.exit( 6 );
     }
 
-    new SocketWrenchSession();
-
 	try {
 	  SocketWrenchSession.setProtocol( protocollabel );
 	} catch ( java.io.IOException e ) {

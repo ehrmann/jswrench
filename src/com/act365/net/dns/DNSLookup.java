@@ -133,6 +133,8 @@ public class DNSLookup {
         e.printStackTrace();
         System.exit( 6 );
     }
+    
+    SocketWrenchSession.shutdown();
   }
   
   public DNSLookup( String domainname ,

@@ -237,8 +237,6 @@ public class Ping {
 		System.exit( 2 );
 	}
       
-    new SocketWrenchSession();
-    
     InetAddress hostaddr = null ,
                 localaddr = null ;
 
@@ -275,5 +273,7 @@ public class Ping {
                       nbytes ) ).start();
 
     receiver.receive();
+    
+    SocketWrenchSession.shutdown();
   }
 }

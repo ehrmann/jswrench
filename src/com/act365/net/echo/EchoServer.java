@@ -85,8 +85,6 @@ public class EchoServer extends Thread {
 	  }
 	}
 
-    new SocketWrenchSession();
-
 	try {
 	  SocketWrenchSession.setProtocol( protocollabel );
 	} catch ( java.io.IOException e ) {

@@ -127,8 +127,6 @@ public class TFTPServer implements Runnable {
             ++ arg ;
         }
 
-        new SocketWrenchSession();
-        
         try {
             SocketWrenchSession.setProtocol( protocolLabel );
         } catch ( IOException e ) {

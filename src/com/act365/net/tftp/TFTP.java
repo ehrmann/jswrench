@@ -173,8 +173,6 @@ public class TFTP extends TFTPBase {
      		++ arg ;
      	}
 
-        new SocketWrenchSession();
-        
         try {
             SocketWrenchSession.setProtocol( protocolLabel );
         } catch ( IOException e ) {
@@ -262,6 +260,8 @@ public class TFTP extends TFTPBase {
             interactive = true ;
   		    tftp( System.in );
   	    }
+        
+        SocketWrenchSession.shutdown();
      }
    
      /**

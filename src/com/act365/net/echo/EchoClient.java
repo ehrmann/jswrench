@@ -88,8 +88,6 @@ class EchoClient {
       }
     }
 
-    new SocketWrenchSession();
-    
 	try {
 	  SocketWrenchSession.setProtocol( protocollabel );
 	} catch ( java.io.IOException e ) {
@@ -156,8 +154,6 @@ class EchoClient {
                     new OutputStreamWriter( serverOut ),
                     serverIn ,
                     new OutputStreamWriter( System.out ) ); 
-
-    System.exit( 0 );
   }
 
   public EchoClient( InputStreamReader  localIn , 

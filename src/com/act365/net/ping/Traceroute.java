@@ -131,8 +131,6 @@ public class Traceroute {
                      int ttl ,
                      boolean debug )
   {
-    new SocketWrenchSession();
-    
     try {
 		SocketWrenchSession.setProtocol( SocketConstants.JSWPROTO_HDRICMP );
     } catch ( java.io.IOException e ) {
@@ -241,6 +239,8 @@ public class Traceroute {
         ++ ttl ;
       }
 
+      SocketWrenchSession.shutdown();
+      
     } catch ( Exception e ) {
       System.err.println( e.getMessage() );
       System.exit( 8 );

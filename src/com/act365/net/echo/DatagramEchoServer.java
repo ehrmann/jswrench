@@ -105,8 +105,6 @@ public class DatagramEchoServer {
       System.exit( 5 );
     }
 
-    new SocketWrenchSession();
-
 	try {
 	  SocketWrenchSession.setProtocol( protocollabel );
 	} catch ( java.io.IOException e ) {

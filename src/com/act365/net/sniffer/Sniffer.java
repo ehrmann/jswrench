@@ -64,7 +64,7 @@ public class Sniffer {
           } else if( args[ i ].equals("-l") && i < args.length - 1 ) {
             localhost = args[ ++ i ];
           } else {
-          	System.err.println("Syntax: Sniffer -p protocol -x excluded");
+          	System.err.println("Syntax: Sniffer -p protocol -x excluded -l localhost");
           	System.exit( 1 );
           }
           ++ i ;
@@ -72,8 +72,6 @@ public class Sniffer {
 		
 		try {
 
-			new SocketWrenchSession();
-            
             int protocol ;
             
             if( protocollabel.equalsIgnoreCase("TCP") ){
@@ -154,6 +152,7 @@ public class Sniffer {
 					    break;
 					}
 			}
+            
 		} catch (Exception e) {
 			System.err.println(e.getMessage());e.printStackTrace();
             
