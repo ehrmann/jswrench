@@ -93,19 +93,44 @@ public abstract class GeneralDatagramSocketImpl extends DatagramSocketImpl {
   native static int _close( int sd );
 
   /**
-   Reads senders address from a datagram packet.
+   Polls until a datagram packet is received. Once received, the parameter
+   <em>sender</em> is populated with the address of the sender and the
+   port number is returned as an <code>int</code>. Note that the JDK1.4 API
+   documentation states that the IP address should be returned as an <code>int</code>
+   - however, the JDK1.1 API documentation states that the port number should be 
+   returned. I have implemented the JDK1.1 behaviour because it seems more 
+   sensible - an IP address is always stored in an <code>InetAddress</code> 
+   object in Java.  
    @param sender address of sender - to be populated by the function call
+   @return port used by sender
   */
 
   public int peek( InetAddress sender ) throws IOException {
     byte[] buffer = new byte[0];
     DatagramPacket dgram = new DatagramPacket( buffer , buffer.length );
-    dgram.setAddress( GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , new byte[]{0,0,0,0} ));
-    _receive( getSocketDescriptor( fd ) , dgram , SocketConstants.MSG_PEEK );
-    sender = dgram.getAddress();
-    return dgram.getPort();
+	dgram.setAddress( GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , new byte[]{0,0,0,0} ));
+	_receive( getSocketDescriptor( fd ) , dgram , SocketConstants.MSG_PEEK );
+	sender = dgram.getAddress();
+	return dgram.getPort();
   }
 
+  /**
+   * Extracts the next DatagramPacket and returns the port number. Note
+   * that the behaviour differs from that described in the JDK1.4
+   * documentation.
+   * @see peek
+   * @param p next packet received
+   * @return port to have received the packet
+   */
+  
+  public int peekData( DatagramPacket p ) throws IOException {
+  	byte[] buffer = new byte[ 0 ];
+  	p.setData( buffer );
+	p.setAddress( GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , new byte[]{0,0,0,0} ));
+	_receive( getSocketDescriptor( fd ) , p , SocketConstants.MSG_PEEK );
+	return p.getPort();
+  }
+  
   /**
    Reads a datagram packet.
    @param dgram packet to be populated
@@ -155,7 +180,7 @@ public abstract class GeneralDatagramSocketImpl extends DatagramSocketImpl {
   }
   
   /**
-   Joins a multicast group.
+   Joins a multicast group. (JDK1.3)
    NB Multicast sockets are not yet supported.
   */
 
@@ -164,7 +189,16 @@ public abstract class GeneralDatagramSocketImpl extends DatagramSocketImpl {
   }
 
   /**
-   Leaves a multicast group.
+   Joins a multicast group. (JDK1.4)
+   NB Multicast sockets are not yet supported.
+  */
+
+  public void joinGroup( SocketAddress mcastaddr , NetworkInterface netIf ) throws IOException {
+	throw new IOException("Multicast sockets not supported");
+  }
+  
+  /**
+   Leaves a multicast group. (JDK1.3)
    NB Multicast sockets are not yet supported.
   */
 
@@ -172,6 +206,15 @@ public abstract class GeneralDatagramSocketImpl extends DatagramSocketImpl {
     throw new IOException("Multicast sockets not supported");
   }
 
+  /**
+   Leaves a multicast group. (JDK1.4)
+   NB Multicast sockets are not yet supported.
+  */
+
+  public void leaveGroup( SocketAddress mcastaddr , NetworkInterface netIf ) throws IOException {
+	throw new IOException("Multicast sockets not supported");
+  }
+  
   /**
    Sets time-to-live for multicast sockets.
    NB Multicast sockets are not yet supported.

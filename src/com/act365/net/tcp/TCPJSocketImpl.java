@@ -726,6 +726,14 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   }
 
   /**
+   * Connects to a socket address.
+   */
+  
+  public void connect( SocketAddress address , int timeout ) throws IOException {
+    throw new IOException("SocketAddress not supported");
+  }
+  
+  /**
    * Connects to a remote address.
    */
   
@@ -845,11 +853,11 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   }
 
   /**
-   * <code>available()</code> isn't implemented.
+   * Returns the number of bytes available to be read without polling.
    */
   
-  public int available() throws IOException {
-    throw new IOException("available() not supported");
+  public int available() {
+  	return readcount ;
   }
 
   /**
@@ -867,4 +875,12 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   public OutputStream getOutputStream() throws IOException {
     return new TCPJOutputStream( this );
   }
+  
+  /**
+   * Urgent data is not supported.
+   */
+  
+  public void sendUrgentData(int data) throws IOException {
+	throw new IOException("Urgent data not supported");
+  }  
 }

@@ -101,6 +101,14 @@ public abstract class GeneralSocketImpl extends SocketImpl {
     address = dst ;
   }
 
+  /**
+   * Connects to the specified host.
+   */
+  
+  public void connect( SocketAddress address , int timeout ) throws IOException {
+  	throw new IOException("SocketAddress is not supported");
+  }
+  
   native static int _connect( int sd , byte[] ipAddress , int port );
 
   /**
@@ -227,6 +235,12 @@ public abstract class GeneralSocketImpl extends SocketImpl {
   public int available() throws IOException {
     throw new IOException("available() not supported");
   }
+  
+  /**
+   * Urgent data isn't supported.
+   */
+
+  public void sendUrgentData( int data ) throws IOException {
+  	throw new IOException("Urgent data not supported");  
+  }
 };
-
-
