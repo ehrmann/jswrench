@@ -53,7 +53,7 @@ class EchoClient {
 
   public static void main( String[] args ){
 
-    final String errortext = "EchoClient -p protocol -i inputfile -o outputfile -l localhost localport hostname port";
+    final String errortext = "Usage: EchoClient -p protocol -i inputfile -o outputfile -l localhost localport hostname port";
     
     if( args.length < 2 ){
     	System.err.println( errortext );
