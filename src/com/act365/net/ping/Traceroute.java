@@ -228,7 +228,7 @@ public class Traceroute {
           if( message.type != ICMP.ICMP_TIME_EXCEEDED &&
               message.type != ICMP.ICMP_ECHOREPLY && 
               message.code != ICMP.ICMP_PORT_UNREACH ){
-            System.out.println( ":" + message.toString() );
+            System.out.println( message.toString() );
           } 
         }
       }
