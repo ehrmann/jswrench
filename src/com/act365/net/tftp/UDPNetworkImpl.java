@@ -57,13 +57,13 @@ public class UDPNetworkImpl extends UDPNetworkBase implements INetworkImpl {
         try {
             destAddress = InetAddress.getByName( hostname );
         } catch( UnknownHostException e ) {
-            dump( e );
+            system("Unknown host " + hostname );
         }
         
         try {
             socket = new DatagramSocket();
         } catch( SocketException e ){
-            dump( e );
+            system("Cannot create socket");
         }
         
         debug("open: " + toString() );
@@ -84,7 +84,7 @@ public class UDPNetworkImpl extends UDPNetworkBase implements INetworkImpl {
         } catch ( InterruptedIOException i ) {
             throw i ;
         } catch ( IOException e ) {
-            dump("receive error", e );
+            system("Receive error");
         }
         
         debug("receive: " + packet.getLength() + 

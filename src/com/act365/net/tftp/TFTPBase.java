@@ -131,7 +131,7 @@ public abstract class TFTPBase extends ErrorHandler {
       }
       
     } catch ( IOException e ) {
-      dump( e );
+      system( "Cannot close file");
     }
   }
 
@@ -696,7 +696,12 @@ public abstract class TFTPBase extends ErrorHandler {
 
           int size = 0 ;
           
-          network.setTimeout( timer.start() );
+          try {
+              network.setTimeout( timer.start() );
+          } catch( TFTPException e ){
+              sendERROR( e );
+              return ;
+          }
           
           try {
               size = network.receive( receiveBuffer );
@@ -705,7 +710,7 @@ public abstract class TFTPBase extends ErrorHandler {
               // Timeout 
               
               if( timer.timeout() ){
-                  dump( e );
+                  system( "Transmission timeout" );
               }
               debug( timer.toString() );
               

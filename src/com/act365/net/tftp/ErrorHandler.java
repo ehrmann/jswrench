@@ -68,26 +68,15 @@ public class ErrorHandler {
     }
     
     /**
-     * Handles abort errors with additional system information.
+     * Handles system errors.
      *  
      * @param errortext
-     * @param e - additional system information
+     * 
      * @throws TFTPException
      */
         
-    protected static void dump( String errortext , Exception e ) throws TFTPException {
-        throw new TFTPException( errortext + ": " + e.getMessage() );
-    }
-    
-    /**
-     * Handles system abort errors.
-     *  
-     * @param e - system information
-     * @throws TFTPException
-     */
-        
-    protected static void dump( Exception e ) throws TFTPException {
-        throw new TFTPException( e.getMessage() );
+    protected static void system( String errortext ) throws TFTPSystemException {
+        throw new TFTPSystemException( errortext );
     }
     
     /**

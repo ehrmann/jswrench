@@ -42,7 +42,7 @@ public class TFTPException extends Exception {
     
     public TFTPException( int errorcode , String s ){
     	
-		super("TFTP: " + s ); 
+		super( s ); 
         this.errorcode = errorcode ;
     }
     

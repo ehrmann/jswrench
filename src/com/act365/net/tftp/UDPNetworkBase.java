@@ -55,7 +55,7 @@ public class UDPNetworkBase extends ErrorHandler {
       try {
           socket.send( new DatagramPacket( buffer , count , destAddress , destPort ) );
       } catch ( IOException e ) {
-          dump("send error", e );
+          system("Retransmission error");
       }
   }
 
@@ -76,7 +76,7 @@ public class UDPNetworkBase extends ErrorHandler {
       try {
           socket.setSoTimeout( timeout * 1000 );
       } catch ( SocketException e ){
-          dump( e );
+          system("Cannot set timeout for connection");
       }
   }
 }

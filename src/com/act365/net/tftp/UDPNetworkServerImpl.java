@@ -50,7 +50,7 @@ public class UDPNetworkServerImpl extends UDPNetworkBase implements INetworkServ
         try {
             socket = new DatagramSocket( port > 0 ? port : TFTPConstants.defaultPort );
         } catch ( SocketException e ) {
-            dump( e );
+            system("Cannot create socket");
         }
 	}
 
@@ -82,7 +82,7 @@ public class UDPNetworkServerImpl extends UDPNetworkBase implements INetworkServ
       try {      
           network.socket = new DatagramSocket();
       } catch ( SocketException e ) {
-          dump( e );
+          system("Cannot create socket");
       }
       
       network.destAddress = GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , destAddress.getAddress() );
@@ -141,7 +141,7 @@ public class UDPNetworkServerImpl extends UDPNetworkBase implements INetworkServ
         } catch ( InterruptedIOException i ) {
             throw i ;
         } catch ( IOException e ) {
-            dump("receive error", e );
+            system("Receive error");
         }
         
         debug("receive: " + packet.getLength() + 

@@ -46,7 +46,7 @@ public class TCPNetworkServerImpl extends TCPNetworkBase implements INetworkServ
         try {
             socket = new ServerSocket( port > 0 ? port : TFTPConstants.defaultPort );
         } catch ( IOException e ) {
-            dump( e );
+            system("Cannot create server socket");
         }
 	}
 
@@ -57,7 +57,7 @@ public class TCPNetworkServerImpl extends TCPNetworkBase implements INetworkServ
       try {
           clientSocket = socket.accept();
       } catch ( IOException e ) {
-          dump( e );
+          system("Cannot accept connection from client");
       }
       
       return new TCPNetworkImpl( clientSocket , trace );
@@ -74,7 +74,7 @@ public class TCPNetworkServerImpl extends TCPNetworkBase implements INetworkServ
         try {  
             socket.close();
         } catch ( IOException e ) {
-            dump( e );
+            system("Cannot close server socket");
         }
     }
 }

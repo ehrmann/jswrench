@@ -119,7 +119,6 @@ public class TFTPWorker extends TFTPBase implements Runnable {
             network.close();
         } catch ( TFTPException e ){
             e.printStackTrace();
-            System.exit( 1 );            
         } 
 	}
 }

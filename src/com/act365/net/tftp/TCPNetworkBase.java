@@ -72,7 +72,7 @@ public class TCPNetworkBase extends ErrorHandler {
           output.write( countBuffer , 0 , 2 );
           output.write( buffer , 0 , count );
       } catch ( IOException e ) {
-          dump("send error", e );
+          system("Transmission error");
       }
   }
 
@@ -101,7 +101,7 @@ public class TCPNetworkBase extends ErrorHandler {
       } catch ( InterruptedIOException i ) {
           throw i ;
       } catch ( IOException e ) {
-          dump("receive error", e );
+          system("Receive error");
       }
         
       debug("receive: " + size + " bytes from " + toString() );

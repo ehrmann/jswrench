@@ -55,7 +55,7 @@ public class TCPNetworkImpl extends TCPNetworkBase implements INetworkImpl {
             this.destAddress = socket.getInetAddress();
             this.destPort = socket.getPort();
         } catch ( IOException e ) {
-            dump( e );
+            system("Problem with socket");
         }
     }
     
@@ -81,7 +81,7 @@ public class TCPNetworkImpl extends TCPNetworkBase implements INetworkImpl {
         try {
             destAddress = Inet4Address.getByName( hostname );
         } catch( UnknownHostException e ) {
-            dump( e );
+            system("Unknown host " + hostname );
         }
         
         try {
@@ -89,7 +89,7 @@ public class TCPNetworkImpl extends TCPNetworkBase implements INetworkImpl {
             input = socket.getInputStream();
             output = socket.getOutputStream();
         } catch( Exception e ){
-            dump( e );
+            system("Cannot create socket");
         }
         
         debug("open: " + toString() );
@@ -106,7 +106,7 @@ public class TCPNetworkImpl extends TCPNetworkBase implements INetworkImpl {
         try {  
             socket.close();
         } catch ( IOException e ) {
-            dump( e );
+            system("Cannot close connection");
         }
     }
 }

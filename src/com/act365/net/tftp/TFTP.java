@@ -182,18 +182,22 @@ public class TFTP extends TFTPBase {
      	// Execute tftp on each filename specified or, in the case that no filenames
      	// have been provided, use standard input.
      	
-        try {
-     	    if( arg < args.length ){
-     		    while( arg < args.length ){
-                    tftp( new FileInputStream( args[ arg ++ ] ) );
-     		    }
-     	    } else {
-                interactive = true ;
-     		    tftp( System.in );
-     	    }
-        } catch ( IOException e ) {
-            dump( e );
-        }
+   	    if( arg < args.length ){
+   		    while( arg < args.length ){
+                FileInputStream input = null ;
+                try {
+                    input = new FileInputStream( args[ arg ] );
+                } catch ( FileNotFoundException e ){
+                    System.out.println("File " + args[ ++ arg ] + " not found");
+                    continue ;
+                }
+                tftp( input );
+                ++ arg ;
+  		    }
+  	    } else {
+            interactive = true ;
+  		    tftp( System.in );
+  	    }
      }
    
      /**
@@ -203,9 +207,9 @@ public class TFTP extends TFTPBase {
       * @param input - input stream from which to read commands
       */
      
-     void tftp( InputStream input ) throws TFTPException , IOException {
+     void tftp( InputStream input ) throws TFTPException {
      	
-     	StreamTokenizer st = new StreamTokenizer( new InputStreamReader( input , "UTF8" ) );
+     	StreamTokenizer st = new StreamTokenizer( new InputStreamReader( input ) );
 
         st.eolIsSignificant( true );
         st.wordChars( 47 , 47 ); // Forward slash 
@@ -232,16 +236,23 @@ public class TFTP extends TFTPBase {
      		      break;
      		  
      		    case StreamTokenizer.TT_EOL:
-     		      break;
-     		    
+     		      continue;
+     		  
      		    case StreamTokenizer.TT_NUMBER:
      		      command("Numerical input not expected: " + st.nval );
      		  }
      		  
             } catch ( TFTPCommandException e ) {
               
-              System.out.println( "Syntax Error: " + e.getMessage() );	
-              continue ;	 
+              System.out.println("Syntax Error: " + e.getMessage() );	
+
+            } catch ( TFTPSystemException e ) {
+                
+              System.out.println("System Error: " + e.getMessage() );
+              
+            } catch ( IOException e ) {
+                
+              System.out.println("Input Error");
             }
             
 			if( interactive ){
@@ -560,7 +571,7 @@ public class TFTP extends TFTPBase {
         try {
             openOutputFile( new File( localfilename ) , 1 );
         } catch ( FileNotFoundException e ){
-            dump( e );
+            system( "File " + localfilename + " not found" );
         }
         
         ((INetworkImpl) network ).open( hostname , port );
@@ -595,7 +606,7 @@ public class TFTP extends TFTPBase {
         try {
      	    openInputFile( new File( localfilename ) , 0 );
         } catch ( FileNotFoundException e ) {
-            dump( e );
+            system("File " + localfilename + " not found");
         }
         
      	((INetworkImpl) network ).open( hostname , port );
