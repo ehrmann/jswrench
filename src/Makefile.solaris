@@ -1,0 +1,54 @@
+.EXPORT_ALL_VARIABLES:
+
+TOPDIR := $(shell if [ "$$PWD" != "" ]; then echo $$PWD; else pwd; fi)
+
+INCLUDES = -I/usr/java/include -I/usr/java/include/solaris -I/usr/include 
+LIBS     = -L/usr/lib -lc -lC
+ARCHIVES = jni/jni.o
+
+CC   =CC
+LD   =ld
+JAVA =javac
+MAKE =make
+
+all : \
+	jnilib \
+	jsubdirs
+
+CFLAGS  = -DSOLARIS $(INCLUDES)
+JFLAGS  = -deprecation 
+LDFLAGS = -B dynamic -G
+
+CSUBDIRS = jni
+JSUBDIRS = \
+	com/act365/net \
+	com/act365/net/echo \
+	com/act365/net/icmp \
+	com/act365/net/ping \
+	com/act365/net/ip \
+	com/act365/net/sniffer \
+	com/act365/net/udp \
+	com/act365/net/dns \
+	com/act365/net/tcp
+
+dummy:
+
+jnilib: csubdirs 
+	$(LD) $(LDFLAGS) $(LIBS) $(ARCHIVES) -o libcom_act365_net_Sockets.so
+
+csubdirs: dummy
+	set -e; for subdir in $(CSUBDIRS); do $(MAKE) -C $$subdir; done
+
+jsubdirs: dummy
+	for dir in $(JSUBDIRS); do $(JAVA) $(JFLAGS) $$dir/*.java ; done
+
+clean : dummy
+	rm -f libcom_act365_net_Sockets.so jswrench.tar.gz
+	rm -f jni/*.o
+	rm -f com/act365/net/*.class
+	rm -f com/act365/net/*/*.class
+
+backup : clean
+	cd .. && tar cf - jswrench/ | gzip -9 > jswrench.tar.gz
+
+
