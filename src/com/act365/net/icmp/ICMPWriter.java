@@ -90,7 +90,7 @@ public class ICMPWriter {
     message.sequence_number = counter ++ ;
     message.data = data ;
 
-    message.checksum = SocketUtils.checksum( write( message ) , 8 + data.length , 0 );
+    message.checksum = SocketUtils.checksum( write( message ) , 0 , 8 + data.length );
        
     return write( message );
   }
