@@ -41,17 +41,37 @@ public class UDPNetworkImpl extends UDPNetworkBase implements INetworkImpl {
      */
     
 	public void open( String hostname , int port ) throws TFTPException {
+    
+        open( hostname , port , null , 0 );
+    }
+    
+    /**
+     * Opens a connection to a given port on a remote host
+     * from a socket bound to a given local address.
+     *       
+     */
+    
+    public void open( String hostname , int port , String localhostname , int localport ) throws TFTPException  {  
 
+        InetAddress localhost = null ;
+        
         destPort = port > 0 ? port : TFTPConstants.defaultPort ;
         
         try {
-            destAddress = InetAddress.getByName( hostname );
+            destAddress = Inet4Address.getByName( hostname );
+            if( hostname instanceof String ){
+                localhost = Inet4Address.getByName( localhostname );
+            }
         } catch( UnknownHostException e ) {
             ErrorHandler.system("Unknown host " + hostname );
         }
         
         try {
-            socket = new DatagramSocket();
+            if( localhost instanceof InetAddress ){
+                socket = new DatagramSocket( localport , localhost );
+            } else {
+                socket = new DatagramSocket();
+            }
         } catch( SocketException e ){
             ErrorHandler.system("Cannot create socket");
         }
@@ -60,6 +80,17 @@ public class UDPNetworkImpl extends UDPNetworkBase implements INetworkImpl {
         
         receiveFirst = true ;
 	}
+    
+    /**
+     * Opens a network connection with a socket that is bound to
+     * a given local address.
+     * 
+     * @param hostname - name of remote server
+     * @param port - specify or set to zero for default (69)
+     * @param localhostname - name of localhost for binding 
+     * @param localport - local port for binding  
+     */
+     
 
     /**
      * Receives data.

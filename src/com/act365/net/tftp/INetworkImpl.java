@@ -32,13 +32,25 @@ package com.act365.net.tftp;
  */
 
 public interface INetworkImpl extends INetworkImplBase {
-	
-	/**
-	 * Opens a network connection.
-	 * 
-	 * @param hostname - name of remote server
-	 * @param port - specify or set to zero for default (69) 
-	 */
+    
+    /**
+     * Opens a network connection.
+     * 
+     * @param hostname - name of remote server
+     * @param port - specify or set to zero for default (69) 
+     */
      
-	public void open( String hostname , int port ) throws TFTPException ;	 
+    public void open( String hostname , int port ) throws TFTPException ;    
+    
+    /**
+     * Opens a network connection with a socket that is bound to
+     * a given local address.
+     * 
+     * @param hostname - name of remote server
+     * @param port - specify or set to zero for default (69)
+     * @param localhostname - name of localhost for binding 
+     * @param localport - local port for binding  
+     */
+     
+    public void open( String hostname , int port , String localhostname , int localport ) throws TFTPException ;    
 }

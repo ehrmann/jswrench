@@ -40,8 +40,9 @@ public class TFTPServer implements Runnable {
      * TFTPServer accepts the following command-line options
      * 
      * -p port#     port to listen on
-     * -l logfile   turns on debug
+     * -f logfile   turns on debug
      * -n protocol  network protocol
+     * -l localhost local address for binding
      * 
      * @param args - command-line argument
      */
@@ -53,7 +54,8 @@ public class TFTPServer implements Runnable {
         int port = 0 ;
         
         String logfile = "" ,
-               protocolLabel = "JDKUDP" ;
+               protocolLabel = "JDKUDP" ,
+               localhostname = null ;
         
         // Parse the command line options.
         
@@ -77,12 +79,12 @@ public class TFTPServer implements Runnable {
                   
                   break;
                   
-                case 'l':
+                case 'f':
                 
                   if( arg < args.length - 1 ){
                       logfile = args[ ++ arg ];
                   } else {
-                      ErrorHandler.quit("-l requires another argument");
+                      ErrorHandler.quit("-f requires another argument");
                   }
                   
                   if( logfile.equals("-") ){
@@ -103,6 +105,16 @@ public class TFTPServer implements Runnable {
                       protocolLabel = args[ ++ arg ];
                   } else {
                       ErrorHandler.quit("-n requires another argument");
+                  }
+                  
+                  break;
+                  
+                case 'l':
+                
+                  if( arg < args.length - 1 ){
+                      localhostname = args[ ++ arg ];
+                  } else {
+                      ErrorHandler.quit("-l requires another argument");
                   }
                   
                   break;
@@ -147,7 +159,7 @@ public class TFTPServer implements Runnable {
         ErrorHandler.setTrace( true );
                                 
         try {  
-            network.init( port );
+            network.init( localhostname , port );
             new Thread( new TFTPServer( network ) ).run();
         } catch ( TFTPException e ) {
             e.printStackTrace();

@@ -42,9 +42,29 @@ public class UDPNetworkServerImpl extends UDPNetworkBase implements INetworkServ
     int receiveSize = -1 ;
     
 	public void init( int port ) throws TFTPException {
+        init( null , port );
+    }
+     
+    public void init( String localhostname , int port ) throws TFTPException {
+           
+        int localport = port > 0 ? port : TFTPConstants.defaultPort ;
         
+        InetAddress localhost = null ;
+        
+        if( localhostname instanceof String ){
+            try {
+                localhost = Inet4Address.getByName( localhostname );
+            } catch ( UnknownHostException e ) {
+                ErrorHandler.system("Unknown Host " + localhostname );
+            }
+        }
+           
         try {
-            socket = new DatagramSocket( port > 0 ? port : TFTPConstants.defaultPort );
+            if( localhost instanceof InetAddress ){
+                socket = new DatagramSocket( localport , localhost );
+            } else {
+                socket = new DatagramSocket( localport );
+            }
         } catch ( SocketException e ) {
             ErrorHandler.system("Cannot create socket");
         }

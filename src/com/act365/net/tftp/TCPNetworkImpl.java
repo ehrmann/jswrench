@@ -70,17 +70,37 @@ public class TCPNetworkImpl extends TCPNetworkBase implements INetworkImpl {
      */
     
 	public void open( String hostname , int port ) throws TFTPException {
+        
+        open( hostname , port , null , 0 );
+    }
+    
+    /**
+     * Opens a connection to a given port on a remote host
+     * from a socket bound to a given local address.
+     *       
+     */
+    
+    public void open( String hostname , int port , String localhostname , int localport ) throws TFTPException {    
 
+        InetAddress localhost = null ;
+        
         destPort = port > 0 ? port : TFTPConstants.defaultPort ;
         
         try {
             destAddress = Inet4Address.getByName( hostname );
+            if( localhostname instanceof String ){
+                localhost = Inet4Address.getByName( localhostname );
+            }
         } catch( UnknownHostException e ) {
             ErrorHandler.system("Unknown host " + hostname );
         }
         
         try {
-            socket = new Socket( destAddress , destPort );
+            if( localhost instanceof InetAddress ){
+                socket = new Socket( destAddress , destPort , localhost , localport );
+            } else {
+                socket = new Socket( destAddress , destPort );
+            }
             input = socket.getInputStream();
             output = socket.getOutputStream();
         } catch( Exception e ){
@@ -89,7 +109,7 @@ public class TCPNetworkImpl extends TCPNetworkBase implements INetworkImpl {
         
         ErrorHandler.debug("open: " + toString() );
 	}
-
+    
     /**
      * Closes a connection.
      */

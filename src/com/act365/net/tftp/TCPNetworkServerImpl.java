@@ -37,10 +37,31 @@ public class TCPNetworkServerImpl extends TCPNetworkBase implements INetworkServ
 
     ServerSocket socket = null ;
     
-	public void init( int port ) throws TFTPException {
+    public void init( int port ) throws TFTPException {
+    
+        init( null , port );
+    }
+
+    public void init( String localhostname , int port ) throws TFTPException {
+        
+        int localport = port > 0 ? port : TFTPConstants.defaultPort ;
+        
+        InetAddress localhost = null ;
+        
+        if( localhostname instanceof String ){
+            try {
+                localhost = Inet4Address.getByName( localhostname );    
+            } catch ( UnknownHostException e ) {
+                ErrorHandler.system("Unknown Host: " + localhostname );
+            }
+        }
         
         try {
-            socket = new ServerSocket( port > 0 ? port : TFTPConstants.defaultPort );
+            if( localhost instanceof InetAddress ){
+                socket = new ServerSocket( localport , 1 , localhost );
+            } else {
+                socket = new ServerSocket();
+            }
         } catch ( IOException e ) {
             ErrorHandler.system("Cannot create server socket");
         }

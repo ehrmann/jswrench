@@ -33,14 +33,24 @@ package com.act365.net.tftp;
 
 public interface INetworkServerImpl extends INetworkImplBase {
 	
-	/**
-	 * Initiates a network connection for the server, if the server
-	 * has not been initiated by <code>inetd</code>.
-	 * 
-	 * @param port - specify or set to zero for default
-	 */
-	 
-	public void init( int port ) throws TFTPException ;
+    /**
+     * Initiates a network connection for the server, if the server
+     * has not been initiated by <code>inetd</code>.
+     * 
+     * @param port - specify or set to zero for default
+     */
+     
+    public void init( int port ) throws TFTPException ;
+
+    /**
+     * Initiates a network connection for the server, if the server
+     * has not been initiated by <code>inetd</code>.
+     * 
+     * @param localhost - specify or set to null for default
+     * @param port - specify or set to zero for default
+     */
+     
+    public void init( String localhost , int port ) throws TFTPException ;
 
 	 /**
 	  * Returns a new network object to handle a new client connection.

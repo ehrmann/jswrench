@@ -37,14 +37,16 @@ import java.util.*;
 
 public class TFTP extends TFTPBase {
 
-     String hostname = null ;
+     String hostname = null ,
+            localhostname = null ;
      
      boolean verbose = false ,
              interactive = false ,
              connected = false ;
              
-     int port     = 0 ,
-         lastsend = 0 ;
+     int port = 0 ,
+         localport = 0 ,
+         lastsend  = 0 ;
          
      // Finite State Machine function objects for the client.
           
@@ -102,11 +104,14 @@ public class TFTP extends TFTPBase {
      public static void main( String[] args ) {
      	
      	String hostname = null ,
+               localhostname = null ,
                protocolLabel = "JDKUDP";
      	
      	boolean trace = false , 
      	        verbose = false ;
      	
+        int localport = 0 ;
+        
      	// Parse the command line options.
      	
      	int arg = 0 ;
@@ -144,7 +149,22 @@ public class TFTP extends TFTPBase {
                   }
                   
                   break;
+                 
+                case 'l':
+                
+                  if( arg < args.length - 2 ){
+                      localhostname = args[ ++ arg ];
+                      try {
+                          localport = Integer.parseInt( args[ ++ arg ] );
+                      } catch ( NumberFormatException e ) {
+                          ErrorHandler.quit("Localport number should be an integer");
+                      }
+                  } else {
+                      ErrorHandler.quit("-l requires two more arguments");
+                  }
                   
+                  break;
+                   
      			default:
      			
                 ErrorHandler.quit("Unknown command line option: " + args[ arg ] );
@@ -178,11 +198,11 @@ public class TFTP extends TFTPBase {
             
         default:
         
-        ErrorHandler.quit("Unsupported protocol");
+            ErrorHandler.quit("Unsupported protocol");
         }
                                     
         try {	
-     	    new TFTP( args , arg , hostname , trace , verbose , network );
+     	    new TFTP( args , arg , hostname , localhostname , localport , trace , verbose , network );
         } catch ( TFTPException e ) {
             e.printStackTrace();
             System.exit( 1 );
@@ -196,6 +216,8 @@ public class TFTP extends TFTPBase {
       * @param args - list of command-line arguments
       * @param arg - position of first filename within command-line arguments
       * @param hostname - remote hostname
+      * @param localhostname - locally-bound address
+      * @param localport - locally-bound port
       * @param trace - whether debug is required 
       * @param verbose - whether verbosity is required
       * @param network - network implementation to use
@@ -205,6 +227,8 @@ public class TFTP extends TFTPBase {
      public TFTP( String[] args ,
                   int arg ,
                   String hostname ,
+                  String localhostname ,
+                  int localport ,
                   boolean debug ,
                   boolean verbose ,
                   INetworkImpl network ) throws TFTPException {
@@ -212,6 +236,8 @@ public class TFTP extends TFTPBase {
         super( network );
         	
         this.hostname = hostname ;
+        this.localhostname = localhostname ;
+        this.localport = localport ;
         this.verbose = verbose ;
 
         ErrorHandler.setDebugStream( System.out );
@@ -281,7 +307,7 @@ public class TFTP extends TFTPBase {
                   ErrorHandler.quit("Unexpected numerical input " + st.nval );
                   
                 default:
-                ErrorHandler.quit("Unexpected character");
+                  ErrorHandler.quit("Unexpected character");
      		  }
      		  
             } catch ( TFTPCommandException e ) {
@@ -626,7 +652,7 @@ public class TFTP extends TFTPBase {
             ErrorHandler.system( "File " + localfilename + " not found" );
         }
         
-        ((INetworkImpl) network ).open( hostname , port );
+        ((INetworkImpl) network ).open( hostname , port , localhostname , localport );
 
         totalbytes = 0 ;
 		
@@ -661,7 +687,7 @@ public class TFTP extends TFTPBase {
             ErrorHandler.system("File " + localfilename + " not found");
         }
         
-     	((INetworkImpl) network ).open( hostname , port );
+     	((INetworkImpl) network ).open( hostname , port , localhostname , localport );
      	
      	totalbytes = 0 ;
      	
