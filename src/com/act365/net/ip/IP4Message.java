@@ -55,22 +55,22 @@ public class IP4Message {
 
     StringBuffer sb = new StringBuffer();
 
-    sb.append("IP: source-");
-    sb.append( source[0] );
+    sb.append("IP4: source-");
+    sb.append( source[0] >= 0 ? source[0] : 0xffffff00 ^ source[0] );
     sb.append('.');
-    sb.append( source[1] );
+    sb.append( source[1] >= 0 ? source[1] : 0xffffff00 ^ source[1] );
     sb.append('.');
-    sb.append( source[2] );
+    sb.append( source[2] >= 0 ? source[2] : 0xffffff00 ^ source[2] );
     sb.append('.');
-    sb.append( source[3] );
+    sb.append( source[3] >= 0 ? source[3] : 0xffffff00 ^ source[3] );
     sb.append(" destination-");
-    sb.append( destination[0] );
+    sb.append( destination[0] >= 0 ? destination[0] : 0xffffff00 ^ destination[0] );
     sb.append('.');
-    sb.append( destination[1] );
+    sb.append( destination[1] >= 0 ? destination[1] : 0xffffff00 ^ destination[1] );
     sb.append('.');
-    sb.append( destination[2] );
+    sb.append( destination[2] >= 0 ? destination[2] : 0xffffff00 ^ destination[2] );
     sb.append('.');
-    sb.append( destination[3] );
+    sb.append( destination[3] >= 0 ? destination[3] : 0xffffff00 ^ destination[3] );
     sb.append(" length-");
     sb.append( length );
     sb.append(" bytes");
