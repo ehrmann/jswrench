@@ -68,6 +68,7 @@ public class ResourceRecord {
   public String toString() {
       StringBuffer sb = new StringBuffer();
       if( type < DNSMessage.dnsTypes.length ){
+          sb.append("type ");
           sb.append( DNSMessage.dnsTypes[type] );
           sb.append(':');
       }

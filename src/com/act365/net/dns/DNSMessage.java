@@ -32,7 +32,7 @@ import java.io.* ;
 
 /**
  * Represents a DNS message.
- * @see www.iana.org/assignments/dns-parameters
+ * @see www.faqs.org/rfcs/rfc1035.html
  */
 
 public class DNSMessage implements IServiceMessage {
@@ -199,6 +199,7 @@ public class DNSMessage implements IServiceMessage {
    
   public short identification ;
   public short flags ;
+  public int dnstype ;
   public Query[] questions ;
   public ResourceRecord[] answers ;
   public ResourceRecord[] authority_records ;
@@ -216,6 +217,7 @@ public class DNSMessage implements IServiceMessage {
   */
 
   public DNSMessage( short identification ,
+                     int dnstype ,
                      boolean recursion_desired ,
                      String domain ) throws IOException {
 
@@ -230,7 +232,7 @@ public class DNSMessage implements IServiceMessage {
 
     Query[] questions = new Query[ 1 ];
 
-    questions[ 0 ] = new Query( domain );
+    questions[ 0 ] = new Query( dnstype , domain );
 
     this.identification = identification ;
     this.flags = flags ;
@@ -279,19 +281,19 @@ public class DNSMessage implements IServiceMessage {
     }
     
     if( ( flags & 0x0400 ) == 1 ){
-        sb.append(":Authoratative answer");
+        sb.append(" Authoratative answer");
     }
     
     if( ( flags & 0x0200 ) == 1 ){
-        sb.append(":Truncated");
+        sb.append(" Truncated");
     }
     
     if( ( flags & 0x0100 ) == 1 ){
-        sb.append(":Recursion desired");
+        sb.append(" Recursion desired");
     }
     
     if( ( flags & 0x0080 ) == 1 ){
-        sb.append(":Recursion available");
+        sb.append(" Recursion available");
     }
     
     int rcode = flags & 0x000f ;
@@ -407,6 +409,17 @@ public class DNSMessage implements IServiceMessage {
   }
 
   /**
+   * Extracts a character string from a DNS message.
+   */
+  
+  static int characterString( byte[] buffer , int offset , StringBuffer name ){
+      byte next = buffer[ offset ++ ];
+      int inext = next >= 0 ? next : 0xffffff00 ^ next ;
+      name.append( new String( buffer , offset , inext ) );    
+      return inext + 1 ;
+  }
+  
+  /**
    Converts the data in a ResourceRecord object into an appropriate string.
   */
 
@@ -430,25 +443,91 @@ public class DNSMessage implements IServiceMessage {
  
         break;
 
+      case DNSMessage.TXT:
+      
+        while( offset < start + count ){
+            offset += characterString( buffer , offset , name );
+            if( offset < start + count - 1 ){
+                name.append(':');
+            }
+        }
+        
+        break;
+        
       case DNSMessage.NS :
-      case DNSMessage.CNAME :
+      case DNSMessage.CNAME:  
       case DNSMessage.PTR :
-
-        domainName( initialOffset , buffer , offset , name );
-
+      case DNSMessage.MB:
+      case DNSMessage.MD: 
+      case DNSMessage.MF:
+      case DNSMessage.MG:
+      case DNSMessage.MR:
+      
+        offset += domainName( initialOffset , buffer , offset , name );
+ 
         break;
 
       case DNSMessage.SOA :
       
         name.append("source-");
         offset += domainName( initialOffset , buffer , offset , name );
-        name.append(":email-");
+        name.append(" email-");
+        offset += domainName( initialOffset , buffer , offset , name );
+        name.append(" serial-");
+        name.append( Integer.toString( SocketUtils.intFromBytes( buffer , offset ) ) );
+        offset += 4 ;
+        name.append(" refresh-");
+        name.append( Integer.toString( SocketUtils.intFromBytes( buffer , offset ) ) );
+        offset += 4 ;
+        name.append(" retry-");
+        name.append( Integer.toString( SocketUtils.intFromBytes( buffer , offset ) ) );
+        offset += 4 ;
+        name.append(" expire-");
+        name.append( Integer.toString( SocketUtils.intFromBytes( buffer , offset ) ) );
+        offset += 4 ;
+        name.append(" minimum-");
+        name.append( Integer.toString( SocketUtils.intFromBytes( buffer , offset ) ) );
+        offset += 4 ;
+
+        break;
+      
+      case DNSMessage.MX:
+      
+        name.append("preference-");
+        name.append( Short.toString( SocketUtils.shortFromBytes( buffer , offset ) ) );
+        offset += 2 ;
+        name.append(" exchange-");
+        offset += domainName( initialOffset , buffer , offset , name );
+        
+        break;
+      
+      case DNSMessage.MINFO:
+      
+        name.append("email-");
+        offset += domainName( initialOffset , buffer , offset , name );
+        name.append(" error email-");
         offset += domainName( initialOffset , buffer , offset , name );
         
         break;
         
+      case DNSMessage.HINFO:
+      
+        name.append("cpu-");
+        offset += characterString( buffer , offset , name );
+        name.append(" os-");
+        offset += characterString( buffer , offset , name );
+        
+        break;
+        
+      case DNSMessage.NULL:
+      
+        name.append( new String( buffer , offset , count ) );
+        
+        break;
+              
       default:
-
+      
+        name.append(" unsupported");
     }
         
     return name.toString();

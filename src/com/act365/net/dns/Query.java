@@ -57,7 +57,7 @@ public class Query {
    a single domain name.
   */
 
-  public Query( String domain_name ) throws IOException {
+  public Query( int dnstype , String domain_name ) throws IOException {
 
     this.domain_name = domain_name ;
 
@@ -65,7 +65,7 @@ public class Query {
 
     parse( domain_name , query_name , 0 );
 
-    query_type  = (short) DNSMessage.A ;
+    query_type  = (short) dnstype ;
     query_class = (short) 1 ;
   }
 
@@ -84,6 +84,7 @@ public class Query {
   public String toString() {
       StringBuffer sb = new StringBuffer();
       if( query_type < DNSMessage.dnsTypes.length ){
+          sb.append("type ");
           sb.append( DNSMessage.dnsTypes[query_type] );
           sb.append(':');
       }

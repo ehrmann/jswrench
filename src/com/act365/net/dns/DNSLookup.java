@@ -35,9 +35,9 @@ import java.net.*;
 /**
  Implements a DNS client. 
  Usage: <code>DNSLookup -r -p protocol -l localhost DNSServer domain</code>.
- <code>-r</code> (optional) indicates whether recursion is desired, i.e. 
- whether a query that cannot be resolved by the named server should be
- passed on to another server.
+ <code>-r</code> (optional) indicates whether recursion, which is enabled by
+ default, should be disabled, i.e. whether a query that cannot be resolved by 
+ the named server should not be passed on to another server.
  <p><code>-p protocol</code> (optional) defines the socket protocol to be used.
  By default, the JDK UDP implementation will be used. The alternatives are
  UDP, RawUDP and RawHdrUDP. 
@@ -55,7 +55,7 @@ public class DNSLookup {
 
   public static void main( String[] args ) {
 
-    final String errortext = "Usage: DNSLookup -r -p protocol -l localhost DNSServer domain";
+    final String errortext = "Usage: DNSLookup -r -p protocol -l localhost -t type DNSServer domain";
 
     if( args.length < 2 ){
     	System.err.println( errortext );
@@ -64,20 +64,23 @@ public class DNSLookup {
     
     int i = -1 ;
 
-    boolean recursion_desired = false ;
+    boolean recursion_desired = true ;
 
     String servername = args[ args.length - 2 ] ,
            domainname = args[ args.length - 1 ] ,
            protocollabel = "JDKUDP",
-           localhost = null ;
+           localhost = null ,
+           type = null ;
 
     while( ++ i < args.length - 2 ){
       if( args[ i ].equals("-r") ){
-        recursion_desired = true ;
+        recursion_desired = false ;
       } else if( args[ i ].equals("-p") && i < args.length - 3 ){
       	protocollabel = args[ ++ i ];
       } else if( args[ i ].equals("-l") && i < args.length - 3 ){
       	localhost = args[ ++ i ];
+      } else if( args[ i ].equals("-t") && i < args.length - 3 ){
+          type = args[ ++ i ];
       } else {
         System.err.println( errortext );
         System.exit( 1 );
@@ -96,6 +99,20 @@ public class DNSLookup {
         System.exit( 3 );    
     }
     
+    int dnstype ;
+    
+    if( type instanceof String ){
+        dnstype = -1 ;
+        while( ! type.equalsIgnoreCase( DNSMessage.dnsTypes[++ dnstype ] ) );
+        if( dnstype == DNSMessage.dnsTypes.length ){
+            System.err.println("Unknown DNS lookup type");
+            System.exit( 4 );
+        }
+    } else {
+        // Determine whether the domain name is a host name or an IP address.
+        dnstype = DNSMessage.A ;
+    }
+    
     InetAddress server = null ,
                 source = null ;
 
@@ -106,21 +123,22 @@ public class DNSLookup {
       }
     } catch( UnknownHostException e ){
       System.err.println("DNS server " + e.getMessage() + " is unknown");
-      System.exit( 4 );
+      System.exit( 5 );
     }
 
     try {
-        new DNSLookup( domainname , server , source , recursion_desired );    
+        new DNSLookup( domainname , server , source , dnstype , recursion_desired );    
     } catch ( Exception e ) {
         System.err.println( e.getMessage() );
         e.printStackTrace();
-        System.exit( 5 );
+        System.exit( 6 );
     }
   }
   
   public DNSLookup( String domainname ,
                     InetAddress server ,
                     InetAddress source ,
+                    int dnstype ,
                     boolean recursion_desired ) throws SocketException , IOException {
     
       new SocketWrenchSession();
@@ -132,7 +150,7 @@ public class DNSLookup {
       }
       socket.setTypeOfService( IP4.TOS_COMMAND );
     
-      DNSMessage dnsMessage = new DNSMessage( (short) hashCode() , recursion_desired , domainname );
+      DNSMessage dnsMessage = new DNSMessage( (short) hashCode() , dnstype , recursion_desired , domainname );
 
       socket.send( dnsMessage , 1024 , server.getAddress() );            
       socket.receive( null , dnsMessage );
