@@ -32,7 +32,8 @@
 #include <errno.h>
 
 #ifdef WIN32
-#include <winsock.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #else
 #include <unistd.h>
 #include <sys/types.h>
@@ -54,17 +55,6 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1socket( JNIEnv* env
                                                                      jboolean headerincluded )
 {
     int type = SocketUtils::socketConstants( socketType );
-
-#ifdef WIN32
-    if( type == SOCK_RAW ){
-
-      jclass exceptionClass = env -> FindClass("java/net/SocketException");
-
-      env -> ThrowNew( exceptionClass , "User-defined IP headers not supported on Windows");
-
-      return -1 ;
-    }
-#endif
 
     int ret = socket( addressFamily , type , protocol );
 
@@ -116,11 +106,9 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1socket( JNIEnv* env
       env -> DeleteLocalRef( exceptionClass );
     }
 
-#ifndef WIN32
-    if( type == SOCK_RAW ){
+    if(  type == SOCK_RAW && headerincluded ){
       setsockopt( ret , IPPROTO_IP , IP_HDRINCL , (char*) & headerincluded , sizeof( headerincluded ) );
     }
-#endif
 
     return ret ;
 }
@@ -136,7 +124,7 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1bind( JNIEnv*    en
 
     internetAddress.sin_family = AF_INET ;
     internetAddress.sin_port   = SocketUtils::javaPortToUnixPort( port );
-
+        
     int ret ;
 
     if( SocketUtils::jbyteArrayToInAddr( env , address , & internetAddress.sin_addr ) ){
@@ -146,7 +134,7 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1bind( JNIEnv*    en
 
           jclass exceptionClass = env -> FindClass("java/net/SocketException");
 
-          switch( errno ){
+          switch( SocketUtils::errorCode() ){
 
             case EBADF:
               env -> ThrowNew( exceptionClass , "bind(): Invalid descriptor" );
@@ -168,6 +156,49 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1bind( JNIEnv*    en
             case ENOTSOCK:
               env -> ThrowNew( exceptionClass , "bind(): Descriptor describes file" );
               break;
+
+#else 
+
+            case WSANOTINITIALISED:
+                env ->ThrowNew( exceptionClass , "bind(): Winsock 2 not initialised" );
+                break;
+
+            case WSAENETDOWN:
+                env -> ThrowNew( exceptionClass , "bind(): Network subsystem has failed" );
+                break;
+
+            case WSAEACCES:
+                env -> ThrowNew( exceptionClass , "bind(): setsockopt option SO_BROADCAST not enabled" );
+                break;
+
+            case WSAEADDRINUSE:
+                env -> ThrowNew( exceptionClass , "bind(): Socket already bound" );
+                break;
+
+            case WSAEADDRNOTAVAIL:
+                env -> ThrowNew( exceptionClass , "bind(): Specified address is invalid" );
+                break;
+
+            case WSAEFAULT:
+                env -> ThrowNew( exceptionClass , "bind(): Name is not a valid part of the user address space" );
+                break;
+
+            case WSAEINPROGRESS:
+                env -> ThrowNew( exceptionClass , "bind(): Blocking call is in progress" );
+                break;
+
+            case WSAEINVAL:
+                env -> ThrowNew( exceptionClass , "bind(): Socket already bound" );
+                break;
+
+            case WSAENOBUFS:
+                env -> ThrowNew( exceptionClass , "bind(): Not enough buffers available" );
+                break;
+
+            case WSAENOTSOCK:
+                env -> ThrowNew( exceptionClass , "bind(): Descriptor is not a socket" );
+                break;
+
 #endif
 
             default:

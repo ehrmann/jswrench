@@ -31,7 +31,7 @@
 #include <errno.h>
 
 #ifdef WIN32
-#include <winsock.h>
+#include <winsock2.h>
 #else
 #include <unistd.h>
 #include <sys/types.h>

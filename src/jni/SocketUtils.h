@@ -28,7 +28,8 @@
 #define INCLUDE_SOCKETUTILS
 
 #ifdef WIN32
-#include <winsock.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #else
 #define TRUE 1
 #define FALSE 0
@@ -52,6 +53,7 @@ public:
     static u_short javaPortToUnixPort( jint javaPort );
     static int socketConstants( const int socketid );
     static int socketOptions( const int optid , int& platform_optid , int& platform_level ); 
+    static int errorCode();
 };
 
 #include <ostream>

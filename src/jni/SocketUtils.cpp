@@ -267,6 +267,15 @@ int SocketUtils::socketOptions( const int optid , int& platform_optid , int& pla
     return TRUE ;
 }
 
+int SocketUtils::errorCode()
+{
+#ifdef WIN32
+    return WSAGetLastError();
+#else
+    return errno ;
+#endif
+}
+
 ostream& operator<<( ostream& str , const sockaddr_in& address )
 {
     assert( address.sin_family == AF_INET );
