@@ -60,10 +60,10 @@ JNIEXPORT jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1close
 /*
  * Class:     com_act365_net_GeneralDatagramSocketImpl
  * Method:    _receive
- * Signature: (ILjava/net/DatagramPacket;I)V
+ * Signature: (ILjava/net/DatagramPacket;IZ)V
  */
 JNIEXPORT void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1receive
-  (JNIEnv *, jclass, jint, jobject, jint);
+  (JNIEnv *, jclass, jint, jobject, jint, jboolean);
 
 /*
  * Class:     com_act365_net_GeneralDatagramSocketImpl

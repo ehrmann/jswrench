@@ -177,9 +177,14 @@ void SocketUtils::writeAddressToSocket( JNIEnv*            env ,
 void SocketUtils::writeAddress( JNIEnv*        env ,
                                 jobject&       inetAddress ,
                                 jint           family ,
-                                const in_addr& address )
+                                const in_addr& address ,
+                                const jboolean useDNS )
 {
-    hostent* pHost = gethostbyaddr( (char*) & address  , sizeof( address ) , AF_INET );
+    hostent* pHost = NULL ;
+
+    if( useDNS ){
+        gethostbyaddr( (char*) & address  , sizeof( address ) , AF_INET );
+    }
 
     jstring hostname ;
 

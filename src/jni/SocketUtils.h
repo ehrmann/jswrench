@@ -56,7 +56,7 @@ public:
 
     static int jbyteArrayToInAddr( JNIEnv* env , jbyteArray javaAddress , in_addr* pAddress );
     static void writeAddressToSocket( JNIEnv* env , jobject& socket , const int socketDescriptor , const sockaddr_in& address );
-    static void writeAddress( JNIEnv* env , jobject& inetAddress , jint family , const in_addr& address );
+    static void writeAddress( JNIEnv* env , jobject& inetAddress , jint family , const in_addr& address , const jboolean useDNS = TRUE );
     static void writeFileDescriptor( JNIEnv* env , jobject& socket , const int socketDescriptor );
     static jint unixAddressToJavaAddress( u_long unixAddress );
     static jint unixPortToJavaPort( u_short unixPort );

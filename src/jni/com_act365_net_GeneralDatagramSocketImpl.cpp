@@ -155,11 +155,12 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1close(JNIEnv* env ,
 }
 
 JNIEXPORT
-void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1receive( JNIEnv* env ,
+void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1receive( JNIEnv*  env ,
                                                                       jclass,
-                                                                      jint    socketDescriptor ,
-                                                                      jobject dgram ,
-                                                                      jint    flags )
+                                                                      jint     socketDescriptor ,
+                                                                      jobject  dgram ,
+                                                                      jint     flags ,
+                                                                      jboolean useDNS )
 {
   jclass datagramPacketClass = env -> GetObjectClass( dgram );
 
@@ -252,7 +253,8 @@ void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1receive( JNIEnv* en
   SocketUtils::writeAddress( env , 
                              inetAddress , 
                              (jint) AF_INET ,  
-                             ((sockaddr_in&) sourceAddress ).sin_addr );
+                             ((sockaddr_in&) sourceAddress ).sin_addr ,
+                             useDNS );
 
   env -> SetIntField( dgram , lengthID , nRead );
 
