@@ -148,18 +148,19 @@ public class SocketUtils {
      
 	  // Sum consecutive 16-bit words.
 
-	  int sum = 0 ;
+	  int sum = 0 ,
+          cursor = 0 ;
 
-	  while( offset < count - 1 ){
+	  while( cursor < count - 1 ){
 
-		sum += (int) integralFromBytes( message , offset , 2 );
+		sum += (int) integralFromBytes( message , offset + cursor , 2 );
 
-		offset += 2 ;
+		cursor += 2 ;
 	  } 
     
-	  if( offset == count - 1 ){
+	  if( cursor == count - 1 ){
 
-		sum += ( message[offset] >= 0 ? message[offset] : message[offset] ^ 0xffffff00 ) << 8 ;
+		sum += ( message[offset+cursor] >= 0 ? message[offset+cursor] : message[offset+cursor] ^ 0xffffff00 ) << 8 ;
 	  }
 
 	  // Add upper 16 bits to lower 16 bits.
