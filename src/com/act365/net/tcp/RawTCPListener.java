@@ -53,7 +53,7 @@ public class RawTCPListener extends Thread {
   static RawTCPListener listener = new RawTCPListener();
 
   static {
-  	if( ( protocol = SocketUtils.getProtocol() ) == 0 ){
+  	if( ( protocol = SocketWrenchSession.getProtocol() ) == 0 ){
   		protocol = SocketConstants.IPPROTO_TCPJ ;
   	}  	
   }

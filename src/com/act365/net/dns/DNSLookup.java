@@ -91,7 +91,7 @@ public class DNSLookup {
     }
 
     try {
-      SocketUtils.setProtocol( protocollabel );
+      SocketWrenchSession.setProtocol( protocollabel );
     } catch ( java.io.IOException e ) {
       System.err.println("Unsupported protocol");
       System.exit( 2 );
@@ -100,7 +100,7 @@ public class DNSLookup {
     final boolean israw = protocollabel.equalsIgnoreCase("RawUDP") ||
                           protocollabel.equalsIgnoreCase("RawHdrUDP");
     
-    final boolean includeheader = SocketUtils.includeHeader();
+    final boolean includeheader = SocketWrenchSession.includeHeader();
     
     new SocketWrenchSession();
     

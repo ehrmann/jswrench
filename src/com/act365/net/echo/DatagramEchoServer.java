@@ -100,7 +100,7 @@ public class DatagramEchoServer {
     }
 
 	try {
-	  SocketUtils.setProtocol( protocollabel );
+	  SocketWrenchSession.setProtocol( protocollabel );
 	} catch ( java.io.IOException e ) {
 	  System.err.println("Unsupported protocol");
 	  System.exit( 1 );
@@ -161,7 +161,7 @@ public class DatagramEchoServer {
         buffer = received.getData();
         bufferlength = received.getLength();
         
-        if( SocketUtils.includeHeader() ){
+        if( SocketWrenchSession.includeHeader() ){
 
           buffer = IP4Reader.read( received.getData() , 0 , received.getLength() , false ).data ;
 

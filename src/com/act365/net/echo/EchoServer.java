@@ -93,15 +93,15 @@ public class EchoServer extends Thread {
 	}
 
 	try {
-	  SocketUtils.setProtocol( protocollabel );
+	  SocketWrenchSession.setProtocol( protocollabel );
 	} catch ( java.io.IOException e ) {
 	  System.err.println("Unsupported protocol");
 	  System.exit( 2 );
 	}
     
-	final int protocol = SocketUtils.getProtocol();
+	final int protocol = SocketWrenchSession.getProtocol();
     
-	boolean includeheader = SocketUtils.includeHeader();
+	boolean includeheader = SocketWrenchSession.includeHeader();
     
 	new SocketWrenchSession();
 

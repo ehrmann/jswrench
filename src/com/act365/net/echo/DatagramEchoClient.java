@@ -119,13 +119,13 @@ class DatagramEchoClient {
     }
 
 	try {
-	  SocketUtils.setProtocol( protocollabel );
+	  SocketWrenchSession.setProtocol( protocollabel );
 	} catch ( java.io.IOException e ) {
 	  System.err.println("Unsupported protocol");
 	  System.exit( 3 );
 	}
     
-	final int protocol = SocketUtils.getProtocol();
+	final int protocol = SocketWrenchSession.getProtocol();
     
 	new SocketWrenchSession();
 
@@ -142,7 +142,7 @@ class DatagramEchoClient {
 	  System.exit( 6 );
 	}
 
-    if( SocketUtils.includeHeader() && localaddr == null ){
+    if( SocketWrenchSession.includeHeader() && localaddr == null ){
     	System.err.println("Local address must be specified with the RawUDP protocol");
     	System.exit( 7 );
     }
@@ -210,7 +210,7 @@ class DatagramEchoClient {
 
       while( ( bufferlength = localIn.read( buffer ) ) > -1 ){
 
-        if( SocketUtils.includeHeader() ){
+        if( SocketWrenchSession.includeHeader() ){
         
             buffer = UDPWriter.write( localaddr.getAddress() ,
                                       (short) localport ,
@@ -243,7 +243,7 @@ class DatagramEchoClient {
 		  buffer = received.getData();
 		  bufferlength = received.getLength();
 
-		  if( SocketUtils.includeHeader() ){  
+		  if( SocketWrenchSession.includeHeader() ){  
 			buffer = IP4Reader.read( buffer , 0, bufferlength , false ).data ;
 			UDPMessage udp = UDPReader.read( buffer , 0 , buffer.length );
 			

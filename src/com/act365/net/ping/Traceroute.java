@@ -102,7 +102,7 @@ public class Traceroute {
     }
 
     try {
-		SocketUtils.setProtocol("HdrICMP");
+		SocketWrenchSession.setProtocol("HdrICMP");
     } catch ( java.io.IOException e ) {
     	System.err.println("Unsupported protocol");
     	System.exit( 4 );

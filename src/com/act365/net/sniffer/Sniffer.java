@@ -72,8 +72,8 @@ public class Sniffer {
 		try {
 
 			new SocketWrenchSession();
-
-            SocketUtils.setProtocol( protocollabel );
+            
+            SocketWrenchSession.setProtocol( protocollabel );
             
             byte[] excludedaddress = new byte[0];
             
@@ -141,7 +141,7 @@ public class Sniffer {
                                         
 
                         System.out.println( tcpmessage.toString () );
-                        SocketUtils.dump( System.out , tcpmessage.data , tcpmessage.datastart , tcpmessage.dataLength() ); // Not quite right
+                        SocketUtils.dump( System.out , tcpmessage.data , tcpmessage.datastart , tcpmessage.dataLength() ); 
                         
 						break;
 

@@ -119,14 +119,14 @@ public class TFTPServer implements Runnable {
         new SocketWrenchSession();
         
         try {
-            SocketUtils.setProtocol( protocolLabel );
+            SocketWrenchSession.setProtocol( protocolLabel );
         } catch ( IOException e ) {
             ErrorHandler.quit("Unable to set protocol");
         }
         
         INetworkServerImpl network = null ;
         
-        switch( SocketUtils.getProtocol() ){
+        switch( SocketWrenchSession.getProtocol() ){
         
         case SocketConstants.IPPROTO_UDP:
 

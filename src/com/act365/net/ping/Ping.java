@@ -239,7 +239,7 @@ public class Ping {
     }
 
 	try {
-		SocketUtils.setProtocol( protocollabel );
+		SocketWrenchSession.setProtocol( protocollabel );
 	} catch ( java.io.IOException e ){
 		System.err.println("Protocol not supported");
 		System.exit( 2 );

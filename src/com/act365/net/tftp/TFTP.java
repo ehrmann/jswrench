@@ -156,14 +156,14 @@ public class TFTP extends TFTPBase {
         new SocketWrenchSession();
         
         try {
-            SocketUtils.setProtocol( protocolLabel );
+            SocketWrenchSession.setProtocol( protocolLabel );
         } catch ( IOException e ) {
             ErrorHandler.quit("Unable to set protocol");
         }
         
         INetworkImpl network = null ;
         
-        switch( SocketUtils.getProtocol() ){
+        switch( SocketWrenchSession.getProtocol() ){
         
         case SocketConstants.IPPROTO_UDP:
 

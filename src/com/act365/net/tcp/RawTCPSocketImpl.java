@@ -48,14 +48,14 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
              minEphemeralPort ,
              maxEphemeralPort ;
                    
-  final static int protocol = SocketUtils.getProtocol();
+  final static int protocol = SocketWrenchSession.getProtocol();
 
   static boolean debug ,
                  avoidhalfcloseserver ,
                  avoidackdelay ,
                  modelpacketloss ;
 
-  final static boolean includeipheader = SocketUtils.includeHeader();
+  final static boolean includeipheader = SocketWrenchSession.includeHeader();
 
   static double alpha ,
                 beta ,
