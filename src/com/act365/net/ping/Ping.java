@@ -76,8 +76,6 @@ public class Ping {
 
       DatagramPacket packet ;
 
-      ICMPReader reader = new ICMPReader( (short) socket.hashCode() );
-
       ICMPMessage message = null ;
 
       int received = 0 ;
@@ -95,12 +93,16 @@ public class Ping {
         packet = new DatagramPacket( buffer , maxdatagramlength );
         socket.receive( packet );
 
-        if( ( message = reader.read( packet.getData() , packet.getLength() , 20 , false ) ) != null ){ 
+        if( ( message = ICMPReader.read( packet.getData() , packet.getLength() , 20 , false ) ) != null ){ 
 
           long t1 , t2 ;
  
           float dt ;
 
+          if( message.identifier != socket.hashCode() ){
+              continue ;
+          }
+          
           switch( message.type ) {
 
             case ICMP.ICMP_ECHOREPLY:
