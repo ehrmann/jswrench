@@ -37,6 +37,8 @@
 #include <assert.h>
 #include <errno.h>
 
+#include <strstream>
+
 int SocketUtils::jbyteArrayToInAddr( JNIEnv*    env ,
                                      jbyteArray javaAddress ,
                                      in_addr*   pAddress )
@@ -144,7 +146,22 @@ void SocketUtils::writeAddress( JNIEnv*        env ,
 {
     hostent* pHost = gethostbyaddr( (char*) & address  , sizeof( address ) , AF_INET );
 
-    jstring hostname = pHost ? env -> NewStringUTF( pHost -> h_name ) : jstring();
+    jstring hostname ;
+
+    if( pHost ){
+
+        hostname = env -> NewStringUTF( pHost -> h_name );
+
+    } else {
+        
+        char iptext[16];
+
+        ostrstream ipstream( iptext , 16 );
+
+        ipstream << address << '\0'; 
+
+        hostname = env -> NewStringUTF( iptext );
+    }
 
     jclass inetAddressClass = env -> GetObjectClass( inetAddress );
 
