@@ -46,6 +46,8 @@ public class IP4Message {
   public byte[] destination ;
   public int[] options ;
   public byte[] data ;
+  public int dataOffset ;
+  public int dataCount ;
 
   /**
    Writes the message to a string.

@@ -95,7 +95,7 @@ public class Sniffer {
 
 				socket.receive(packet);
 
-				ipmessage =	IP4Reader.read(packet.getData(), packet.getLength(), true);
+				ipmessage =	IP4Reader.read(packet.getData(), 0 , packet.getLength(), true);
 
                 if( excludedaddress.length == 4 &&
                     excludedaddress[0] == ipmessage.source[0] &&
@@ -114,8 +114,8 @@ public class Sniffer {
 					case SocketConstants.IPPROTO_UDP :
 
 						UDPMessage udpmessage = UDPReader.read( ipmessage.data,
-                                                                0,
-                                                                ipmessage.data.length,
+                                                                ipmessage.dataOffset,
+                                                                ipmessage.dataCount,
                                                                 true,
                                                                 ipmessage.source,
                                                                 ipmessage.destination );
@@ -133,8 +133,8 @@ public class Sniffer {
 					case SocketConstants.IPPROTO_TCPJ :
 
 						TCPMessage tcpmessage = TCPReader.read(	ipmessage.data ,
-                                                                0,
-                                                                ipmessage.data.length,
+                                                                ipmessage.dataOffset,
+                                                                ipmessage.dataCount,
                                                                 true,
                                                                 ipmessage.source,
                                                                 ipmessage.destination);
@@ -146,10 +146,10 @@ public class Sniffer {
 						break;
 
 					case SocketConstants.IPPROTO_ICMP :
-                    
+                                            
                         ICMPMessage icmpMessage = ICMPReader.read( ipmessage.data ,
-                                                                   0 ,
-                                                                   ipmessage.data.length ,
+                                                                   ipmessage.dataOffset ,
+                                                                   ipmessage.dataCount ,
                                                                    true );
                         
                         System.out.println( icmpMessage.toString() );
@@ -165,6 +165,7 @@ public class Sniffer {
 					}
 			}
 		} catch (Exception e) {
+            e.printStackTrace();
 			System.err.println(e.getMessage());
 		}
 	}

@@ -101,7 +101,7 @@ public class RawTCPListener extends Thread {
 
         socket.receive( packet );
 
-        ipmessage = IP4Reader.read( packet.getData() , packet.getLength() , false );
+        ipmessage = IP4Reader.read( packet.getData() , 0 , packet.getLength() , false );
 
         int mprotocol = ipmessage.protocol >= 0 ? ipmessage.protocol : 0xffffff00 ^ ipmessage.protocol ;
 
@@ -109,7 +109,7 @@ public class RawTCPListener extends Thread {
           continue ;
         }
 
-        tcpmessage = TCPReader.read( ipmessage.data , 0 , ipmessage.data.length );
+        tcpmessage = TCPReader.read( ipmessage.data , ipmessage.dataOffset , ipmessage.dataCount );
 
         pcs.firePropertyChange( "TCPJ", ipmessage , tcpmessage );
       }

@@ -74,10 +74,11 @@ public class IP4Writer {
       SocketUtils.intToBytes( message.options[ b - 5 ] , buffer , 4 * b );
     }
 
-    int i = 4 * b - 1 ;
+    int i = 0 ;
     
-    while( ++ i < message.length ){
-      buffer[i] = message.data[ i - 4 * b ];
+    while( i < message.dataCount ){
+      buffer[i] = message.data[ i + message.dataOffset ];
+      ++ i ;
     }
     
     return buffer ;

@@ -163,7 +163,7 @@ public class DatagramEchoServer {
         
         if( SocketUtils.includeHeader() ){
 
-          buffer = IP4Reader.read( received.getData() , received.getLength() , false ).data ;
+          buffer = IP4Reader.read( received.getData() , 0 , received.getLength() , false ).data ;
 
           UDPMessage udp = UDPReader.read( buffer , 0 , buffer.length );
           

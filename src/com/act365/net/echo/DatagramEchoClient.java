@@ -243,7 +243,7 @@ class DatagramEchoClient {
 		  bufferlength = received.getLength();
 
 		  if( SocketUtils.includeHeader() ){  
-			buffer = IP4Reader.read( buffer , bufferlength , false ).data ;
+			buffer = IP4Reader.read( buffer , 0, bufferlength , false ).data ;
 			UDPMessage udp = UDPReader.read( buffer , 0 , buffer.length );
 			
 			if( received.getAddress().equals( localaddr ) && udp.sourceport == localport ){
