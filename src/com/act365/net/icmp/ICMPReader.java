@@ -36,36 +36,23 @@ import java.io.* ;
 
 public class ICMPReader {
 
-  short identifier ;
-
-  /**
-   Creates a reader to read from DatagramPacket objects.
-   The reader will only accept ICMP packets with the
-   specified identifier.
-  */
-
-  public ICMPReader( short identifier ){
-    this.identifier = identifier ;
-  }
-
   /**
    read() constructs an ICMP message from a buffer. An exception will
    be thrown if the message is not in the ICMP format or if there is a
-   checksum error but the message will simply be ignored should the 
-   identifier does not match.
-   @return The ICMPMessage contained in the packet or null if the
-           identifier did not match.
+   checksum error.
+   
+   @return The ICMPMessage contained in the packet
   */
 
-  public ICMPMessage read( byte[] buffer, int length, int offset, boolean testchecksum ) throws IOException {
+  public static ICMPMessage read( byte[] buffer, int offset, int count, boolean testchecksum ) throws IOException {
 
-     if( length - offset < 8 ) {
-       throw new IOException("ICMP messages must be at least eight bytes long");
+     if( count < 4 ) {
+       throw new IOException("ICMP messages must be at least four bytes long");
      }
 
      short checksum ;
 
-     if( testchecksum && ( checksum = SocketUtils.checksum( buffer , length , offset ) ) != 0 ){
+     if( testchecksum && ( checksum = SocketUtils.checksum( buffer , offset , count ) ) != 0 ){
        throw new IOException("Checksum error: " + checksum );
      }
 
@@ -79,59 +66,25 @@ public class ICMPReader {
 
      int datastart ;
 
-     switch( message.type ){
+     boolean isQuery = message.isQuery();
+     
+     if( isQuery ){
 
-     case ICMP.ICMP_ECHOREPLY:
-     case ICMP.ICMP_ECHO:
-     case ICMP.ICMP_ROUTERADVERT:
-     case ICMP.ICMP_ROUTERSOLICIT:
-     case ICMP.ICMP_TIMESTAMP:
-     case ICMP.ICMP_TIMESTAMPREPLY:
-     case ICMP.ICMP_INFO_REQUEST:
-     case ICMP.ICMP_INFO_REPLY:
-     case ICMP.ICMP_ADDRESS:
-     case ICMP.ICMP_ADDRESSREPLY:
+         if( count < 8 ) {
+           throw new IOException("ICMP query messages must be at least eight bytes long");
+         }
 
-       isquery = true ;
-       datastart = 8 ;
-       break;
+         message.identifier = SocketUtils.shortFromBytes( buffer , offset + 4 );
+         message.sequence_number = SocketUtils.shortFromBytes( buffer , offset + 6 );
 
-     case ICMP.ICMP_DEST_UNREACH:
-     case ICMP.ICMP_SOURCE_QUENCH:
-     case ICMP.ICMP_REDIRECT:
-     case ICMP.ICMP_TIME_EXCEEDED:
-     case ICMP.ICMP_PARAMETERPROB:
-
-       isquery = false ;
-       datastart = 4 ;
-       break;
-
-     default:
-
-       return null ;
+         datastart = 8 ;
+     } else {
+         datastart = 4 ;
      } 
-
-     if( isquery ){
-
-       message.identifier = SocketUtils.shortFromBytes( buffer , offset + 4 );
-
-       if( identifier != message.identifier ){
-         return null ;
-       }
-
-       message.sequence_number = SocketUtils.shortFromBytes( buffer , offset + 6 );
-     }
-
-     byte[] data = new byte[ length - offset - datastart ];
-
-     int i = offset + datastart ;
-
-     while( i < length ){
-       data[ i - offset - datastart ] = buffer[i];
-       ++ i ;
-     }
-
-     message.data = data ;
+     
+     message.data = buffer ;
+     message.offset = offset + datastart ;
+     message.count = count - datastart ;
 
      return message ;
   }
