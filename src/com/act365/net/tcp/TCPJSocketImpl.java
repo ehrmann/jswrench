@@ -59,6 +59,9 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
                       beta = 2.0 ,
                       packetloss = 0.1 ;
 
+  final static InetAddress ip0 = GeneralSocketImpl.createInetAddress() ,
+                           iplocalhost = GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , new byte[] {127,0,0,1} );
+  
   static int nextEphemeralPort = 1024 ;
  
   DatagramSocket socket ;
@@ -95,6 +98,8 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   
   public TCPJSocketImpl() throws SocketException {
 
+    super();
+    
     resetSocket();
  
     socket = new DatagramSocket();
@@ -317,19 +322,18 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
    */
   
   void resetSocket(){
-
-    address = null ;
-    port = 0 ;
-    
+/*
     try {
-      localport = 0 ;
       if( localhost == null ){
         localhost = InetAddress.getLocalHost();
       }
     } catch ( UnknownHostException uhe ) {
       localhost = null ;
     }
-     
+*/     
+	address = localhost = ip0 ;
+	port = localport = 0 ;
+    
     state = previousstate = TCP.CLOSED ; 
     localseqnum = ISNCounter.getCounter();
     destseqnum = 0 ;
@@ -632,21 +636,36 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   
   public void propertyChange( PropertyChangeEvent evt ){
 
+    if( localhost.getAddress() == null || address.getAddress() == null ){
+      return ;
+    }
+    
     IP4Message ipmessage = (IP4Message) evt.getOldValue();
 
-    if( address instanceof InetAddress ){
+//    System.err.print("Destination check: ");
+    
+    if( ! address.equals( ip0 ) ){
 
+//        System.err.print("[" + address.getHostName() + "]");
+        
         byte[] destinationaddress = address.getAddress();
 
         if( destinationaddress[ 0 ] != ipmessage.source[ 0 ] || 
             destinationaddress[ 1 ] != ipmessage.source[ 1 ] ||
             destinationaddress[ 2 ] != ipmessage.source[ 2 ] ||
             destinationaddress[ 3 ] != ipmessage.source[ 3 ] ){
+//            System.err.println("FAILED");
             return ;
+        } else {
+//        	System.err.println("PASSED");
         }
+    } else {
+//    	System.err.println("SKIPPED");
     }
 
-    if( localhost instanceof InetAddress ){
+//    System.err.print("Source check: ");
+    
+    if( ! localhost.equals( ip0 ) ){
  
         byte[] localaddress = localhost.getAddress();
 
@@ -654,14 +673,24 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
             localaddress[ 1 ] != ipmessage.destination[ 1 ] ||
             localaddress[ 2 ] != ipmessage.destination[ 2 ] ||
             localaddress[ 3 ] != ipmessage.destination[ 3 ] ){
+//            System.err.println("FAILED");
             return ;
+        } else {
+//        	System.err.println("PASSED");
         }
+    } else {
+//    	System.err.println("SKIPPED");
     }
 
     TCPMessage tcpmessage = (TCPMessage) evt.getNewValue();
 
+//    System.err.print("Port check: ");
+    
     if( port != 0 && port != tcpmessage.sourceport || localport != tcpmessage.destinationport ){
+//      System.err.println("FAILED");
       return ;
+    } else {
+//      System.err.println("PASSED");
     }
 
     if( debug ){
@@ -670,18 +699,21 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     }
 
     try {
-      if( address == null ){
-        address = InetAddress.getByName( ipmessage.source[ 0 ] + "." +
-                                         ipmessage.source[ 1 ] + "." +
-                                         ipmessage.source[ 2 ] + "." +
-                                         ipmessage.source[ 3 ] );
+      if( address.equals( ip0 ) ){
+      	address = GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , ipmessage.source );
+//        System.err.println("New address " + address.toString() );
       }
       if( port == 0 ){
         port = tcpmessage.sourceport ;
       }
+//      System.err.println("About to receive");
       receive( tcpmessage );
+//      System.err.println("Received");
     } catch( Exception e ) {
+      System.err.println("propertyChange: " + e.getMessage() );
     }
+    
+//    System.err.println("Exit from propertyChange");
   }
 
   /**
@@ -703,12 +735,12 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   
   public void bind( InetAddress inetAddress , int port ) throws IOException {
 
-    localhost = inetAddress ;
+    localhost = inetAddress.equals( ip0 ) ? iplocalhost : inetAddress ;
 
     if( port != (short) port ){
       throw new IOException("Illegal port number");
-    } else if( port == 0 ) {
-      throw new IOException("Use of port 0 is prohibited");
+//    } else if( port == 0 ) {
+//      throw new IOException("Use of port 0 is prohibited");
     } else if( port >= minEphemeralPort && port <= maxEphemeralPort ) {
       throw new IOException("Ports " + minEphemeralPort + " to " + maxEphemeralPort + " are reserved for ephemeral use");
     } else {
@@ -730,7 +762,8 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
    */
   
   public void connect( SocketAddress address , int timeout ) throws IOException {
-    throw new IOException("SocketAddress not supported");
+  	
+  	connect( ((InetSocketAddress) address ).getAddress() , ((InetSocketAddress) address ).getPort() );
   }
   
   /**
@@ -765,13 +798,18 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   
   public synchronized void accept( SocketImpl newSocket ) {
 
+//    System.err.println("Before acceptance: " + toString() );
+    
     while( state != TCP.ESTABLISHED ){
       try {
         wait();
       } catch ( InterruptedException ie ) {
+      	System.err.println("Interrupted Exception in accept()");
       }
     }
 
+//	System.err.println("After acceptance: " + toString() );
+    
     TCPJSocketImpl tcpjsocket = (TCPJSocketImpl) newSocket ;
 
     tcpjsocket.resetSocket();
@@ -786,28 +824,20 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
     tcpjsocket.windowsize = windowsize ;
     tcpjsocket.destwindowsize = destwindowsize ;
 
-    if( address instanceof InetAddress ){
-      try {
-        tcpjsocket.address = InetAddress.getByName( address.getHostName() );
-      } catch( UnknownHostException e ){
-        tcpjsocket.address = null ;
-      }
+    if( ! address.equals( ip0 ) ){
+      tcpjsocket.localhost = GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , address.getAddress() );
     } else {
-      tcpjsocket.address = null ;
+      tcpjsocket.localhost = GeneralSocketImpl.createInetAddress();
     }
 
-    if( localhost instanceof InetAddress ){
-      try {
-        tcpjsocket.localhost = InetAddress.getByName( localhost.getHostName() );
-      } catch( UnknownHostException e ){
-        tcpjsocket.localhost = null ;
-      }
+    if( ! localhost.equals( ip0 ) ){
+      tcpjsocket.address = GeneralSocketImpl.createInetAddress( SocketConstants.AF_INET , localhost.getAddress() );
     } else {
-      tcpjsocket.localhost = null ;
+      tcpjsocket.address = GeneralSocketImpl.createInetAddress();
     }
 
     port  = 0 ;
-    address = null ;
+    address = GeneralSocketImpl.createInetAddress();
     state = TCP.LISTEN ;
   }
 
@@ -882,5 +912,44 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
   
   public void sendUrgentData(int data) throws IOException {
 	throw new IOException("Urgent data not supported");
-  }  
+  } 
+  
+  /**
+   * Writes to a string.
+   */ 
+  
+  public String toString() {
+    
+    StringBuffer sb = new StringBuffer();
+    
+    int count = 0 ;
+    
+    if( fd instanceof FileDescriptor ){
+      count ++ ;
+      sb.append("sd=");
+      sb.append( GeneralSocketImpl.getSocketDescriptor( fd ) );
+    }
+    
+    if( localhost instanceof InetAddress ){
+      if( count ++ > 0 ){
+        sb.append(",");  	
+      }
+      sb.append("local=");
+      sb.append( localhost.toString() );
+      sb.append(":");
+      sb.append( localport );
+    }
+    
+    if( address instanceof InetAddress ){
+      if( count ++ > 0 ){
+        sb.append(",");
+      }
+      sb.append("remote=");
+      sb.append( address.toString() );
+      sb.append(":");
+      sb.append( port );
+    }
+    
+    return sb.toString();    
+  }
 }
