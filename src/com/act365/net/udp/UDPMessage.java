@@ -235,7 +235,7 @@ public class UDPMessage implements IProtocolMessage {
                   throw new IOException("Checksum error: " + checksum );
               }
           }
-          return count + 8 ;
+          return this.count + 8 ;
       } else {
           data = buffer ;
           this.offset = offset ;
@@ -286,12 +286,12 @@ public class UDPMessage implements IProtocolMessage {
     
     int i = 0 ;
 
-    while( i < length - 8 ){
+    while( i < count ){
       buffer[ offset + i ] = data[ this.offset + i ];
       ++ i ;
     }
 
-    return SocketWrenchSession.isRaw() ? length : length - 8 ;
+    return SocketWrenchSession.isRaw() ? length : count ;
   }
 }
 

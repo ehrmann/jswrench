@@ -244,7 +244,7 @@ public class JSWDatagramSocket extends DatagramSocket {
         
             if( message.usesPortNumbers() ){
                 if( SocketWrenchSession.isRaw() ){
-                    if( sourcePort != message.getDestinationPort() ){
+                    if( sourcePort != 0 && sourcePort != message.getDestinationPort() ){
                         continue ;
                     }
                 } else {
