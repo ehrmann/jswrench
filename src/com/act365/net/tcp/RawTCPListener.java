@@ -34,13 +34,13 @@ import java.io.*;
 import java.net.*;
 
 /**
- <code>TCPJListener</code> is a singleton class that polls for TCPJ messages.
+ <code>RawTCPListener</code> is a singleton class that polls for TCP or TCPJ messages.
  It raises <code>PropertyChangeEvent</code> objects that, unconventionally,
  contain an <code>IPMessage</code> object as the old value and a <code>TCPMessage</code> 
  objects as the new.
 */
 
-public class TCPJListener extends Thread {
+public class RawTCPListener extends Thread {
 
   PropertyChangeSupport pcs ;
 
@@ -50,7 +50,7 @@ public class TCPJListener extends Thread {
 
   static int protocol ;
   
-  static TCPJListener listener = new TCPJListener();
+  static RawTCPListener listener = new RawTCPListener();
 
   static {
   	if( ( protocol = SocketUtils.getProtocol() ) == 0 ){
@@ -58,7 +58,7 @@ public class TCPJListener extends Thread {
   	}  	
   }
   
-  TCPJListener(){
+  RawTCPListener(){
     alive = true ;
     pcs = new PropertyChangeSupport( this );
  
@@ -70,10 +70,10 @@ public class TCPJListener extends Thread {
   }
 
   /**
-   * Returns a reference to the single <code>TCPJListener</code> object.
+   * Returns a reference to the single <code>RawTCPListener</code> object.
    */
 
-  public static TCPJListener getInstance() {
+  public static RawTCPListener getInstance() {
     return listener ;
   }
 

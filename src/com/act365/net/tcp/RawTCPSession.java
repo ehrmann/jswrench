@@ -27,12 +27,12 @@
 package com.act365.net.tcp ;
 
 /**
- The singleton class TCPSession manages startup and closedown tasks.
+ The singleton class RawTCPSession manages startup and closedown tasks.
 */
 
-public class TCPSession {
+public class RawTCPSession {
 
-  static TCPSession session = new TCPSession();
+  static RawTCPSession session = new RawTCPSession();
 
   /**
    * Starts a session.
@@ -40,18 +40,18 @@ public class TCPSession {
 
   public static void start() {
 
-    if( ! TCPJListener.getInstance().isAlive() ){
-      TCPJListener.getInstance().start();
+    if( ! RawTCPListener.getInstance().isAlive() ){
+      RawTCPListener.getInstance().start();
     }
 
-    while( ! TCPJListener.getInstance().isAlive() );
+    while( ! RawTCPListener.getInstance().isAlive() );
   }
 
   /**
-   * Access the sole <code>TCPSession</code> object.
+   * Access the sole <code>RawTCPSession</code> object.
    */
   
-  public static TCPSession getInstance() {
+  public static RawTCPSession getInstance() {
     return session ;
   }
 
@@ -61,7 +61,7 @@ public class TCPSession {
 
   public static void terminate() {
     ISNCounter.terminate();
-    TCPJListener.getInstance().terminate();
+    RawTCPListener.getInstance().terminate();
   }
 }
 

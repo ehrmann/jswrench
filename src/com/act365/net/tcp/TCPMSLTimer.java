@@ -33,7 +33,7 @@ package com.act365.net.tcp ;
 
 public class TCPMSLTimer extends Thread {
 
-  TCPJSocketImpl socket ;
+  RawTCPSocketImpl socket ;
 
   long msltimeout ;
 
@@ -43,7 +43,7 @@ public class TCPMSLTimer extends Thread {
    * @param msltimeout MSL in thousandths of a second
    */
   
-  public TCPMSLTimer( TCPJSocketImpl socket , long msltimeout ) {
+  public TCPMSLTimer( RawTCPSocketImpl socket , long msltimeout ) {
     this.socket = socket ;
     this.msltimeout = msltimeout ;
   }

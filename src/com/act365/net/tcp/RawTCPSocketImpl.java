@@ -39,7 +39,7 @@ import java.util.*;
  * used with a non-standard IP protocol setting.
  */
 
-class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
+class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
   
   static long msltimeout ;
 
@@ -148,7 +148,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
    * @throws SocketException if the underlying <code>DatagramSocket</code> object cannot be opened
    */
   
-  public TCPJSocketImpl() throws SocketException {
+  public RawTCPSocketImpl() throws SocketException {
 
     super();
     
@@ -158,7 +158,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
 
     msltimer = new TCPMSLTimer( this , msltimeout );
 
-    TCPJListener.getInstance().addPropertyChangeListener( this );
+    RawTCPListener.getInstance().addPropertyChangeListener( this );
 
     if( modelpacketloss ){
       random = new Random();
@@ -871,7 +871,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
       }
     }
 
-    TCPJSocketImpl tcpjsocket = (TCPJSocketImpl) newSocket ;
+    RawTCPSocketImpl tcpjsocket = (RawTCPSocketImpl) newSocket ;
 
     tcpjsocket.resetSocket();
 
@@ -956,7 +956,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
    */
   
   public InputStream getInputStream() throws IOException {
-    return new TCPJInputStream( this );
+    return new RawTCPInputStream( this );
   }
 
   /**
@@ -964,7 +964,7 @@ class TCPJSocketImpl extends SocketImpl implements PropertyChangeListener {
    */
   
   public OutputStream getOutputStream() throws IOException {
-    return new TCPJOutputStream( this );
+    return new RawTCPOutputStream( this );
   }
   
   /**

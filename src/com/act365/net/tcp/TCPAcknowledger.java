@@ -35,9 +35,9 @@ public class TCPAcknowledger extends Thread {
 
   long delay ;
 
-  TCPJSocketImpl socket ;
+  RawTCPSocketImpl socket ;
 
-  public TCPAcknowledger( TCPJSocketImpl socket , long delay  ){
+  public TCPAcknowledger( RawTCPSocketImpl socket , long delay  ){
     this.socket = socket ;
     this.delay = delay ;
   }

@@ -29,56 +29,58 @@ package com.act365.net.tcp ;
 import java.io.*;
 
 /**
- * Writes to a TCPJ socket.
+ * <code>TCPJInputStream</code> reads data from a TCPJ socket.
  */
 
-public class TCPJOutputStream extends OutputStream {
+public class RawTCPInputStream extends InputStream {
 
-  TCPJSocketImpl socket ;
-
-  /**
-   * Creates an output stream to write to the given socket.
+  RawTCPSocketImpl socket ;
+  
+  /*
+   * Creates an input stream to read from the named socket.
    */
-
-  public TCPJOutputStream( TCPJSocketImpl socket ){
+   
+  public RawTCPInputStream( RawTCPSocketImpl socket ){
     this.socket = socket ;
   }
 
   /**
-   * Writes a single byte.
+   * Reads a single byte.
    */
   
-  public void write( int oneByte ) throws IOException {
+  public int read() throws IOException {
 
-    byte buffer[] = { (byte) oneByte };
+    byte[] buffer = new byte[ 1 ];
 
-    socket.write( buffer , 0 , 1 );
+    socket.read( buffer , 0 , 1 );
+
+    return (int) buffer[ 0 ];
   }
 
   /**
-   * Writes an entire buffer.
+   * Reads an entire buffer.
    */
   
-  public void write( byte[] buffer ) throws IOException {
+  public int read( byte[] buffer ) throws IOException {
     
-    socket.write( buffer , 0 , buffer.length );
+    return socket.read( buffer , 0 , buffer.length ); 
   }
 
   /**
-   * Writes a partial buffer.
+   * Reads a partial buffer.
    */
   
-  public void write( byte[] buffer , int offset , int count ) throws IOException {
+  public int read( byte[] buffer , int offset , int count ) throws IOException {
   
-    socket.write( buffer , offset , count );
+    return socket.read( buffer , offset , count );
   }
 
   /**
-   * Closes the output stream.
+   * Closes the stream.
    */
   
   public void close() throws IOException {
-
+  
     socket.close();
   }
 }

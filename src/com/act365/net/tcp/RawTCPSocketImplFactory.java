@@ -31,10 +31,10 @@ import com.act365.net.*;
 import java.net.*;
 
 /**
- * Factory to create <code>TCPJSocketImpl</code> objects.
+ * Factory to create <code>RawTCPSocketImpl</code> objects.
 */
 
-public class TCPJSocketImplFactory implements SocketImplFactory {
+public class RawTCPSocketImplFactory implements SocketImplFactory {
 
   /**
    * Creates a new <code>TCPJSocketImpl</code> object.
@@ -42,8 +42,8 @@ public class TCPJSocketImplFactory implements SocketImplFactory {
   
   public SocketImpl createSocketImpl() {
     try {
-      TCPSession.start();
-      return new TCPJSocketImpl();
+      RawTCPSession.start();
+      return new RawTCPSocketImpl();
     } catch( SocketException se ) {
       return new TCPSocketImpl();
     }
