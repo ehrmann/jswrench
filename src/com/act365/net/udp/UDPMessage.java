@@ -32,11 +32,11 @@ package com.act365.net.udp ;
 
 public class UDPMessage {
 
-  short sourceport ;
-  short destinationport ;
-  short length ;
-  short checksum ;
-  byte[] data ;
+  public short sourceport ;
+  public short destinationport ;
+  public short length ;
+  public short checksum ;
+  public byte[] data ;
 
   /**
    Writes the message to a string.

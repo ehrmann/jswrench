@@ -32,21 +32,21 @@ package com.act365.net.tcp ;
 
 public class TCPMessage {
 
-  short sourceport ;
-  short destinationport ;
-  int sequencenumber ;
-  int acknowledgementnumber ;
-  int headerlength ;
-  boolean urg ;
-  boolean ack ;
-  boolean psh ;
-  boolean rst ;
-  boolean syn ;
-  boolean fin ;
-  short windowsize ;
-  short checksum ;
-  short urgentpointer ;
-  byte[] options ;
-  byte[] data ; 
+  public short sourceport ;
+  public short destinationport ;
+  public int sequencenumber ;
+  public int acknowledgementnumber ;
+  public int headerlength ;
+  public boolean urg ;
+  public boolean ack ;
+  public boolean psh ;
+  public boolean rst ;
+  public boolean syn ;
+  public boolean fin ;
+  public short windowsize ;
+  public short checksum ;
+  public short urgentpointer ;
+  public byte[] options ;
+  public byte[] data ; 
 }
 
