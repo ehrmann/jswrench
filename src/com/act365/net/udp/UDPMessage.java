@@ -26,20 +26,70 @@
 
 package com.act365.net.udp ;
 
+import com.act365.net.*;
+
+import java.io.IOException ;
+
 /**
  Objects of the class UDPMessage store UDP messages.
 */
 
-public class UDPMessage {
+public class UDPMessage implements IProtocolMessage {
 
   public short sourceport ;
   public short destinationport ;
-  public short length ;
   public short checksum ;
-  public byte[] data ;
-  public int offset ;
-  public int count ;
+  
+  byte[] data ;
+  int offset ;
+  int count ;
 
+  /**
+   * Populates a UDP message.
+   * @param sourceport the UDP port from which the message has been sent
+   * @param destinationport the UDP port to which the message will be sent
+   * @param data array that contains data segment
+   * @param offset offset of data segment within data array
+   * @param count length of data segment
+   */
+  
+  public void populate( short  sourceport ,
+                        short  destinationport ,
+                        byte[] data ,
+                        int    offset ,
+                        int    count ){
+      this.sourceport = sourceport ;
+      this.destinationport = destinationport ;
+      this.checksum = 0 ;
+      this.data = data ;
+      this.offset = offset ;
+      this.count = count ;
+  }
+  
+  /**
+   * Returns 17, the UDP protocol code.
+   */
+    
+  public int getProtocol(){
+      return 17 ;
+  }
+    
+  /**
+   * Returns "UDP", the protocol name.
+   */ 
+    
+  public String getProtocolName(){
+      return "UDP";
+  }
+    
+  /**
+   * UDP messages work with raw and standard sockets.
+   */
+    
+  public boolean isRaw(){
+      return false ;
+  }
+    
   /**
    Writes the message to a string.
   */
@@ -53,7 +103,7 @@ public class UDPMessage {
     sb.append(" destination port-");
     sb.append( destinationport >= 0 ? destinationport : destinationport ^ 0xffffff00 );
     sb.append(" length-");
-    sb.append( length );
+    sb.append( count );
     sb.append(" bytes");
 
     return sb.toString();
@@ -66,5 +116,124 @@ public class UDPMessage {
   public int length() {
       return 8 + count ;  
   }
+  
+  /**
+   * Returns the array that contains the message data. 
+   */
+  
+  public byte[] getData(){
+      return data ;
+  }
+  
+  /**
+   * Returns the length of the message data.
+   */
+  
+  public int getCount(){
+      return count ;
+  }
+  
+  /**
+   * Returns the offset of the message data within the data array.
+   */
+  
+  public int getOffset(){
+      return offset ;
+  }
+      
+  /**
+   * Populates an IProtocol message instance according to
+   * the contents of a byte-stream. Returns the number of bytes read in order
+   * to populate the message. Many protocols implement a checksum safety feature.
+   * In principle, the checksum should always be tested, though there might be
+   * circumstances (e.g. the Reader might not have access to all of the data used 
+   * to calculate the original checksum) where the called might choose to avoid
+   * the test.
+   * 
+   * @param buffer - contains the byte-stream
+   * @param offset - the position of the first byte to read
+   * @param count - the number of bytes available to read
+   * @param testchecksum - whether to calculate the checksum
+   * @param source IP address of source
+   * @param destination IP address of destination
+   * @return the number of bytes read in order to populate the message
+   * @throws IOException cannot construct a message from the buffer contents
+   */
+    
+  public int read( byte[] buffer , int offset , int count , boolean testchecksum , byte[] source , byte[] destination ) throws IOException {
+
+      if( count < 8 ){
+        throw new IOException("UDP messages must be at least eight bytes long");
+      }
+
+      sourceport = SocketUtils.shortFromBytes( buffer , offset );
+      destinationport = SocketUtils.shortFromBytes( buffer , offset + 2 );
+      this.count = SocketUtils.shortFromBytes( buffer , offset + 4 ) - 8 ;
+      checksum = SocketUtils.shortFromBytes( buffer , offset + 6 );
+
+      data = buffer ;
+      this.offset = offset + 8 ;
+
+      if( testchecksum ){
+
+        short checksum = SocketUtils.checksum( source ,
+                                               destination ,
+                                               (byte) SocketConstants.IPPROTO_UDP ,
+                                               buffer ,
+                                               this.offset ,
+                                               this.count );
+
+        if( checksum != 0 ){
+          throw new IOException("Checksum error: " + checksum );
+        }
+      }
+    
+      return length();      
+  }
+
+  /**
+   * Writes the message into a byte-stream at the given position.
+   * @param buffer
+   * @param offset
+   * @param source source IP address
+   * @param destination destination IP address
+   * @return number of bytes written
+   */
+    
+  public int write( byte[] buffer , int offset , byte[] source , byte[] destination ) throws IOException {
+  
+      int length ;
+      
+      try {
+          length = simpleWrite( buffer , offset );
+      } catch( ArrayIndexOutOfBoundsException e ){
+          throw new IOException("UDP Write buffer overflow");
+      }
+    
+      checksum = SocketUtils.checksum( source , destination , (byte) SocketConstants.IPPROTO_UDP , buffer , offset , length );
+      SocketUtils.shortToBytes( checksum , buffer , offset + 2 );
+       
+      return length ;
+  }
+
+  int simpleWrite( byte[] buffer , int offset ) {
+
+    final short length = (short) length();
+    
+    SocketUtils.shortToBytes( sourceport , buffer , offset );
+    SocketUtils.shortToBytes( destinationport , buffer , offset + 2 );
+    SocketUtils.shortToBytes( length , buffer , offset + 4 );
+    SocketUtils.shortToBytes( checksum , buffer , offset + 6 );
+
+    int i = 0 ;
+
+    while( i < length ){
+      buffer[ offset + 8 + i ] = data[ offset + i ];
+      ++ i ;
+    }
+
+    return length ;
+  }
+
 }
 

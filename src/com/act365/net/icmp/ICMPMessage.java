@@ -126,13 +126,25 @@ public class ICMPMessage implements IProtocolMessage {
       return sb.toString();
   }
 
+  /**
+   * Returns the array that contains the message data. 
+   */
+  
   public byte[] getData(){
       return icmpData ;
   }
   
+  /**
+   * Returns the length of the message data.
+   */
+  
   public int getCount(){
       return icmpCount ;
   }
+  
+  /**
+   * Returns the offset of the message data within the data array.
+   */
   
   public int getOffset(){
       return icmpOffset ;
@@ -188,10 +200,12 @@ public class ICMPMessage implements IProtocolMessage {
 
   /**
    * Reads an ICMP message from a bytestream.
-   * The checksum is optionally tested. 
+   * The checksum is optionally tested. The source and destination
+   * arguments are ignored because they are not used in the ICMP checksum
+   * calculation.
    */
   
-  public int read( byte[] buffer , int offset , int count , boolean testchecksum ) throws IOException {
+  public int read( byte[] buffer , int offset , int count , boolean testchecksum , byte[] source , byte[] destination ) throws IOException {
       
       if( count < 4 ) {
         throw new IOException("ICMP messages must be at least four bytes long");
@@ -251,13 +265,14 @@ public class ICMPMessage implements IProtocolMessage {
     
   /**
    * Writes the message into a byte-stream at the given position.
-   * 
+   * The source and destination arguments will be ignored because they 
+   * are not involved in the ICMP checksum calculation
    * @param buffer
    * @param offset
    * @return number of bytes written
    */
   
-  public int write( byte[] buffer , int offset ) throws IOException {
+  public int write( byte[] buffer , int offset , byte[] source , byte[] destination ) throws IOException {
   
       int length ;
       

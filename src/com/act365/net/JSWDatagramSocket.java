@@ -157,15 +157,16 @@ public class JSWDatagramSocket extends DatagramSocket {
         
         if( SocketWrenchSession.isRaw()){
 
-            cursor += UDPWriter.write( sourceAddress ,
-                                       (short) sourcePort ,
-                                       destAddress ,
-                                       (short) destPort ,
-                                        buffer ,
-                                        offset ,
-                                        count ,
-                                        sendBuffer ,
-                                        cursor );            
+            UDPMessage udpMessage = new UDPMessage();
+            
+            udpMessage.populate( (short) sourcePort ,
+                                 (short) destPort ,
+                                 buffer ,
+                                 offset ,
+                                 count );
+            
+            cursor += udpMessage.write( sendBuffer , cursor , sourceAddress , destAddress );
+            
         } else {
                     
             try {
@@ -209,7 +210,7 @@ public class JSWDatagramSocket extends DatagramSocket {
                                        cursor );                                                   
         }
 
-        cursor += message.write( sendBuffer , cursor );
+        cursor += message.write( sendBuffer , cursor , sourceAddress , destAddress );
                         
         if( debug instanceof PrintStream ){
             debug.println("SEND:");
@@ -357,9 +358,9 @@ public class JSWDatagramSocket extends DatagramSocket {
                 length -= size ;
 
                 if( ip4Message instanceof IP4Message ){                        
-                    size = UDPReader.read( udpMessage , receiveBuffer , cursor , length , testChecksum , ip4Message.source , ip4Message.destination );
+                    size = udpMessage.read( receiveBuffer , cursor , length , testChecksum , ip4Message.source , ip4Message.destination );
                 } else {
-                    size = UDPReader.read( udpMessage , receiveBuffer , cursor , length );
+                    size = udpMessage.read( receiveBuffer , cursor , length , false , null , null );
                 }
         
                 if( sourcePort != 0 && sourcePort != udpMessage.destinationport ){
@@ -377,14 +378,12 @@ public class JSWDatagramSocket extends DatagramSocket {
                     ip4Message.length = (short)( length + 28 );
                 }
                 
-                udpMessage.sourceport = (short) dgram.getPort() ;
-                udpMessage.destinationport = (short) sourcePort ;
-                udpMessage.length = (short)( length + 8 );
-                udpMessage.checksum = 0 ;
-                udpMessage.data = dgram.getData() ;
-                udpMessage.offset = 0 ;
-                udpMessage.count = length ;  
-                
+                udpMessage.populate( (short) dgram.getPort() ,
+                                     (short)  sourcePort ,
+                                     dgram.getData() ,
+                                     0 ,
+                                     length );
+                                      
                 cursor = length ;
                 length = 0 ;                      
             }
@@ -402,7 +401,7 @@ public class JSWDatagramSocket extends DatagramSocket {
                 debug.println( ip4Message.toString() );
             }
             debug.println( udpMessage.toString() );
-            SocketUtils.dump( debug , udpMessage.data , udpMessage.offset , udpMessage.count );
+            SocketUtils.dump( debug , udpMessage.getData() , udpMessage.getOffset() , udpMessage.getCount() );
         }
         
         return protocol ;
@@ -549,7 +548,11 @@ public class JSWDatagramSocket extends DatagramSocket {
             cursor += size ;
             length -= size ;
         
-            size = message.read( receiveBuffer , cursor , length , testChecksum );
+            if( ip4Message instanceof IP4Message ){
+                size = message.read( receiveBuffer , cursor , length , testChecksum , ip4Message.source , ip4Message.destination );
+            } else {
+                size = message.read( receiveBuffer , cursor , length , testChecksum , null , null );
+            }
         
             cursor += size ;
             length -= size ;
@@ -602,11 +605,11 @@ public class JSWDatagramSocket extends DatagramSocket {
         switch( protocol ){
             
             case SocketConstants.IPPROTO_ICMP:
-                size = icmpMessage.read( receiveBuffer , cursor , length , testChecksum );
+                size = icmpMessage.read( receiveBuffer , cursor , length , testChecksum , null , null );
                 break;
                 
             case SocketConstants.IPPROTO_UDP:
-                size = UDPReader.read( udpMessage , receiveBuffer , cursor , length , testChecksum && ! isFull , sourceAddress , dgram.getAddress().getAddress() );
+                size = udpMessage.read( receiveBuffer , cursor , length , testChecksum && ! isFull , sourceAddress , dgram.getAddress().getAddress() );
                 break;
                 
             case SocketConstants.IPPROTO_TCP:
@@ -646,7 +649,7 @@ public class JSWDatagramSocket extends DatagramSocket {
                 
                 case SocketConstants.IPPROTO_UDP:
                     debug.println( udpMessage.toString() );
-                    SocketUtils.dump( debug , udpMessage.data , udpMessage.count , udpMessage.offset );
+                    SocketUtils.dump( debug , udpMessage.getData() , udpMessage.getCount() , udpMessage.getOffset() );
                     break;
             }
         }

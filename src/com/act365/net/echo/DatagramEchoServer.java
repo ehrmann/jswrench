@@ -153,9 +153,9 @@ public class DatagramEchoServer {
 
         server.send( ip4Message.source , 
                      udpMessage.sourceport >= 0 ? udpMessage.sourceport : udpMessage.sourceport ^ 0xffffff00 ,
-                     udpMessage.data ,
-                     udpMessage.offset ,
-                     udpMessage.count );
+                     udpMessage.getData() ,
+                     udpMessage.getOffset() ,
+                     udpMessage.getCount() );
       }
 
     } catch ( SocketException se ) {

@@ -146,7 +146,7 @@ public class DNSLookup {
       socket.send( server.getAddress() , 53 , dnsbuffer , 0 , length );            
       socket.receive( null , udpMessage );
 
-      DNSReader.read( dnsMessage , udpMessage.data , udpMessage.offset , udpMessage.count );
+      DNSReader.read( dnsMessage , udpMessage.getData() , udpMessage.getOffset() , udpMessage.getCount() );
         
       dnsMessage.dump( System.out );
   }

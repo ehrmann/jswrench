@@ -135,11 +135,11 @@ public class Sniffer {
 
                         if( udpMessage.sourceport == 53 ){
                             DNSMessage dnsMessage = new DNSMessage();
-                        	DNSReader.read( dnsMessage , udpMessage.data , udpMessage.offset , udpMessage.count );
+                        	DNSReader.read( dnsMessage , udpMessage.getData() , udpMessage.getOffset() , udpMessage.getCount() );
                             dnsMessage.dump( System.out );
                         } else {
                             System.out.println( udpMessage.toString() );
-                            SocketUtils.dump( System.out , udpMessage.data , udpMessage.offset , udpMessage.count );
+                            SocketUtils.dump( System.out , udpMessage.getData() , udpMessage.getOffset() , udpMessage.getCount() );
                         }
                         
 						break;

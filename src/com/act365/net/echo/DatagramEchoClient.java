@@ -169,7 +169,7 @@ class DatagramEchoClient {
         
         socket.send( dest.getAddress() , port , buffer , 0 , bufferlength );
         socket.receive( ip4Message , udpMessage );
-        System.out.write( udpMessage.data , udpMessage.offset , udpMessage.count );
+        System.out.write( udpMessage.getData() , udpMessage.getOffset() , udpMessage.getCount() );
       }
 
     } catch( IOException e ){

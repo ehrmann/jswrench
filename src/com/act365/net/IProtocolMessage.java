@@ -100,25 +100,39 @@ public interface IProtocolMessage {
      * In principle, the checksum should always be tested, though there might be
      * circumstances (e.g. the Reader might not have access to all of the data used 
      * to calculate the original checksum) where the called might choose to avoid
-     * the test.
+     * the test. Some protocols, e.g. UDP and TCP , use the source and destination
+     * IP addresses, which are stored in the IP header, in order to form the 
+     * checksum.
      * 
      * @param buffer - contains the byte-stream
      * @param offset - the position of the first byte to read
      * @param count - the number of bytes available to read
      * @param testchecksum - whether to calculate the checksum
+     * @param source - source IP address
+     * @param destination destination IP address
      * @return the number of bytes read in order to populate the message
      * @throws IOException cannot construct a message from the buffer contents
-     */
+     */ 
     
-    public int read( byte[] buffer , int offset , int count , boolean testchecksum ) throws IOException ;
+    public int read( byte[] buffer ,
+                     int offset , 
+                     int count , 
+                     boolean testchecksum , 
+                     byte[] source , 
+                     byte[] destination ) throws IOException ;
 
     /**
      * Writes the message into a byte-stream at the given position.
      * 
-     * @param buffer
+     * @param buffer 
      * @param offset
+     * @param source source IP address
+     * @param destination destination IP address
      * @return number of bytes written
      */
     
-    public int write( byte[] buffer , int offset ) throws IOException ;
+    public int write( byte[] buffer , 
+                      int offset ,
+                      byte[] source , 
+                      byte[] destination ) throws IOException ;
 }
