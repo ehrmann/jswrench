@@ -42,17 +42,19 @@ public class TFTPServer extends ErrorHandler implements Runnable {
      * -p port#     port to listen on
      * -l logfile   turns on debug
      * -i           interactive (instead of daemon)
+     * -n protocol  network protocol
      * 
      * @param args - command-line argument
      */
     
-    public static void main( String[] args ) throws Exception {
+    public static void main( String[] args ) {
         
         OutputStream debug = null ;
         
         int port = 0 ;
         
-        String logfile = "";
+        String logfile = "" ,
+               protocolLabel = "JDKUDP" ;
         
         // Parse the command line options.
         
@@ -96,6 +98,16 @@ public class TFTPServer extends ErrorHandler implements Runnable {
                   
                   break;
         
+                case 'n':
+                
+                  if( arg < args.length - 1 ){
+                      protocolLabel = args[ ++ arg ];
+                  } else {
+                      quit("-n requires another argument");
+                  }
+                  
+                  break;
+                  
                 default:
                 
                   quit("Unknown command line option: " + args[ arg ] );
@@ -106,10 +118,32 @@ public class TFTPServer extends ErrorHandler implements Runnable {
 
         new SocketWrenchSession();
         
-        SocketUtils.setProtocol("UDP");
+        try {
+            SocketUtils.setProtocol( protocolLabel );
+        } catch ( IOException e ) {
+            quit("Unable to set protocol");
+        }
         
-        UDPNetworkServerImpl network = new UDPNetworkServerImpl( debug );
-                            
+        INetworkServerImpl network = null ;
+        
+        switch( SocketUtils.getProtocol() ){
+        
+        case SocketConstants.IPPROTO_UDP:
+
+            network = new UDPNetworkServerImpl( debug );
+            break;
+            
+        case SocketConstants.IPPROTO_TCP:
+        case SocketConstants.IPPROTO_TCPJ:
+        
+            network = new TCPNetworkServerImpl( debug );
+            break;
+            
+        default:
+        
+            quit("Unsupported protocol");
+        }
+                                    
         try {  
             network.init( port );
             new Thread( new TFTPServer( network , debug ) ).run();
@@ -121,7 +155,7 @@ public class TFTPServer extends ErrorHandler implements Runnable {
     
     // State variables
     
-    UDPNetworkServerImpl network ;
+    INetworkServerImpl network ;
     
     /**
      * Creates a server with a given network connection and optional debug.
@@ -130,7 +164,7 @@ public class TFTPServer extends ErrorHandler implements Runnable {
      * @param debug - where debug is to be written
      */
     
-    public TFTPServer( UDPNetworkServerImpl network , OutputStream debug ){
+    public TFTPServer( INetworkServerImpl network , OutputStream debug ){
         
         super( debug );
         

@@ -26,7 +26,7 @@
 
 package com.act365.net.tftp;
 
-import com.act365.net.SocketWrenchSession ;
+import com.act365.net.* ;
 
 import java.io.*;
 import java.util.*;
@@ -101,7 +101,8 @@ public class TFTP extends TFTPBase {
      
      public static void main( String[] args ) {
      	
-     	String hostname = null ;
+     	String hostname = null ,
+               protocolLabel = "JDKUDP";
      	
      	boolean trace = false , 
      	        verbose = false ;
@@ -134,6 +135,16 @@ public class TFTP extends TFTPBase {
      			  verbose = true ;
      			  break;
      			  
+                case 'n':
+                
+                  if( arg < args.length - 1 ){
+                    protocolLabel = args[ ++ arg ];
+                  } else {
+                    quit("-n requires another argument");
+                  }
+                  
+                  break;
+                  
      			default:
      			
      			  quit("Unknown command line option: " + args[ arg ] );
@@ -142,10 +153,34 @@ public class TFTP extends TFTPBase {
      		++ arg ;
      	}
 
-        UDPNetworkImpl network = new UDPNetworkImpl( System.err );
-         
         new SocketWrenchSession();
+        
+        try {
+            SocketUtils.setProtocol( protocolLabel );
+        } catch ( IOException e ) {
+            quit("Unable to set protocol");
+        }
+        
+        INetworkImpl network = null ;
+        
+        switch( SocketUtils.getProtocol() ){
+        
+        case SocketConstants.IPPROTO_UDP:
+
+            network = new UDPNetworkImpl( System.err );
+            break;
             
+        case SocketConstants.IPPROTO_TCP:
+        case SocketConstants.IPPROTO_TCPJ:
+        
+            network = new TCPNetworkImpl( System.err );
+            break;
+            
+        default:
+        
+            quit("Unsupported protocol");
+        }
+                                    
         try {	
      	    new TFTP( args , arg , hostname , trace , verbose , network );
         } catch ( TFTPException e ) {
