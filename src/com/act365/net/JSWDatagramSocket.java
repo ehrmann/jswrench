@@ -233,7 +233,7 @@ public class JSWDatagramSocket extends DatagramSocket {
               }
                 
           } catch ( ArrayIndexOutOfBoundsException e ) {                
-              throw new IOException("UDP Write buffer overflow");
+              throw new IOException("TCP Write buffer overflow");
           }
       }
         
