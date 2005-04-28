@@ -412,6 +412,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
         return ;
       } else if( message.syn ) {
         // Simply ignore further SYN messages. 
+        return ;
       }
       break;
     case TCP.SYN_SENT:
