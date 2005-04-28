@@ -90,6 +90,14 @@ public class RawTCPListener extends Thread {
   }
   
   /**
+   * Determines whether to trace incoming packets. (Default is no).
+   */
+  
+  public void setDebug( boolean debug ){
+      socket.setDebug( debug ? System.out : null ); 
+  }
+  
+  /**
    * Starts the listener.
    */
   

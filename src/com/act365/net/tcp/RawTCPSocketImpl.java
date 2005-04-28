@@ -140,10 +140,11 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
     retransmissionTimer = new RetransmissionTimer( firstTimeout );
     
     RawTCPListener.getInstance().addPropertyChangeListener( this );
+    RawTCPListener.getInstance().setDebug( debug );
     if( ! testchecksum ){
         RawTCPListener.getInstance().testChecksum( false );        
     }
-
+    
     if( modelpacketloss ){
       random = new Random();
     }
@@ -409,6 +410,8 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
         state = TCP.LISTEN ;
         notifyAll();
         return ;
+      } else if( message.syn ) {
+        // Simply ignore further SYN messages. 
       }
       break;
     case TCP.SYN_SENT:
