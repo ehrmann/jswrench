@@ -446,6 +446,10 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 		  return;
         }
       } else if( message.psh ){
+        if( message.sequencenumber <= destseqnum ){
+            // Ignore rebroadcast data.
+            return ;
+        }
         {
           int i = - 1 ;
           while( ++ i < message.data.length ){
