@@ -362,21 +362,28 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
    * in order to release waiting send() calls.
    */
 
-  synchronized void updateACK( TCPMessage message ) {
+  synchronized boolean updateACK( TCPMessage message ) {
 
-    if( message.ack ){
-      acknowledgedseqnum = message.acknowledgementnumber ;
+    if( message.ack && ( acknowledgedseqnum == 0 || message.acknowledgementnumber > acknowledgedseqnum ) ){
+        acknowledgedseqnum = message.acknowledgementnumber ;            
     }
 
+    if( destseqnum != 0 && message.sequencenumber < destseqnum ){
+        // Ignore retransmitted messages.
+        return false ;   
+    }
+    
     if( message.syn || message.fin ){
-      destseqnum = message.sequencenumber + 1 ;
+        destseqnum = message.sequencenumber + 1 ;
     } else if( message.psh ) {
-      destseqnum = message.sequencenumber + message.data.length ;
+        destseqnum = message.sequencenumber + message.data.length ;
     }
       
     destwindowsize = message.windowsize ;
  
     notifyAll();
+    
+    return true ;
   }
   
   /**
@@ -446,10 +453,6 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 		  return;
         }
       } else if( message.psh ){
-        if( message.sequencenumber <= destseqnum ){
-            // Ignore rebroadcast data.
-            return ;
-        }
         {
           int i = - 1 ;
           while( ++ i < message.data.length ){
@@ -725,8 +728,9 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 		return ;
 	  }
 
-      updateACK( tcpmessage );
-      updateState( tcpmessage );
+      if( updateACK( tcpmessage ) ){
+        updateState( tcpmessage );        
+      }
     } catch( Exception e ) {
       System.err.println("propertyChange: " + e.getMessage() );
     }
