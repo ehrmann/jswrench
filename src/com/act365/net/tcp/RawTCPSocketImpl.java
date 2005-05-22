@@ -203,6 +203,8 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 	
 	send( flags , options , start , end , seqnum );
     
+    System.out.println("Data sent");
+    
     if( ( flags & TCP.SYN ) > 0 || ( flags & TCP.FIN ) > 0 ){
       ++ localseqnum ;
     } else if( ( flags & TCP.PSH ) > 0 ) {
@@ -210,7 +212,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
     }  
 
     if( awaitACK ){
-
+        System.out.println("Await acknowledgement");
         int sendsize = 1 ;
         
         retransmissionTimer.newPacket();
@@ -226,6 +228,9 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 		  	seqnum = acknowledgedseqnum ; 
 		  }
 		  
+          System.out.println("acknowledgedseqnum: " + acknowledgedseqnum );
+          System.out.println("sendsize: " + sendsize );
+          
           if( acknowledgedseqnum > 0 && sendsize == 0 ){
               retransmissionTimer.stop();
           }
@@ -237,12 +242,17 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
               send( flags , options , start , end , seqnum );
               wait( retransmissionTimer.start() * 1000 );
 
+              System.out.println("retransmit");
+              
               if( acknowledgedseqnum == 0 ){
                   sendsize = 1 ;
               } else {
                   start = ( end - ( localseqnum - acknowledgedseqnum ) )% writebuffer.length ;
                   sendsize = ( end - start )% writebuffer.length ;
               }	
+              
+              System.out.println("acknowledgedseqnum: " + acknowledgedseqnum );
+              System.out.println("sendsize: " + sendsize );
               
               if( acknowledgedseqnum > 0 && sendsize == 0 ){
                   retransmissionTimer.stop();
@@ -362,15 +372,15 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
    * in order to release waiting send() calls.
    */
 
-  synchronized boolean updateACK( TCPMessage message ) {
+  synchronized void updateACK( TCPMessage message ) {
 
     if( message.ack && ( acknowledgedseqnum == 0 || message.acknowledgementnumber > acknowledgedseqnum ) ){
         acknowledgedseqnum = message.acknowledgementnumber ;            
     }
 
     if( destseqnum != 0 && message.sequencenumber < destseqnum ){
-        // Ignore retransmitted messages.
-        return false ;   
+        // Don't update counters for retransmitted messages.
+        return ;   
     }
     
     if( message.syn || message.fin ){
@@ -383,7 +393,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
  
     notifyAll();
     
-    return true ;
+    return ;
   }
   
   /**
@@ -400,7 +410,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
       break;
     case TCP.LISTEN:
       if( message.syn ){
-        send( TCP.SYN | TCP.ACK );
+        send( TCP.SYN | TCP.ACK , new TCPOptions() , true );
         previousstate = state ;
         state = TCP.SYN_RCVD ;
         notifyAll();
@@ -453,14 +463,14 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 		  return;
         }
       } else if( message.psh ){
-        {
-          int i = - 1 ;
-          while( ++ i < message.data.length ){
-            readbuffer[( readoffset + readcount + i ) % maxwindowsize ] = message.data[( message.datastart + i )% message.data.length ];
-          }
+        if( destseqnum != 0 && message.sequencenumber < destseqnum ){
+            int i = - 1 ;
+            while( ++ i < message.data.length ){
+              readbuffer[( readoffset + readcount + i ) % maxwindowsize ] = message.data[( message.datastart + i )% message.data.length ];
+            }
+            readcount += message.getCount();
+            windowsize -= message.getCount();            
         }
-        readcount += message.getCount();
-        windowsize -= message.getCount();
         acknowledge();
         notifyAll();
         return ;
@@ -728,9 +738,9 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 		return ;
 	  }
 
-      if( updateACK( tcpmessage ) ){
-        updateState( tcpmessage );        
-      }
+      updateACK( tcpmessage );
+      updateState( tcpmessage );        
+      
     } catch( Exception e ) {
       System.err.println("propertyChange: " + e.getMessage() );
     }
