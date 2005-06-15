@@ -225,11 +225,6 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 		  	seqnum = acknowledgedseqnum ; 
 		  }
 		  
-          System.out.println("acknowledgedseqnum: " + Integer.toHexString( acknowledgedseqnum ) );
-          System.out.println("start: " + start );
-          System.out.println("end: " + end );
-          System.out.println("sendsize: " + sendsize );
-          
           if( acknowledgedseqnum > 0 && sendsize == 0 ){
               retransmissionTimer.stop();
           }
@@ -247,11 +242,6 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
                   start = ( end - ( localseqnum - acknowledgedseqnum ) )% writebuffer.length ;
                   sendsize = ( end - start )% writebuffer.length ;
               }	
-              
-              System.out.println("acknowledgedseqnum: " + Integer.toHexString( acknowledgedseqnum ) );
-              System.out.println("start: " + start );
-              System.out.println("end: " + end );
-              System.out.println("sendsize: " + sendsize );
               
               if( acknowledgedseqnum > 0 && sendsize == 0 ){
                   retransmissionTimer.stop();
@@ -469,7 +459,6 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
         }
         readcount += messageCount ;
         windowsize -= messageCount ;   
-        SocketUtils.dump( System.out , readbuffer , readoffset , readcount );
         acknowledge();
         notifyAll();
         return ;
