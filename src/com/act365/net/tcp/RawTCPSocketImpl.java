@@ -466,7 +466,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
             final int messageCount = message.getCount();
             int i = - 1 ;
             while( ++ i < messageCount ){
-              readbuffer[( readoffset + readcount + i ) % maxwindowsize ] = message.data[( message.datastart + i )% messageCount ];
+              readbuffer[( readoffset + readcount + i ) % maxwindowsize ] = message.data[( message.datastart + i )% message.data.length ];
             }
             readcount += messageCount ;
             windowsize -= messageCount ;   
