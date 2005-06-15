@@ -463,12 +463,14 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
         }
       } else if( message.psh ){
         if( destseqnum != 0 && message.sequencenumber < destseqnum ){
+            final int messageCount = message.getCount();
             int i = - 1 ;
-            while( ++ i < message.data.length ){
-              readbuffer[( readoffset + readcount + i ) % maxwindowsize ] = message.data[( message.datastart + i )% message.data.length ];
+            while( ++ i < messageCount ){
+              readbuffer[( readoffset + readcount + i ) % maxwindowsize ] = message.data[( message.datastart + i )% messageCount ];
             }
-            readcount += message.getCount();
-            windowsize -= message.getCount();            
+            readcount += messageCount ;
+            windowsize -= messageCount ;   
+            SocketUtils.dump( System.out , readbuffer , readoffset , readcount );
         }
         acknowledge();
         notifyAll();
