@@ -273,27 +273,23 @@ public class TCPMessage implements IProtocolMessage {
 		sb.append("ACK");
 	}
 
-    int unsigned ;
-      	
+    String number ;
+    
 	sb.append(" seq-");
-
-	unsigned = sequencenumber >= 0 ? sequencenumber : 0xffffff00 ^ sequencenumber ;
-
-	if( unsigned < 16 ){
+    number = Integer.toHexString( sequencenumber );
+    count = number.length();
+	while( count ++ < 8 ){
 	  sb.append('0');
 	}
-	
-	sb.append( Integer.toHexString( unsigned ) );
-	
+    sb.append( number );
+    
 	sb.append(" ack-");
-
-	unsigned = acknowledgementnumber >= 0 ? acknowledgementnumber : 0xffffff00 ^ acknowledgementnumber ;
-
-	if( unsigned < 16 ){
-	  sb.append('0');
-	}
-	
-	sb.append( Integer.toHexString( unsigned ) );
+    number = Integer.toHexString( acknowledgementnumber );
+    count = number.length();
+    while( count ++ < 8 ){
+      sb.append('0');
+    }
+    sb.append( number );
   	
 	sb.append(" window-");
 	sb.append( windowsize >= 0 ? windowsize : 0xffff0000 ^ windowsize );
