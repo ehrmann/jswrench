@@ -380,8 +380,6 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
       
     destwindowsize = message.windowsize ;
  
-    notifyAll();
-    
     return true ;
   }
   
@@ -391,8 +389,6 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 
   synchronized void updateState( TCPMessage message ) throws IOException {
 
-    flush();
-        
     switch( state ){
 
     case TCP.CLOSED:
@@ -525,20 +521,6 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
     resetSocket();
 
     throw new IOException("Connection reset by peer");
-  }
-  
-  /**
-   * Polls until the writebuffer is empty.
-   */
-  
-  synchronized void flush() {
-  	try {
-  		while( writestart != writeend ){
-  			wait();
-  		}
-  	} catch ( InterruptedException e ) {
-  	  System.err.println("flush() " + e.getMessage() );
-  	}
   }
   
   void activeOpen( InetAddress address , short port ) throws IOException {
