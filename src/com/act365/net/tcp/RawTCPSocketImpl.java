@@ -82,6 +82,8 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 
   TCPAcknowledger acknowledger ;
 
+  TCPFinisher finisher ;
+  
   TCPMSLTimer msltimer ;
 
   RetransmissionTimer retransmissionTimer ;
@@ -441,7 +443,8 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 			notifyAll();
 			return ;
         } else {
-		  send( TCP.FIN | TCP.ACK );
+          send( TCP.ACK );
+          passiveClose();
 		  previousstate = state ;
 		  state = TCP.LAST_ACK ;
 		  notifyAll();
@@ -567,6 +570,8 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
 
   synchronized void activeClose() throws IOException {
 
+    flush();
+    
     switch( state ){
 
       case TCP.ESTABLISHED:
@@ -599,6 +604,16 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
     socket.close();
   }
       
+  synchronized void passiveClose() throws IOException {
+
+    if( finisher == null || ! finisher.isAlive() ) {
+      finisher = new TCPFinisher( this );
+      finisher.start();
+      
+      while( ! finisher.isAlive() );
+    }
+  }
+
   synchronized void setState( int state ){
     this.state = state ;
     notifyAll();
