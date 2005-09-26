@@ -175,10 +175,6 @@ public class Traceroute {
       
       IProtocolMessage message = null ;
       
-      float sumdt = 0 ,
-            mindt = Float.MAX_VALUE ,
-            maxdt = Float.MIN_VALUE ;
-
       int sourceport = 42000 ,
           destinationport = 64000 ;
 

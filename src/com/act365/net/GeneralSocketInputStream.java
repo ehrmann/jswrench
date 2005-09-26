@@ -102,8 +102,7 @@ public class GeneralSocketInputStream extends InputStream {
    */
   
   public void close() throws IOException {
-  
-    int ret = _close( socketDescriptor );
+    _close( socketDescriptor );
   }
 
   static native int _close( int socketDescriptor );

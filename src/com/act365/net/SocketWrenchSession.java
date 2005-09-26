@@ -245,7 +245,7 @@ public class SocketWrenchSession {
    */
 
   public static void setProtocol( String protocol ) throws IOException {
-      int i = 0 , proto = -1 ;
+      int i = 0 ;
       while( i < SocketConstants.jswProtocolLabels.length ){
           if( protocol.equalsIgnoreCase( SocketConstants.jswProtocolLabels[ i ] ) ){
               setProtocol( i );

@@ -64,8 +64,7 @@ public class GeneralSocketOutputStream extends OutputStream {
    */
   
   public void write( byte[] buffer ) throws IOException {
-    
-    int sent = _send( socketDescriptor , buffer , 0 , buffer.length );
+    _send( socketDescriptor , buffer , 0 , buffer.length );
   }
 
   /**
@@ -88,8 +87,7 @@ public class GeneralSocketOutputStream extends OutputStream {
    */
   
   public void close() throws IOException {
-
-    int ret = _close( socketDescriptor );
+    _close( socketDescriptor );
   }
 
   static native int _close( int socketDescriptor );

@@ -659,8 +659,7 @@ class RawTCPSocketImpl extends SocketImpl implements PropertyChangeListener {
       return 0 ;
     }
 
-    final int initialcount = count ,
-              initialoffset = offset ;
+    final int initialcount = count ;
  
     while( count > 0 ){
       while( readcount == 0 ){

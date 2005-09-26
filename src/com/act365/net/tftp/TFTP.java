@@ -362,8 +362,6 @@ public class TFTP extends TFTPBase {
             ErrorHandler.command( "Unknown command " + st.sval );
      	}
      	
-     	boolean exit = false ;
-     	
      	switch ( command ){
      		
      		/*

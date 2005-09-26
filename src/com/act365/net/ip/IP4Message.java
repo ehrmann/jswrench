@@ -80,7 +80,7 @@ public class IP4Message implements IProtocolMessage {
     this.headerlength = 5 ;
     this.typeofservice = typeofservice ;
     this.length = (short)( 20 + data.length );
-    this.identifier = identifier ++ ;
+    this.identifier = ip4Identifier ++ ;
     this.flags = IP4.DONT_FRAGMENT ;
     this.offset = (short) 0 ;
     this.timetolive = timetolive ;

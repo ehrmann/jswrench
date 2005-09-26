@@ -92,11 +92,7 @@ public abstract class GeneralSocketImpl extends SocketImpl {
   */
 
   public void connect( InetAddress dst , int remotePort ) throws IOException {
-
-    int ret = _connect( getSocketDescriptor( fd ) ,
-                        dst.getAddress() ,
-                        remotePort );
-
+    _connect( getSocketDescriptor( fd ) , dst.getAddress() , remotePort );
     port    = remotePort ;
     address = dst ;
   }

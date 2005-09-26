@@ -257,8 +257,6 @@ public class ICMPMessage implements IProtocolMessage {
       code = buffer[ offset + 1 ];
       checksum = SocketUtils.shortFromBytes( buffer , offset + 2 );
 
-      boolean isquery ;
-
       int datastart ;
 
       boolean isQuery = isQuery();
