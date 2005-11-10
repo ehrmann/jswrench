@@ -80,6 +80,9 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1socket( JNIEnv* env
 
             env -> DeleteLocalRef( exceptionClass );
         }
+
+		// Attempt to set the SO_BROADCAST option (enable broadcast) but don't worry should it fail.
+		setsockopt( ret , SOL_SOCKET , SO_BROADCAST , (char*) & one , sizeof( one ) );
     }
 
 #ifdef LINUX
