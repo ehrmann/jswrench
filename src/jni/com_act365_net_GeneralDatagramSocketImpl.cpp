@@ -68,9 +68,9 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1socket( JNIEnv* env
       env -> DeleteLocalRef( exceptionClass );
     }
 
-    if(  type == SOCK_RAW && headerincluded ){
+    int one = 1 ; // Necessary for Windows
 
-        int one = 1 ; // Necessary for Windows
+    if(  type == SOCK_RAW && headerincluded ){
 
         if( setsockopt( ret , IPPROTO_IP , IP_HDRINCL , (char*) & one , sizeof( one ) ) ){
 
@@ -80,10 +80,9 @@ jint JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1socket( JNIEnv* env
 
             env -> DeleteLocalRef( exceptionClass );
         }
-
-		// Attempt to set the SO_BROADCAST option (enable broadcast) but don't worry should it fail.
-		setsockopt( ret , SOL_SOCKET , SO_BROADCAST , (char*) & one , sizeof( one ) );
     }
+
+    setsockopt( ret , SOL_SOCKET , SO_BROADCAST , (char*) & one , sizeof( one ) );
 
 #ifdef LINUX
     setReceiveTimeout( ret , 0 );
@@ -307,6 +306,89 @@ void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1send( JNIEnv*    en
 
   if( isCopy ){
     env -> ReleaseByteArrayElements( buffer , pBuffer , JNI_ABORT );
+  }
+}
+
+JNIEXPORT 
+void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1join(JNIEnv* env , 
+                                                                  jclass , 
+                                                                  jint socketDescriptor , 
+                                                                  jbyteArray groupAddress )
+{
+    // Set multicast address.
+    struct ip_mreq mreq ;
+
+    if( ! SocketUtils::jbyteArrayToInAddr( env , groupAddress , & mreq.imr_multiaddr ) ){
+        jclass exceptionClass = env -> FindClass("java/io/IOException");
+        env -> ThrowNew( exceptionClass , "Cannot interpret group address");
+        env -> DeleteLocalRef( exceptionClass );
+        return ;
+    }
+
+    // Set local address.
+    mreq.imr_interface.s_addr = htonl( INADDR_ANY ); // Default
+#ifdef WIN32
+    char ac[80];
+    if( gethostname( ac , sizeof( ac ) ) == 0 ) {
+        struct hostent *phe ;
+        if( phe = gethostbyname( ac ) ){
+            mreq.imr_interface = * (in_addr*)( phe -> h_addr_list[0] );
+        }
+    }
+#else
+    struct ifreq ifreqLocal ;
+    if( ioctl( socketDescriptor , SIOCGIFADDR , ifreqLocal ) >= 0 ){
+        mreq.imr_interface.s_addr = ifreqLocal.ifr_addr ;
+    }
+#endif
+
+    int ret ;
+
+    if( ret = setsockopt( socketDescriptor , IPPROTO_IP , IP_ADD_MEMBERSHIP , (char*) & mreq , sizeof( mreq ) ) ){
+        jclass exceptionClass = env -> FindClass("java/net/SocketException");
+        SocketUtils::throwError( env , exceptionClass , "setsockopt()" );
+        env -> DeleteLocalRef( exceptionClass );
+    }
+}
+
+JNIEXPORT 
+void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1leave(JNIEnv* env , 
+                                                                   jclass , 
+                                                                   jint socketDescriptor , 
+                                                                   jbyteArray groupAddress )
+{
+    struct ip_mreq mreq ;
+
+    if( ! SocketUtils::jbyteArrayToInAddr( env , groupAddress , & mreq.imr_multiaddr ) ){
+        jclass exceptionClass = env -> FindClass("java/io/IOException");
+        env -> ThrowNew( exceptionClass , "Cannot interpret group address");
+        env -> DeleteLocalRef( exceptionClass );
+        return ;
+    }
+    mreq.imr_interface.s_addr = htonl( INADDR_ANY );
+
+    int ret ;
+
+    if( ret = setsockopt( socketDescriptor , IPPROTO_IP , IP_DROP_MEMBERSHIP , (char*) & mreq , sizeof( mreq ) ) ){
+        jclass exceptionClass = env -> FindClass("java/net/SocketException");
+        SocketUtils::throwError( env , exceptionClass , "setsockopt()" );
+        env -> DeleteLocalRef( exceptionClass );
+    }
+}
+
+JNIEXPORT 
+void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1setTimeToLive( JNIEnv* env , 
+                                                                            jclass, 
+                                                                            jint socketDescriptor , 
+                                                                            jbyte ttl )
+{
+  if( setsockopt( socketDescriptor , IPPROTO_IP , IP_MULTICAST_TTL , (char*) & ttl , sizeof( ttl ) ) ){
+
+    jclass exceptionClass = env -> FindClass("java/net/SocketException");
+
+    SocketUtils::throwError( env , exceptionClass , "setsockopt()" );
+
+    env -> DeleteLocalRef( exceptionClass );
   }
 }
 

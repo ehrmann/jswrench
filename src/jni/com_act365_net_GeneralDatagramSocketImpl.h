@@ -75,6 +75,46 @@ JNIEXPORT void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1send
 
 /*
  * Class:     com_act365_net_GeneralDatagramSocketImpl
+ * Method:    _join
+ * Signature: (I[B)V
+ */
+JNIEXPORT void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1join
+  (JNIEnv *, jclass, jint, jbyteArray);
+
+/*
+ * Class:     com_act365_net_GeneralDatagramSocketImpl
+ * Method:    _joinGroup
+ * Signature: (ILjava/net/InetSocketAddress;Ljava/net/NetworkInterface;)V
+ */
+JNIEXPORT void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1joinGroup
+  (JNIEnv *, jclass, jint, jobject, jobject);
+
+/*
+ * Class:     com_act365_net_GeneralDatagramSocketImpl
+ * Method:    _leave
+ * Signature: (I[B)V
+ */
+JNIEXPORT void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1leave
+  (JNIEnv *, jclass, jint, jbyteArray);
+
+/*
+ * Class:     com_act365_net_GeneralDatagramSocketImpl
+ * Method:    _leaveGroup
+ * Signature: (ILjava/net/InetSocketAddress;Ljava/net/NetworkInterface;)V
+ */
+JNIEXPORT void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1leaveGroup
+  (JNIEnv *, jclass, jint, jobject, jobject);
+
+/*
+ * Class:     com_act365_net_GeneralDatagramSocketImpl
+ * Method:    _setTimeToLive
+ * Signature: (IB)V
+ */
+JNIEXPORT void JNICALL Java_com_act365_net_GeneralDatagramSocketImpl__1setTimeToLive
+  (JNIEnv *, jclass, jint, jbyte);
+
+/*
+ * Class:     com_act365_net_GeneralDatagramSocketImpl
  * Method:    _getSocketDescriptor
  * Signature: (Ljava/io/FileDescriptor;)I
  */
